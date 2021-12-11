@@ -1,4 +1,4 @@
-# vector-addon
+# Vector Addon
 A open-source addon for Meteor Client.
 
 Vector Discord:
