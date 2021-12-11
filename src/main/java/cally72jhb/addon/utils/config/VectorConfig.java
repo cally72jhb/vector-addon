@@ -44,12 +44,12 @@ public class VectorConfig extends System<VectorConfig> {
     public NbtCompound toTag() {
         NbtCompound tag = new NbtCompound();
 
-        tag.putString("clientname", clientName);
-        tag.putString("clientsuffix", clientPrefix);
-        tag.putString("clientsuffix", clientSuffix);
+        tag.putString("clientname", clientName == null ? "Vector" : clientName);
+        tag.putString("clientsuffix", clientPrefix == null ? "[" : clientPrefix);
+        tag.putString("clientsuffix", clientSuffix == null ? "]" : clientSuffix);
         tag.putBoolean("icon", windowIcon);
         tag.putBoolean("members", highlightMembers);
-        tag.put("color", memberColor.toTag());
+        tag.put("color", memberColor == null ? new SettingColor(255, 255, 145).toTag() : memberColor.toTag());
 
         return tag;
     }
