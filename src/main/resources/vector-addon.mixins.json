@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "package": "cally72jhb.addon.mixin",
+  "compatibilityLevel": "JAVA_16",
+  "client": [
+    "Matrix4fMixin",
+    "GameRendererMixin",
+    "MinecraftClientMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

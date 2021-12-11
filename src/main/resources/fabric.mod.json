@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "id": "vector-addon",
+  "version": "${version}",
+
+  "name": "Vector Addon",
+  "description": "Best Meteor Addon.",
+  "authors": [
+    "cally72jhb"
+  ],
+  "contact": {
+    "homepage": "",
+    "issues": "",
+    "sources": "",
+    "discord": ""
+  },
+
+  "license": "GPL-3.0",
+  "icon": "assets/vector/V-Component.png",
+
+  "environment": "client",
+  "entrypoints": {
+    "meteor": [
+      "cally72jhb.addon.VectorAddon"
+    ]
+  },
+  "mixins": [
+    "vector-addon.mixins.json",
+    "vector-addon-meteor.mixins.json"
+  ],
+  "custom": {
+    "meteor-client:color": "140,245,165"
+  },
+  "depends": {
+    "java": ">=16",
+    "minecraft": ">=@mc_version@",
+    "meteor-client": "*"
+  }
+}
