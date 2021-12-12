@@ -1,6 +1,8 @@
 package cally72jhb.addon.utils.config;
 
+import cally72jhb.addon.gui.tabs.VectorConfigTab;
 import meteordevelopment.meteorclient.MeteorClient;
+import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.systems.System;
 import meteordevelopment.meteorclient.systems.Systems;
 import meteordevelopment.meteorclient.utils.misc.Version;
@@ -13,14 +15,14 @@ import net.minecraft.nbt.NbtCompound;
 public class VectorConfig extends System<VectorConfig> {
     public Version version;
 
-    public String clientName;
-    public String clientPrefix;
-    public String clientSuffix;
+    public String clientName = VectorConfigTab.clientName.get();
+    public String clientPrefix = VectorConfigTab.clientPrefix.get();
+    public String clientSuffix = VectorConfigTab.clientSuffix.get();
 
-    public boolean windowIcon;
-    public boolean highlightMembers;
+    public boolean windowIcon = VectorConfigTab.windowIcon.get();
+    public boolean highlightMembers = VectorConfigTab.highlightMembers.get();
 
-    public SettingColor memberColor;
+    public SettingColor memberColor = VectorConfigTab.memberColor.get();
 
     public VectorConfig() {
         super("vector-config");
@@ -44,28 +46,39 @@ public class VectorConfig extends System<VectorConfig> {
     public NbtCompound toTag() {
         NbtCompound tag = new NbtCompound();
 
-        tag.putString("clientname", clientName == null ? "Vector" : clientName);
-        tag.putString("clientsuffix", clientPrefix == null ? "[" : clientPrefix);
-        tag.putString("clientsuffix", clientSuffix == null ? "]" : clientSuffix);
+        tag.putString("clientname", clientName);
+        tag.putString("clientsuffix", clientPrefix);
+        tag.putString("clientsuffix", clientSuffix);
         tag.putBoolean("icon", windowIcon);
         tag.putBoolean("members", highlightMembers);
-        tag.put("color", memberColor == null ? new SettingColor(255, 255, 145).toTag() : memberColor.toTag());
+        tag.put("color", memberColor.toTag());
 
         return tag;
     }
 
     @Override
     public VectorConfig fromTag(NbtCompound tag) {
-        clientName = tag.getString("clientname");
-        clientPrefix = tag.getString("clientsuffix");
-        clientSuffix = tag.getString("clientsuffix");
-        windowIcon = tag.getBoolean("icon");
-        highlightMembers = tag.getBoolean("members");
+        clientName = getString(tag, "clientname", VectorConfigTab.clientName);
+        clientPrefix = getString(tag, "clientsuffix", VectorConfigTab.clientPrefix);
+        clientSuffix = getString(tag, "clientsuffix", VectorConfigTab.clientSuffix);
+        windowIcon = getBoolean(tag, "icon", VectorConfigTab.windowIcon);
+        highlightMembers = getBoolean(tag, "members", VectorConfigTab.highlightMembers);
         if (tag.contains("color")) {
-            if (memberColor == null) memberColor = new SettingColor();
             memberColor.fromTag(tag.getCompound("color"));
+        } else {
+            memberColor = VectorConfigTab.memberColor.getDefaultValue();
         }
 
         return this;
+    }
+
+    // Utils
+
+    private boolean getBoolean(NbtCompound tag, String key, Setting<Boolean> setting) {
+        return tag.contains(key) ? tag.getBoolean(key) : setting.getDefaultValue();
+    }
+
+    private String getString(NbtCompound tag, String key, Setting<String> setting) {
+        return tag.contains(key) ? tag.getString(key) : setting.getDefaultValue();
     }
 }

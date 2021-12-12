@@ -19,19 +19,19 @@ import meteordevelopment.meteorclient.systems.modules.Modules;
 public class Systems {
     public static void init() {
         // Modules
-        add(new AutoCityPlus());
+        //add(new AutoCityPlus());
         add(new AutoEz());
-        add(new EntityFly());
+        add(new BedrockWalk());
         add(new BowBomb());
         add(new CevBreaker());
         add(new ColorPlace());
-        add(new Fun());
+        add(new ClipPhase());
+        add(new EntityFly());
         add(new PortalGodMode());
         add(new IsometricView());
         add(new NewChunks());
         add(new PacketFly());
         add(new PingSpoof());
-        add(new Phase());
         add(new SkeletonESP());
         add(new StepPlus());
         add(new Strafe());

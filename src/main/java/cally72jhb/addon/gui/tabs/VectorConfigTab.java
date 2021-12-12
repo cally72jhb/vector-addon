@@ -7,6 +7,7 @@ import meteordevelopment.meteorclient.gui.tabs.Tab;
 import meteordevelopment.meteorclient.gui.tabs.TabScreen;
 import meteordevelopment.meteorclient.gui.tabs.WindowTabScreen;
 import meteordevelopment.meteorclient.settings.*;
+import meteordevelopment.meteorclient.systems.config.Config;
 import meteordevelopment.meteorclient.utils.misc.NbtUtils;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import net.minecraft.client.gui.screen.Screen;
@@ -73,7 +74,7 @@ public class VectorConfigTab extends Tab {
             .description("The color the Vector Users will be highlighted with.")
             .defaultValue(new SettingColor(255, 255, 145))
             .onChanged(color -> VectorConfig.get().memberColor = color)
-            .onModuleActivated(color -> color.set(VectorConfig.get().memberColor == null ? new SettingColor(255, 255, 145) : VectorConfig.get().memberColor))
+            .onModuleActivated(color -> color.set(VectorConfig.get().memberColor))
             .visible(highlightMembers::get)
             .build()
     );
