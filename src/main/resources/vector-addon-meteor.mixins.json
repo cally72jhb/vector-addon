@@ -9,7 +9,6 @@
     "SettingCommandMixin",
     "SprintMixin",
     "SystemsMixin",
-    "TargetUtilsMixin",
-    "TitleScreenSplashesMixin"
+    "TargetUtilsMixin"
   ]
 }

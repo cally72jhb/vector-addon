@@ -10,7 +10,9 @@ import meteordevelopment.meteorclient.events.world.CollisionShapeEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.mixin.PlayerPositionLookS2CPacketAccessor;
 import meteordevelopment.meteorclient.mixininterface.IVec3d;
-import meteordevelopment.meteorclient.settings.*;
+import meteordevelopment.meteorclient.settings.DoubleSetting;
+import meteordevelopment.meteorclient.settings.Setting;
+import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
@@ -137,11 +139,8 @@ public class Phase extends Module {
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent event) {
         mc.player.noClip = true;
-        ((IVec3d) event.movement).set(speedX, speedY, speedZ);
-    }
 
-    private boolean checkCollisionBox() {
-        return !mc.world.getBlockCollisions(mc.player, mc.player.getBoundingBox()).findAny().isEmpty();
+        ((IVec3d) event.movement).set(speedX, speedY, speedZ);
     }
 
     @EventHandler

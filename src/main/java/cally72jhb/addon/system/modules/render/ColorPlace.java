@@ -15,8 +15,10 @@ import meteordevelopment.meteorclient.utils.render.color.Color;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
 import net.minecraft.item.BlockItem;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.shape.VoxelShape;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -40,6 +42,13 @@ public class ColorPlace extends Module {
         .build()
     );
 
+    private final Setting<Boolean> advanced = sgGeneral.add(new BoolSetting.Builder()
+            .name("advanced")
+            .description("Shows a more advanced outline on different types of shape blocks.")
+            .defaultValue(true)
+            .build()
+    );
+
     private final Setting<Boolean> place = sgGeneral.add(new BoolSetting.Builder()
             .name("place")
             .description("Whether or not to render placing blocks.")
@@ -61,10 +70,10 @@ public class ColorPlace extends Module {
             .build()
     );
 
-    private final Setting<Integer> renderticks = sgRender.add(new IntSetting.Builder()
+    private final Setting<Integer> renderTicks = sgRender.add(new IntSetting.Builder()
         .name("ticks")
         .description("How many ticks it should take for a block to disappear.")
-        .defaultValue(8)
+        .defaultValue(10)
         .min(1)
         .sliderMax(8)
         .build()
@@ -100,13 +109,13 @@ public class ColorPlace extends Module {
 
     @Override
     public void onActivate() {
-        for (RenderBlock renderBlock : renderBlocks) renderBlockPool.free(renderBlock);
+        for (RenderBlock block : renderBlocks) renderBlockPool.free(block);
         renderBlocks.clear();
     }
 
     @Override
     public void onDeactivate() {
-        for (RenderBlock renderBlock : renderBlocks) renderBlockPool.free(renderBlock);
+        for (RenderBlock block : renderBlocks) renderBlockPool.free(block);
         renderBlocks.clear();
     }
 
@@ -114,29 +123,23 @@ public class ColorPlace extends Module {
 
     @EventHandler
     private void onPlace(PlaceBlockEvent event) {
-        if (!place.get()) return;
-        if (blocksFilter.get() == ListMode.Blacklist && blocks.get().contains(event.block)) return;
-        else if (blocksFilter.get() == ListMode.Whitelist && !blocks.get().contains(event.block)) return;
+        if (!place.get() || shouldRender(event.block)) return;
 
         renderBlocks.add(renderBlockPool.get().set(event.blockPos));
     }
 
     @EventHandler
     private void onBreak(BreakBlockEvent event) {
-        if (!breaking.get()) return;
-        if (blocksFilter.get() == ListMode.Blacklist && blocks.get().contains(VectorUtils.getBlock(event.blockPos))) return;
-        else if (blocksFilter.get() == ListMode.Whitelist && !blocks.get().contains(VectorUtils.getBlock(event.blockPos))) return;
+        if (!breaking.get() || shouldRender(VectorUtils.getBlock(event.blockPos))) return;
 
         renderBlocks.add(renderBlockPool.get().set(event.blockPos));
     }
 
     @EventHandler
     private void onInteract(InteractBlockEvent event) {
-        if (!interact.get()) return;
-        if (blocksFilter.get() == ListMode.Blacklist && blocks.get().contains(VectorUtils.getBlock(event.result.getBlockPos()))) return;
-        else if (blocksFilter.get() == ListMode.Whitelist && !blocks.get().contains(VectorUtils.getBlock(event.result.getBlockPos()))) return;
-
-        if (mc.player.getMainHandStack().getItem() instanceof BlockItem) return;
+        if (mc.player == null || event.hand == null || mc.player.getStackInHand(event.hand) == null) return;
+        if (!interact.get() || shouldRender(VectorUtils.getBlock(event.result.getBlockPos()))) return;
+        if (mc.player.getStackInHand(event.hand).getItem() instanceof BlockItem) return;
 
         renderBlocks.add(renderBlockPool.get().set(event.result.getBlockPos()));
     }
@@ -154,7 +157,13 @@ public class ColorPlace extends Module {
     @EventHandler
     private void onRender(Render3DEvent event) {
         renderBlocks.sort(Comparator.comparingInt(b -> -b.ticks));
-        renderBlocks.forEach(renderBlock -> renderBlock.render(event, sideColor.get(), lineColor.get(), shapeMode.get()));
+        renderBlocks.forEach(block -> block.render(event, sideColor.get(), lineColor.get(), shapeMode.get()));
+    }
+
+    private boolean shouldRender(Block block) {
+        if (blocksFilter.get() == ListMode.Blacklist && blocks.get().contains(block)) return false;
+        else if (blocksFilter.get() == ListMode.Whitelist || !blocks.get().contains(block)) return false;
+        return true;
     }
 
     public enum ListMode {
@@ -164,11 +173,13 @@ public class ColorPlace extends Module {
 
     public class RenderBlock {
         public BlockPos.Mutable pos = new BlockPos.Mutable();
+        public BlockState state;
         public int ticks;
 
         public RenderBlock set(BlockPos blockPos) {
             pos.set(blockPos);
-            ticks = renderticks.get();
+            state = VectorUtils.getBlockState(blockPos);
+            ticks = renderTicks.get();
 
             return this;
         }
@@ -184,7 +195,17 @@ public class ColorPlace extends Module {
             sides.a *= (double) ticks / 8;
             lines.a *= (double) ticks / 8;
 
-            event.renderer.box(pos, sides, lines, shapeMode, 0);
+            if (!advanced.get()) {
+                event.renderer.box(pos, sides, lines, shapeMode, 0);
+            } else {
+                VoxelShape shape = state.getOutlineShape(mc.world, pos);
+
+                if (shapeMode == ShapeMode.Both || shapeMode == ShapeMode.Lines) {
+                    shape.forEachEdge((minX, minY, minZ, maxX, maxY, maxZ) -> {
+                        event.renderer.line(pos.getX() + minX, pos.getY() + minY, pos.getZ() + minZ, pos.getX() + maxX, pos.getY() + maxY, pos.getZ() + maxZ, lines);
+                    });
+                }
+            }
 
             sides.a = preSideA;
             lines.a = preLineA;

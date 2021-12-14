@@ -10,8 +10,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(MinecraftClient.class)
 public class MinecraftClientMixin {
     @Inject(method = "handleInputEvents", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/MinecraftClient;doAttack()V"))
-    private void onAttack(CallbackInfo ci)
-    {
+    private void onAttack(CallbackInfo info) {
         VectorUtils.CPS++;
     }
 }

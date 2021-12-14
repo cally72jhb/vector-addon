@@ -43,12 +43,17 @@ public class VectorConfig extends System<VectorConfig> {
     }
 
     @Override
+    public void init() {
+        RainbowColors.add(memberColor);
+    }
+
+    @Override
     public NbtCompound toTag() {
         NbtCompound tag = new NbtCompound();
 
-        tag.putString("clientname", clientName);
-        tag.putString("clientsuffix", clientPrefix);
-        tag.putString("clientsuffix", clientSuffix);
+        tag.putString("name", clientName);
+        tag.putString("suffix", clientPrefix);
+        tag.putString("suffix", clientSuffix);
         tag.putBoolean("icon", windowIcon);
         tag.putBoolean("members", highlightMembers);
         tag.put("color", memberColor.toTag());
@@ -58,9 +63,9 @@ public class VectorConfig extends System<VectorConfig> {
 
     @Override
     public VectorConfig fromTag(NbtCompound tag) {
-        clientName = getString(tag, "clientname", VectorConfigTab.clientName);
-        clientPrefix = getString(tag, "clientsuffix", VectorConfigTab.clientPrefix);
-        clientSuffix = getString(tag, "clientsuffix", VectorConfigTab.clientSuffix);
+        clientName = getString(tag, "name", VectorConfigTab.clientName);
+        clientPrefix = getString(tag, "suffix", VectorConfigTab.clientPrefix);
+        clientSuffix = getString(tag, "suffix", VectorConfigTab.clientSuffix);
         windowIcon = getBoolean(tag, "icon", VectorConfigTab.windowIcon);
         highlightMembers = getBoolean(tag, "members", VectorConfigTab.highlightMembers);
         if (tag.contains("color")) {

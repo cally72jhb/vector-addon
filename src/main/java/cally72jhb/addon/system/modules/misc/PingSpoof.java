@@ -1,6 +1,7 @@
 package cally72jhb.addon.system.modules.misc;
 
 import cally72jhb.addon.VectorAddon;
+import cally72jhb.addon.utils.misc.SystemTimer;
 import meteordevelopment.meteorclient.events.packets.PacketEvent;
 import meteordevelopment.meteorclient.events.render.Render3DEvent;
 import meteordevelopment.meteorclient.settings.IntSetting;
@@ -26,8 +27,13 @@ public class PingSpoof extends Module {
         super(VectorAddon.CATEGORY, "ping-spoof", "Modify your ping.");
     }
 
-    SystemTimer timer = new SystemTimer();
-    KeepAliveC2SPacket packet = null;
+    private SystemTimer timer;
+    private KeepAliveC2SPacket packet;
+
+    @Override
+    public void onActivate() {
+        timer = new SystemTimer();
+    }
 
     @EventHandler
     public void onPacketSend(PacketEvent.Send event) {
@@ -38,11 +44,6 @@ public class PingSpoof extends Module {
         }
     }
 
-    @Override
-    public String getInfoString() {
-        return ping.get() + "ms";
-    }
-
     @EventHandler
     public void onUpdate(Render3DEvent event) {
         if(timer.hasPassed(ping.get()) && packet != null) {
@@ -51,27 +52,8 @@ public class PingSpoof extends Module {
         }
     }
 
-    class SystemTimer {
-        private long time;
-
-        public SystemTimer() {
-            time = System.currentTimeMillis();
-        }
-
-        public boolean hasPassed(double ms) {
-            return System.currentTimeMillis() - time >= ms;
-        }
-
-        public void reset() {
-            time = System.currentTimeMillis();
-        }
-
-        public long getTime() {
-            return time;
-        }
-
-        public void setTime(long time) {
-            this.time = time;
-        }
+    @Override
+    public String getInfoString() {
+        return ping.get() + "ms";
     }
 }

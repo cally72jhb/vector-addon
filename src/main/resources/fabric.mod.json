@@ -4,19 +4,17 @@
   "version": "${version}",
 
   "name": "Vector Addon",
-  "description": "Best Meteor Addon.",
+  "description": "A open-source addon for Meteor Client.",
   "authors": [
     "cally72jhb"
   ],
   "contact": {
-    "homepage": "",
-    "issues": "",
-    "sources": "",
-    "discord": ""
+    "sources": "https://github.com/cally72jhb/vector-addon",
+    "discord": "https://discord.gg/A3nYgbKeXR"
   },
 
   "license": "GPL-3.0",
-  "icon": "assets/vector/V-Component.png",
+  "icon": "assets/vector/icon.png",
 
   "environment": "client",
   "entrypoints": {

@@ -8,7 +8,6 @@ import meteordevelopment.meteorclient.renderer.ShapeMode;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.Utils;
-import meteordevelopment.meteorclient.utils.entity.EntityUtils;
 import meteordevelopment.meteorclient.utils.entity.SortPriority;
 import meteordevelopment.meteorclient.utils.entity.TargetUtils;
 import meteordevelopment.meteorclient.utils.player.FindItemResult;
@@ -31,10 +30,7 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
-
-import static meteordevelopment.meteorclient.MeteorClient.mc;
 
 public class AutoCityPlus extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();

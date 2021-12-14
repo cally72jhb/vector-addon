@@ -4,6 +4,7 @@ import cally72jhb.addon.VectorAddon;
 import cally72jhb.addon.utils.VectorUtils;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.mixininterface.IVec3d;
+import meteordevelopment.meteorclient.settings.BoolSetting;
 import meteordevelopment.meteorclient.settings.DoubleSetting;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
@@ -18,8 +19,27 @@ public class BedrockWalk extends Module {
     private final Setting<Double> speed = sgGeneral.add(new DoubleSetting.Builder()
             .name("speed")
             .description("Your movement speed.")
-            .defaultValue(2)
+            .defaultValue(1)
+            .min(0.5)
+            .sliderMin(0.5)
+            .build()
+    );
+
+    private final Setting<Double> unlock = sgGeneral.add(new DoubleSetting.Builder()
+            .name("unlock-speed")
+            .description("At what speed to disable pulling in a direction.")
+            .defaultValue(1)
             .min(0.1)
+            .max(7.5)
+            .sliderMin(0.1)
+            .sliderMax(7.5)
+            .build()
+    );
+
+    private final Setting<Boolean> sneak = sgGeneral.add(new BoolSetting.Builder()
+            .name("sneak")
+            .description("Whether or not to center when your sneaking.")
+            .defaultValue(true)
             .build()
     );
 
@@ -29,6 +49,7 @@ public class BedrockWalk extends Module {
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
+        if (!sneak.get() && mc.player.isSneaking()) return;
         double[] dir = VectorUtils.directionSpeed(1f);
 
         double x = mc.player.getBlockX();
@@ -39,6 +60,6 @@ public class BedrockWalk extends Module {
 
         Vec3d vel = mc.player.getVelocity();
 
-        ((IVec3d) mc.player.getVelocity()).set((dir[0] > 0.1 || dir[0] < -0.1) ? vel.x : (deltaX / speed.get()), mc.player.getVelocity().y, (dir[1] > 0.1 || dir[1] < -0.1) ? vel.z : (deltaZ / speed.get()));
+        ((IVec3d) mc.player.getVelocity()).set((dir[0] > (unlock.get() / 10) || dir[0] < -(unlock.get() / 10)) ? vel.x : (deltaX / speed.get()), mc.player.getVelocity().y, (dir[1] > (unlock.get() / 10) || dir[1] < -(unlock.get() / 10)) ? vel.z : (deltaZ / speed.get()));
     }
 }

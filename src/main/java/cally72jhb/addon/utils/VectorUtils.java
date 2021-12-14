@@ -2,8 +2,7 @@ package cally72jhb.addon.utils;
 
 import cally72jhb.addon.VectorAddon;
 import cally72jhb.addon.utils.config.VectorConfig;
-import cally72jhb.addon.utils.login.Login;
-import meteordevelopment.meteorclient.MeteorClient;
+import cally72jhb.addon.utils.misc.Members;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -23,24 +22,19 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static meteordevelopment.meteorclient.MeteorClient.mc;
-
 public class VectorUtils {
     public static int CPS = 0;
     public static MinecraftClient mc;
 
     public static void init() {
         mc = MinecraftClient.getInstance();
-
         new Timer().scheduleAtFixedRate(newTimerTaskFromLambda(() -> CPS = 0), 0, 1000);
     }
 
     public static TimerTask newTimerTaskFromLambda(Runnable runnable) {
-        return new TimerTask()
-        {
+        return new TimerTask() {
             @Override
-            public void run()
-            {
+            public void run() {
                 runnable.run();
             }
         };
@@ -79,19 +73,10 @@ public class VectorUtils {
         return Math.sqrt(dX * dX + dY * dY + dZ * dZ);
     }
 
-    public static double distanceBetweenY(BlockPos pos1, BlockPos pos2) {
-        return MathHelper.sqrt((float) (pos1.getY() + pos2.getY()));
-    }
-
     public static double distanceBetweenXZ(BlockPos pos1, BlockPos pos2) {
         double d = pos1.getX() - pos2.getX();
         double f = pos1.getZ() - pos2.getZ();
         return MathHelper.sqrt((float) (d * d + f * f));
-    }
-
-    public static String getPos() {
-        if (mc.player != null) return mc.player.getBlockPos().getX() + " " + mc.player.getBlockPos().getY() + " " + mc.player.getBlockPos().getZ();
-        else return "0 0 0";
     }
 
     // Blocks
@@ -195,7 +180,7 @@ public class VectorUtils {
     public static void members() {
         Thread thread = new Thread(() -> {
             try {
-                members = Login.getUserNames();
+                members = Members.getUserNames();
             } catch (IOException | InterruptedException ex) {
                 ex.printStackTrace();
             }

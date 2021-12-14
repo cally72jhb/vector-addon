@@ -39,7 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 public class PacketFly extends Module {
-    public enum PacketFlyType {
+    public enum Type {
         FACTOR,
         SETBACK,
         FAST,
@@ -49,7 +49,7 @@ public class PacketFly extends Module {
         VECTOR
     }
 
-    public enum PacketFlyMode {
+    public enum Mode {
         PRESERVE,
         UP,
         DOWN,
@@ -58,26 +58,26 @@ public class PacketFly extends Module {
         OBSCURE
     }
 
-    public enum PacketFlyBypass {
+    public enum Bypass {
         NONE,
         DEFAULT,
         NCP
     }
 
-    public enum PacketFlyPhase {
+    public enum Phase {
         NONE,
         VANILLA,
         NCP
     }
 
-    public enum PacketFlyAntiKick {
+    public enum AntiKick {
         NONE,
         NORMAL,
         LIMITED,
         STRICT
     }
 
-    public enum PacketFlylimit {
+    public enum Limit {
         NONE,
         STRONG,
         STRICT
@@ -89,25 +89,25 @@ public class PacketFly extends Module {
     private final SettingGroup sgKeybind = settings.createGroup("Keybind");
     private final SettingGroup sgPhase = settings.createGroup("Phase");
 
-    private final Setting<PacketFlyType> type = sgGeneral.add(new EnumSetting.Builder<PacketFlyType>()
+    private final Setting<Type> type = sgGeneral.add(new EnumSetting.Builder<Type>()
         .name("fly-type")
         .description("The way you are moved by this module.")
-        .defaultValue(PacketFlyType.FACTOR)
+        .defaultValue(Type.FACTOR)
         .onChanged(this::updateFlying)
         .build()
     );
 
-    private final Setting<PacketFlyMode> packetMode = sgGeneral.add(new EnumSetting.Builder<PacketFlyMode>()
+    private final Setting<Mode> packetMode = sgGeneral.add(new EnumSetting.Builder<Mode>()
         .name("packet-mode")
         .description("Which packets to send to the server.")
-        .defaultValue(PacketFlyMode.DOWN)
+        .defaultValue(Mode.DOWN)
         .build()
     );
 
-    private final Setting<PacketFlyBypass> bypass = sgGeneral.add(new EnumSetting.Builder<PacketFlyBypass>()
+    private final Setting<Bypass> bypass = sgGeneral.add(new EnumSetting.Builder<Bypass>()
             .name("bypass-mode")
             .description("What bypass mode to use.")
-            .defaultValue(PacketFlyBypass.NONE)
+            .defaultValue(Bypass.NONE)
             .build()
     );
 
@@ -160,7 +160,7 @@ public class PacketFly extends Module {
         .description("Your flight factor.")
         .defaultValue(5)
         .min(0)
-        .visible(() -> type.get() == PacketFlyType.FACTOR || type.get() == PacketFlyType.DESYNC)
+        .visible(() -> type.get() == Type.FACTOR || type.get() == Type.DESYNC)
         .build()
     );
 
@@ -193,7 +193,7 @@ public class PacketFly extends Module {
         .min(0)
         .sliderMin(50)
         .sliderMax(200)
-        .visible(() -> type.get() == PacketFlyType.FACTOR || type.get() == PacketFlyType.DESYNC)
+        .visible(() -> type.get() == Type.FACTOR || type.get() == Type.DESYNC)
         .build()
     );
 
@@ -208,17 +208,17 @@ public class PacketFly extends Module {
 
     // Anti Kick
 
-    private final Setting<PacketFlyAntiKick> antiKick = sgAntiKick.add(new EnumSetting.Builder<PacketFlyAntiKick>()
+    private final Setting<AntiKick> antiKick = sgAntiKick.add(new EnumSetting.Builder<AntiKick>()
         .name("anti-kick")
         .description("The anti kick mode.")
-        .defaultValue(PacketFlyAntiKick.NORMAL)
+        .defaultValue(AntiKick.NORMAL)
         .build()
     );
 
-    private final Setting<PacketFlylimit> limit = sgAntiKick.add(new EnumSetting.Builder<PacketFlylimit>()
+    private final Setting<Limit> limit = sgAntiKick.add(new EnumSetting.Builder<Limit>()
         .name("limit")
         .description("The flight limit.")
-        .defaultValue(PacketFlylimit.STRICT)
+        .defaultValue(Limit.STRICT)
         .build()
     );
 
@@ -247,7 +247,7 @@ public class PacketFly extends Module {
 
     private final Setting<Keybind> toggleLimit = sgKeybind.add(new KeybindSetting.Builder()
         .name("toggle-limit")
-        .description("Key to toggle PacketFlyLimit on or off.")
+        .description("Key to toggle Limit on or off.")
         .defaultValue(Keybind.fromKey(-1))
         .build()
     );
@@ -261,10 +261,10 @@ public class PacketFly extends Module {
 
     // Phase
 
-    private final Setting<PacketFlyPhase> phase = sgPhase.add(new EnumSetting.Builder<PacketFlyPhase>()
+    private final Setting<Phase> phase = sgPhase.add(new EnumSetting.Builder<Phase>()
         .name("phase")
         .description("Whether or not to phase through blocks.")
-        .defaultValue(PacketFlyPhase.NONE)
+        .defaultValue(Phase.NONE)
         .build()
     );
 
@@ -382,7 +382,7 @@ public class PacketFly extends Module {
 
     @EventHandler
     public void isCube(CollisionShapeEvent event) {
-        if (phase.get() != PacketFlyPhase.NONE && noCollision.get()) event.shape = VoxelShapes.empty();
+        if (phase.get() != Phase.NONE && noCollision.get()) event.shape = VoxelShapes.empty();
     }
 
     // For Toggling
@@ -416,7 +416,7 @@ public class PacketFly extends Module {
 
     @EventHandler
     public void onPostTick(TickEvent.Post event) {
-        if (type.get() == PacketFlyType.ELYTRA) {
+        if (type.get() == Type.ELYTRA) {
             Vec3d vec3d = new Vec3d(0,0,0);
 
             if (mc.player.fallDistance <= 0.2) return;
@@ -454,7 +454,7 @@ public class PacketFly extends Module {
 
         mc.player.setVelocity(0.0D, 0.0D, 0.0D);
 
-        if (teleportId <= 0 && type.get() != PacketFlyType.SETBACK) {
+        if (teleportId <= 0 && type.get() != Type.SETBACK) {
             startingOutOfBoundsPos = new PlayerMoveC2SPacket.PositionAndOnGround(randomHorizontal(), 1, randomHorizontal(), mc.player.isOnGround());
             packets.add(startingOutOfBoundsPos);
             mc.getNetworkHandler().sendPacket(startingOutOfBoundsPos);
@@ -468,8 +468,8 @@ public class PacketFly extends Module {
         speedZ = 0;
 
         if (mc.options.keyJump.isPressed() && (hDelay < 1 || (multiAxis.get() && phasing))) {
-            if (ticksExisted % (type.get() == PacketFlyType.SETBACK || type.get() == PacketFlyType.SLOW || limit.get() == PacketFlylimit.STRICT && forceLimit ? 10 : 20) == 0) {
-                speedY = (antiKick.get() != PacketFlyAntiKick.NONE && forceAntiKick && onGround()) ? -0.032 : 0.062;
+            if (ticksExisted % (type.get() == Type.SETBACK || type.get() == Type.SLOW || limit.get() == Limit.STRICT && forceLimit ? 10 : 20) == 0) {
+                speedY = (antiKick.get() != AntiKick.NONE && forceAntiKick && onGround()) ? -0.032 : 0.062;
             } else {
                 speedY = 0.062;
             }
@@ -483,7 +483,7 @@ public class PacketFly extends Module {
 
         if ((multiAxis.get() && phasing) || !(mc.options.keySneak.isPressed() && mc.options.keyJump.isPressed())) {
             if (isPlayerMoving()) {
-                double[] dir = directionSpeed((((phasing && phase.get() == PacketFlyPhase.NCP ) || bypass.get() == PacketFlyBypass.NCP) ? (noPhaseSlow.get() ? (multiAxis.get() ? 0.0465 : 0.062) : 0.031) : 0.26) * speed.get());
+                double[] dir = directionSpeed((((phasing && phase.get() == Phase.NCP ) || bypass.get() == Bypass.NCP) ? (noPhaseSlow.get() ? (multiAxis.get() ? 0.0465 : 0.062) : 0.031) : 0.26) * speed.get());
                 if ((dir[0] != 0 || dir[1] != 0) && (vDelay < 1 || (multiAxis.get() && phasing))) {
                     speedX = dir[0];
                     speedZ = dir[1];
@@ -491,23 +491,23 @@ public class PacketFly extends Module {
                 }
             }
 
-            if (antiKick.get() != PacketFlyAntiKick.NONE && forceAntiKick && onGround() && ((limit.get() == PacketFlylimit.NONE && forceLimit) || limitTicks != 0)) {
-                if (antiKickTicks < (packetMode.get() == PacketFlyMode.BYPASS && !bounds.get() ? 1 : 3)) {
+            if (antiKick.get() != AntiKick.NONE && forceAntiKick && onGround() && ((limit.get() == Limit.NONE && forceLimit) || limitTicks != 0)) {
+                if (antiKickTicks < (packetMode.get() == Mode.BYPASS && !bounds.get() ? 1 : 3)) {
                     antiKickTicks++;
                 } else {
                     antiKickTicks = 0;
-                    if ((antiKick.get() != PacketFlyAntiKick.LIMITED && forceAntiKick && onGround()) || !phasing) {
-                        speedY = (antiKick.get() == PacketFlyAntiKick.STRICT && forceAntiKick && onGround()) ? -0.08 : -0.04;
+                    if ((antiKick.get() != AntiKick.LIMITED && forceAntiKick && onGround()) || !phasing) {
+                        speedY = (antiKick.get() == AntiKick.STRICT && forceAntiKick && onGround()) ? -0.08 : -0.04;
                     }
                 }
             }
         }
 
-        if (((phasing && phase.get() == PacketFlyPhase.NCP) || bypass.get() == PacketFlyBypass.NCP) && (double) mc.player.forwardSpeed != 0.0 || (double) mc.player.sidewaysSpeed != 0.0 && speedY != 0) {
+        if (((phasing && phase.get() == Phase.NCP) || bypass.get() == Bypass.NCP) && (double) mc.player.forwardSpeed != 0.0 || (double) mc.player.sidewaysSpeed != 0.0 && speedY != 0) {
             speedY /= 2.5;
         }
 
-        if (limit.get() != PacketFlylimit.NONE && forceLimit) {
+        if (limit.get() != Limit.NONE && forceLimit) {
             if (limitTicks == 0) {
                 speedX = 0;
                 speedY = 0;
@@ -577,14 +577,14 @@ public class PacketFly extends Module {
         vDelay--;
         hDelay--;
 
-        if (constrict.get() && ((limit.get() == PacketFlylimit.NONE && forceLimit) || limitTicks > 1)) {
+        if (constrict.get() && ((limit.get() == Limit.NONE && forceLimit) || limitTicks > 1)) {
             mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), mc.player.getY(), mc.player.getZ(), false));
         }
 
         limitTicks++;
         jitterTicks++;
 
-        if (limitTicks > ((limit.get() == PacketFlylimit.STRICT && forceLimit) ? (limitStrict ? 1 : 2) : 3)) {
+        if (limitTicks > ((limit.get() == Limit.STRICT && forceLimit) ? (limitStrict ? 1 : 2) : 3)) {
             limitTicks = 0;
             limitStrict = !limitStrict;
         }
@@ -598,7 +598,7 @@ public class PacketFly extends Module {
 
     @EventHandler
     public void onReceivePacket(PacketEvent.Receive event) {
-        if (type.get() == PacketFlyType.ELYTRA) return;
+        if (type.get() == Type.ELYTRA) return;
         if (event.packet instanceof PlayerPositionLookS2CPacket) {
             if (!(mc.currentScreen instanceof DownloadingTerrainScreen)) {
                 PlayerPositionLookS2CPacket packet = (PlayerPositionLookS2CPacket) event.packet;
@@ -607,11 +607,11 @@ public class PacketFly extends Module {
                         this.teleportId = ((PlayerPositionLookS2CPacket) event.packet).getTeleportId();
                     } else {
                         if (mc.world.isPosLoaded(mc.player.getBlockX(), mc.player.getBlockZ()) &&
-                            type.get() != PacketFlyType.SETBACK) {
-                            if (type.get() == PacketFlyType.DESYNC) {
+                            type.get() != Type.SETBACK) {
+                            if (type.get() == Type.DESYNC) {
                                 posLooks.remove(packet.getTeleportId());
                                 event.cancel();
-                                if (type.get() == PacketFlyType.SLOW) {
+                                if (type.get() == Type.SLOW) {
                                     mc.player.setPosition(packet.getX(), packet.getY(), packet.getZ());
                                 }
                                 return;
@@ -620,7 +620,7 @@ public class PacketFly extends Module {
                                 if (vec.x == packet.getX() && vec.y == packet.getY() && vec.z == packet.getZ()) {
                                     posLooks.remove(packet.getTeleportId());
                                     event.cancel();
-                                    if (type.get() == PacketFlyType.SLOW) {
+                                    if (type.get() == Type.SLOW) {
                                         mc.player.setPosition(packet.getX(), packet.getY(), packet.getZ());
                                     }
                                     return;
@@ -645,19 +645,19 @@ public class PacketFly extends Module {
 
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent event) {
-        if (type.get() == PacketFlyType.ELYTRA) {
+        if (type.get() == Type.ELYTRA) {
             mc.player.getAbilities().flying = true;
             mc.player.getAbilities().setFlySpeed(speed.get().floatValue() / 20);
             return;
         }
 
-        if (type.get() != PacketFlyType.SETBACK && teleportId <= 0) return;
-        if (type.get() != PacketFlyType.SLOW) ((IVec3d) event.movement).set(speedX, speedY, speedZ);
+        if (type.get() != Type.SETBACK && teleportId <= 0) return;
+        if (type.get() != Type.SLOW) ((IVec3d) event.movement).set(speedX, speedY, speedZ);
     }
 
     @EventHandler
     public void onSend(PacketEvent.Send event) {
-        if (type.get() == PacketFlyType.ELYTRA && event.packet instanceof PlayerMoveC2SPacket) {
+        if (type.get() == Type.ELYTRA && event.packet instanceof PlayerMoveC2SPacket) {
             mc.player.networkHandler.sendPacket(new ClientCommandC2SPacket(mc.player, ClientCommandC2SPacket.Mode.START_FALL_FLYING));
             return;
         }
@@ -678,14 +678,14 @@ public class PacketFly extends Module {
 
     // Utils
 
-    public void updateFlying(PacketFlyType type) {
-        if (mc.world != null && mc.player != null && type != PacketFlyType.ELYTRA) {
+    public void updateFlying(Type type) {
+        if (mc.world != null && mc.player != null && type != Type.ELYTRA) {
             mc.player.getAbilities().flying = false;
             mc.player.getAbilities().allowFlying = false;
         }
     }
 
-    private void sendPackets(double x, double y, double z, PacketFlyMode mode, boolean confirmTeleport, boolean sendExtraConfirmTeleport) {
+    private void sendPackets(double x, double y, double z, Mode mode, boolean confirmTeleport, boolean sendExtraConfirmTeleport) {
         Vec3d nextPos = new Vec3d(mc.player.getX() + x, mc.player.getY() + y, mc.player.getZ() + z);
         Vec3d bounds = getBoundsVec(x, y, z, mode);
 
@@ -693,7 +693,7 @@ public class PacketFly extends Module {
         packets.add(nextPosPacket);
         mc.getNetworkHandler().sendPacket(nextPosPacket);
 
-        if ((limit.get() != PacketFlylimit.NONE && forceLimit) && limitTicks == 0) return;
+        if ((limit.get() != Limit.NONE && forceLimit) && limitTicks == 0) return;
 
         PlayerMoveC2SPacket boundsPacket = new PlayerMoveC2SPacket.PositionAndOnGround(bounds.x, bounds.y, bounds.z, mc.player.isOnGround());
         packets.add(boundsPacket);
@@ -716,7 +716,7 @@ public class PacketFly extends Module {
         }
     }
 
-    private Vec3d getBoundsVec(double x, double y, double z, PacketFlyMode mode) {
+    private Vec3d getBoundsVec(double x, double y, double z, Mode mode) {
         switch (mode) {
             case UP:
                 return new Vec3d(mc.player.getX() + x, bounds.get() ? (strict.get() ? 255 : 256) : mc.player.getY() + 420, mc.player.getZ() + z);
@@ -739,7 +739,7 @@ public class PacketFly extends Module {
     }
 
     public double randomHorizontal() {
-        int randomValue = random.nextInt(bounds.get() ? 80 : (packetMode.get() == PacketFlyMode.OBSCURE ? (ticksExisted % 2 == 0 ? 480 : 100) : 29000000)) + (bounds.get() ? 5 : 500);
+        int randomValue = random.nextInt(bounds.get() ? 80 : (packetMode.get() == Mode.OBSCURE ? (ticksExisted % 2 == 0 ? 480 : 100) : 29000000)) + (bounds.get() ? 5 : 500);
         if (random.nextBoolean()) {
             return randomValue;
         }
@@ -790,7 +790,7 @@ public class PacketFly extends Module {
     }
 
     private boolean checkCollisionBox() {
-        return !mc.world.getBlockCollisions(mc.player, mc.player.getBoundingBox()).findAny().isEmpty();
+        return mc.world.getBlockCollisions(mc.player, mc.player.getBoundingBox()).iterator().hasNext();
     }
 
     private boolean onGround() {

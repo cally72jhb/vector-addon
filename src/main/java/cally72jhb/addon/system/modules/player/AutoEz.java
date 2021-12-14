@@ -15,118 +15,143 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.packet.s2c.play.EntityStatusS2CPacket;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Random;
+import java.util.UUID;
 
 public class AutoEz extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
+    private final SettingGroup sgPops = settings.createGroup("Pops");
+    private final SettingGroup sgKills = settings.createGroup("Kills");
     private final SettingGroup sgTargeting = settings.createGroup("Targeting");
 
     private final Setting<Boolean> message = sgGeneral.add(new BoolSetting.Builder()
-            .name("message")
-            .description("Sends messages in the chat when you kill or pop players.")
-            .defaultValue(true)
-            .build()
+        .name("message")
+        .description("Sends messages in the chat when you kill or pop players.")
+        .defaultValue(true)
+        .build()
     );
 
     private final Setting<Boolean> notify = sgGeneral.add(new BoolSetting.Builder()
-            .name("notify")
-            .description("Sends client-side messages with your kill and pop streak after you kill players.")
-            .defaultValue(false)
-            .build()
+        .name("notify")
+        .description("Sends client-side messages with your kill and pop streak after you kill players.")
+        .defaultValue(false)
+        .build()
     );
 
     private final Setting<Boolean> smallCaps = sgGeneral.add(new BoolSetting.Builder()
-            .name("small-caps")
-            .description("Sends all messages with small caps.")
-            .defaultValue(false)
-            .build()
+        .name("small-caps")
+        .description("Sends all messages with small caps.")
+        .defaultValue(false)
+        .build()
     );
 
     private final Setting<Boolean> clearOnDeath = sgGeneral.add(new BoolSetting.Builder()
-            .name("clear-on-death")
-            .description("Resets your scores on death.")
-            .defaultValue(true)
-            .build()
+        .name("clear-on-death")
+        .description("Resets your scores on death.")
+        .defaultValue(true)
+        .build()
     );
 
     private final Setting<Boolean> randomMsg = sgGeneral.add(new BoolSetting.Builder()
-            .name("random")
-            .description("Sends random messages every kill or pop.")
-            .defaultValue(true)
-            .build()
+        .name("random")
+        .description("Sends random messages every kill or pop.")
+        .defaultValue(true)
+        .build()
     );
 
-    private final Setting<String> popString = sgGeneral.add(new StringSetting.Builder()
-            .name("pop-message")
-            .description("The message to send when you poped a player.")
-            .defaultValue("ez pop {player}")
-            .visible(() -> !randomMsg.get())
-            .build()
+    // Pops
+
+    private final Setting<Boolean> popMsg = sgPops.add(new BoolSetting.Builder()
+        .name("pop")
+        .description("Sends a messages everytime you pop a player.")
+        .defaultValue(true)
+        .build()
     );
 
-    private final Setting<String> killString = sgGeneral.add(new StringSetting.Builder()
-            .name("kill-message")
-            .description("The message to send when you killed someone.")
-            .defaultValue("killed {player}")
-            .visible(() -> !randomMsg.get())
-            .build()
+    private final Setting<String> popString = sgPops.add(new StringSetting.Builder()
+        .name("pop-message")
+        .description("The message to send when you poped a player.")
+        .defaultValue("ez pop {player}")
+        .visible(() -> !randomMsg.get() && popMsg.get())
+        .build()
     );
 
-    private final Setting<List<String>> popMessages = sgGeneral.add(new StringListSetting.Builder()
-            .name("pop-messages")
-            .description("The random messages to send when you poped a player.")
-            .defaultValue(List.of("vector on top", "ez {player}", "poped {player} with vector", "{pops} on {player} already"))
-            .visible(randomMsg::get)
-            .build()
+    private final Setting<List<String>> popMessages = sgPops.add(new StringListSetting.Builder()
+        .name("pop-messages")
+        .description("The random messages to send when you poped a player.")
+        .defaultValue(List.of("vector on top", "ez {player}", "poped {player} with vector", "{pops} pops on {player} already"))
+        .visible(() -> randomMsg.get() && popMsg.get())
+        .build()
     );
 
-    private final Setting<List<String>> killMessages = sgGeneral.add(new StringListSetting.Builder()
-            .name("kill-messages")
-            .description("The random messages to send when you kill someone.")
-            .defaultValue(List.of("ez {player}", "killed {player} with vector", "currently at {kills} kill streak", "{playerkills} on {player} already"))
-            .visible(randomMsg::get)
-            .build()
+    private final Setting<Integer> popDelay = sgPops.add(new IntSetting.Builder()
+        .name("pop-delay")
+        .description("How long to wait in ticks after sending a pop message again.")
+        .defaultValue(15)
+        .min(0)
+        .visible(popMsg::get)
+        .build()
     );
 
-    private final Setting<Integer> delay = sgGeneral.add(new IntSetting.Builder()
-            .name("delay")
-            .description("How long to wait in ticks after sending a message again.")
-            .defaultValue(40)
-            .min(0)
-            .build()
+    // Kills
+
+    private final Setting<Boolean> killMsg = sgKills.add(new BoolSetting.Builder()
+        .name("kill")
+        .description("Sends a messages everytime you kill a player.")
+        .defaultValue(true)
+        .build()
+    );
+
+    private final Setting<String> killString = sgKills.add(new StringSetting.Builder()
+        .name("kill-message")
+        .description("The message to send when you killed someone.")
+        .defaultValue("killed {player}")
+        .visible(() -> !randomMsg.get() && killMsg.get())
+        .build()
+    );
+
+    private final Setting<List<String>> killMessages = sgKills.add(new StringListSetting.Builder()
+        .name("kill-messages")
+        .description("The random messages to send when you kill someone.")
+        .defaultValue(List.of("ez {player}", "killed {player} with vector", "currently at {kills} kill streak", "{playerkills} kills on {player} already", "join vector for free: https://discord.gg/A3nYgbKeXR"))
+        .visible(() -> randomMsg.get() && killMsg.get())
+        .build()
+    );
+
+    private final Setting<Integer> killDelay = sgKills.add(new IntSetting.Builder()
+        .name("kill-delay")
+        .description("How long to wait in ticks after sending a kill message again.")
+        .defaultValue(5)
+        .min(0)
+        .visible(killMsg::get)
+        .build()
     );
 
     // Targeting
 
     private final Setting<Boolean> ignoreFriends = sgTargeting.add(new BoolSetting.Builder()
-            .name("ignore-friends")
-            .description("Ignores friended players.")
-            .defaultValue(true)
-            .build()
+        .name("ignore-friends")
+        .description("Ignores friended players.")
+        .defaultValue(true)
+        .build()
     );
 
     private final Setting<Boolean> checkTargets = sgTargeting.add(new BoolSetting.Builder()
-            .name("check-targets")
-            .description("Checks the current target form every module.")
-            .defaultValue(true)
-            .build()
+        .name("check-targets")
+        .description("Checks the current target form every module.")
+        .defaultValue(true)
+        .build()
     );
 
     private final Setting<Double> range = sgTargeting.add(new DoubleSetting.Builder()
-            .name("range")
-            .description("The range a player has to be in with to detect a pop.")
-            .defaultValue(7)
-            .min(0)
-            .max(50)
-            .build()
-    );
-
-    private final Setting<Double> minPops = sgTargeting.add(new DoubleSetting.Builder()
-            .name("minimum-pops")
-            .description("The minimum pops required to send a message that contains {pops}.")
-            .defaultValue(7)
-            .min(1)
-            .build()
+        .name("range")
+        .description("The range a player has to be in with to detect a pop.")
+        .defaultValue(7)
+        .min(0)
+        .max(50)
+        .build()
     );
 
     private final Char2CharMap SMALL_CAPS = new Char2CharArrayMap();
@@ -135,7 +160,8 @@ public class AutoEz extends Module {
     private HashMap<UUID, Integer> pops;
     private Random random;
     private int allKills;
-    private int timer;
+    private int killTimer;
+    private int popTimer;
 
     public AutoEz() {
         super(VectorAddon.CATEGORY, "auto-ez", "Send a chat message after killing a player.");
@@ -150,8 +176,10 @@ public class AutoEz extends Module {
         kills = new HashMap<>();
         pops = new HashMap<>();
         random = new Random();
+
         allKills = 0;
-        timer = 0;
+        killTimer = 0;
+        popTimer = 0;
     }
 
     @EventHandler
@@ -160,36 +188,41 @@ public class AutoEz extends Module {
         if (packet.getStatus() != 35 && packet.getStatus() != 3) return;
         if (packet.getStatus() == 3 && packet.getEntity(mc.world) == mc.player && clearOnDeath.get()) onActivate();
 
-        if (timer >= delay.get() || delay.get() == 0) {
-            Entity entity = packet.getEntity(mc.world);
+        Entity entity = packet.getEntity(mc.world);
 
-            if (!(entity instanceof PlayerEntity) || entity == mc.player
-                    || (Friends.get().isFriend((PlayerEntity) entity) && ignoreFriends.get())
-                    || VectorUtils.distance(mc.player.getPos(), entity.getPos()) > range.get()) return;
+        if (!(entity instanceof PlayerEntity) || entity == mc.player
+            || (Friends.get().isFriend((PlayerEntity) entity) && ignoreFriends.get())
+            || VectorUtils.distance(mc.player.getPos(), entity.getPos()) > range.get()) return;
 
-            if (checkTargets.get()) {
-                boolean target = true;
+        if (checkTargets.get()) {
+            boolean target = true;
 
-                for (Module module : Modules.get().getAll()) {
-                    if (module.getInfoString() != null && module.getInfoString().contains(entity.getEntityName())) {
-                        target = false;
-                        break;
-                    }
+            for (Module module : Modules.get().getAll()) {
+                if (module.getInfoString() != null && module.getInfoString().contains(entity.getEntityName())) {
+                    target = false;
+                    break;
                 }
-
-                if (target) return;
             }
 
-            timer = 0;
+            if (target) return;
+        }
 
-            if (packet.getStatus() == 35) sendPopMsg((PlayerEntity) entity);
-            if (packet.getStatus() == 3) sendKillMsg((PlayerEntity) entity);
+        if (packet.getStatus() == 35 && popMsg.get() && (popTimer >= popDelay.get() || popDelay.get() == 0)) {
+            sendPopMsg((PlayerEntity) entity);
+            popTimer = 0;
+            return;
+        }
+
+        if (packet.getStatus() == 3 && killMsg.get() && (killTimer >= killDelay.get() || killDelay.get() == 0)) {
+            sendKillMsg((PlayerEntity) entity);
+            killTimer = 0;
         }
     }
 
     @EventHandler
     private void onPostTick(TickEvent.Post event) {
-        timer++;
+        killTimer++;
+        popTimer++;
     }
 
     // Messaging
@@ -244,10 +277,7 @@ public class AutoEz extends Module {
     private String apply(PlayerEntity player, List<String> strings) {
         String string = strings.get(random.nextInt(strings.size())).replace("{player}", player.getEntityName());
 
-        if (string.contains("{pops}") && pops.get(player.getUuid()) <= minPops.get()) {
-            string = string.replace("{pops}", String.valueOf(pops.get(player.getUuid())));
-        }
-
+        string = string.replace("{pops}", String.valueOf(pops.get(player.getUuid())));
         string = string.replace("{playerkills}", String.valueOf(kills.get(player.getUuid())));
         string = string.replace("{kills}", String.valueOf(allKills));
 

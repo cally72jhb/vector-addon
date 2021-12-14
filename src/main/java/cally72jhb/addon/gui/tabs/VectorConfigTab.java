@@ -7,7 +7,6 @@ import meteordevelopment.meteorclient.gui.tabs.Tab;
 import meteordevelopment.meteorclient.gui.tabs.TabScreen;
 import meteordevelopment.meteorclient.gui.tabs.WindowTabScreen;
 import meteordevelopment.meteorclient.settings.*;
-import meteordevelopment.meteorclient.systems.config.Config;
 import meteordevelopment.meteorclient.utils.misc.NbtUtils;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import net.minecraft.client.gui.screen.Screen;
@@ -79,7 +78,7 @@ public class VectorConfigTab extends Tab {
             .build()
     );
 
-    public static VectorConfigTab.ConfigScreen currentScreen;
+    public static ConfigScreen currentScreen;
 
     public VectorConfigTab() {
         super("Vector Config");
@@ -87,12 +86,12 @@ public class VectorConfigTab extends Tab {
 
     @Override
     public TabScreen createScreen(GuiTheme theme) {
-        return currentScreen = new VectorConfigTab.ConfigScreen(theme, this);
+        return currentScreen = new ConfigScreen(theme, this);
     }
 
     @Override
     public boolean isScreen(Screen screen) {
-        return screen instanceof VectorConfigTab.ConfigScreen;
+        return screen instanceof ConfigScreen;
     }
 
     public static class ConfigScreen extends WindowTabScreen {

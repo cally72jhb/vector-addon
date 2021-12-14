@@ -9,6 +9,9 @@ import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.meteorclient.systems.modules.world.Timer;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
+import net.minecraft.util.shape.VoxelShape;
+
+import java.util.stream.Stream;
 
 public class StepPlus extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
@@ -133,7 +136,11 @@ public class StepPlus extends Module {
     // Utils
 
     private boolean shouldStep(double[] dir, double y1, double y2) {
-        return mc.world.getBlockCollisions(mc.player, mc.player.getBoundingBox().offset(dir[0], y1, dir[1])).findAny().isEmpty() && !mc.world.getBlockCollisions(mc.player, mc.player.getBoundingBox().offset(dir[0], y2, dir[1])).findAny().isEmpty();
+        return !getCollisions(dir[0], y1, dir[1]).iterator().hasNext() && getCollisions(dir[0], y2, dir[1]).iterator().hasNext();
+    }
+
+    private Iterable<VoxelShape> getCollisions(double x, double y, double z) {
+        return mc.world.getBlockCollisions(mc.player, mc.player.getBoundingBox().offset(x, y, z));
     }
 
     public enum Mode {
