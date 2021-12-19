@@ -12,7 +12,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.util.shape.VoxelShapes;
 import net.minecraft.world.World;
 
 import java.io.IOException;
@@ -99,15 +98,6 @@ public class VectorUtils {
         return getBlockState(pos).isSolidBlock(mc.world, pos);
     }
 
-    public static boolean canBreak(BlockPos blockPos, BlockState state) {
-        if (!mc.player.isCreative() && state.getHardness(mc.world, blockPos) < 0) return false;
-        return state.getOutlineShape(mc.world, blockPos) != VoxelShapes.empty();
-    }
-
-    public static boolean canBreak(BlockPos blockPos) {
-        return canBreak(blockPos, mc.world.getBlockState(blockPos));
-    }
-
     public static boolean isSurroundBlock(BlockPos blockPos) {
         Block block = mc.world.getBlockState(blockPos).getBlock();
         return block == Blocks.OBSIDIAN || block == Blocks.CRYING_OBSIDIAN || block == Blocks.ENDER_CHEST || block == Blocks.RESPAWN_ANCHOR || block == Blocks.ANVIL;
@@ -118,8 +108,7 @@ public class VectorUtils {
     }
 
     public static boolean canPlace(BlockPos pos, boolean checkEntities) {
-        if (pos == null) return false;
-        if (mc.world == null) return false;
+        if (pos == null || mc.world == null) return false;
 
         // Check y level
         if (!World.isValid(pos)) return false;

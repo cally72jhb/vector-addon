@@ -11,8 +11,6 @@ import meteordevelopment.orbit.EventHandler;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.util.shape.VoxelShape;
 
-import java.util.stream.Stream;
-
 public class StepPlus extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
 
@@ -35,6 +33,9 @@ public class StepPlus extends Module {
             .description("Your step height.")
             .defaultValue(1)
             .min(1)
+            .max(2.5)
+            .sliderMin(1)
+            .sliderMax(2.5)
             .build()
     );
 
@@ -55,7 +56,7 @@ public class StepPlus extends Module {
     private float prevStepHeight;
 
     public StepPlus() {
-        super(VectorAddon.CATEGORY, "step-plus", "Instant step up blocks.");
+        super(VectorAddon.CATEGORY, "step-plus", "Allows you to walk up full blocks.");
     }
 
     @Override
@@ -73,7 +74,7 @@ public class StepPlus extends Module {
     @EventHandler
     private void onPlayerMove(PlayerMoveEvent event) {
         if ((activeWhen.get() == ActiveWhen.Sneaking && !mc.player.isSneaking()) || (activeWhen.get() == ActiveWhen.NotSneaking && mc.player.isSneaking()) || (!mc.player.isOnGround() && onlyOnGround.get())) return;
-        if (mode.get() == Mode.NPCPLUS) mc.player.stepHeight = height.get().floatValue();
+        if (mode.get() == Mode.NCPPLUS) mc.player.stepHeight = height.get().floatValue();
         if (mode.get() == Mode.NORMAL) {
             mc.player.stepHeight = height.get().floatValue();
             return;
@@ -146,7 +147,7 @@ public class StepPlus extends Module {
     public enum Mode {
         NORMAL,
         NCP,
-        NPCPLUS
+        NCPPLUS
     }
 
     public enum ActiveWhen {

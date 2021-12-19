@@ -18,6 +18,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.item.BlockItem;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
 import net.minecraft.util.shape.VoxelShape;
 
 import java.util.ArrayList;
@@ -89,7 +90,7 @@ public class ColorPlace extends Module {
     private final Setting<SettingColor> sideColor = sgRender.add(new ColorSetting.Builder()
             .name("side-color")
             .description("The side color.")
-            .defaultValue(new SettingColor(255, 255, 255, 15))
+            .defaultValue(new SettingColor(255, 255, 255, 25))
             .build()
     );
 
@@ -204,6 +205,12 @@ public class ColorPlace extends Module {
                     shape.forEachEdge((minX, minY, minZ, maxX, maxY, maxZ) -> {
                         event.renderer.line(pos.getX() + minX, pos.getY() + minY, pos.getZ() + minZ, pos.getX() + maxX, pos.getY() + maxY, pos.getZ() + maxZ, lines);
                     });
+                }
+
+                if (shapeMode == ShapeMode.Both || shapeMode == ShapeMode.Sides) {
+                    for (Box box : shape.getBoundingBoxes()) {
+                        event.renderer.box(pos.getX() + box.minX, pos.getY() + box.minY, pos.getZ() + box.minZ, pos.getX() + box.maxX, pos.getY() + box.maxY, pos.getZ() + box.maxZ, sideColor.get(), lineColor.get(), shapeMode, 0);
+                    }
                 }
             }
 

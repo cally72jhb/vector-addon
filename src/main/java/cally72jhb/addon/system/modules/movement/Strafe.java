@@ -97,7 +97,7 @@ public class Strafe extends Module {
         return new Vec2(velX, velZ);
     }
 
-    protected double getDefaultSpeed() {
+    private double getDefaultSpeed() {
         double defaultSpeed = 0.2873;
         if (mc.player.hasStatusEffect(StatusEffects.SPEED)) {
             int amplifier = mc.player.getStatusEffect(StatusEffects.SPEED).getAmplifier();

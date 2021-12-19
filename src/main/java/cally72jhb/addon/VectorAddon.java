@@ -4,6 +4,8 @@ import cally72jhb.addon.system.Systems;
 import cally72jhb.addon.system.players.Player;
 import cally72jhb.addon.system.players.Players;
 import cally72jhb.addon.utils.VectorUtils;
+import cally72jhb.addon.utils.config.VectorConfig;
+import cally72jhb.addon.utils.titlescreen.CustomTitleScreen;
 import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.addons.MeteorAddon;
 import meteordevelopment.meteorclient.events.game.GameJoinedEvent;
@@ -43,13 +45,15 @@ public class VectorAddon extends MeteorAddon {
         VectorUtils.changeIcon();
 
         mc.options.skipMultiplayerWarning = true;
+
+        if (VectorConfig.get().customTitleScreen) mc.setScreen(new CustomTitleScreen());
     }
 
     @Override
     public void onRegisterCategories() {
         Modules.registerCategory(CATEGORY);
     }
-    
+
     @EventHandler
     private void onGameJoin(GameJoinedEvent event) {
         VectorUtils.members();
@@ -67,8 +71,8 @@ public class VectorAddon extends MeteorAddon {
     private void onMessageReceive(ReceiveMessageEvent event) {
         for (Player player : Players.get()) {
             if (!event.getMessage().getString().contains("muted " + player.name) && player.muted && event.getMessage().getString().contains(player.name)) {
-                event.cancel();
                 System.out.println(event.getMessage().getString());
+                event.cancel();
             }
         }
     }

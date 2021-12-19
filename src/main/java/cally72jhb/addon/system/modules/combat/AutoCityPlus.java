@@ -195,10 +195,10 @@ public class AutoCityPlus extends Module {
 
             if (canCity(pos) && shouldCity(pos)) {
                 for (BlockPos p : getSurround(pos)) {
-                    if (VectorUtils.canBreak(p)) {
+                    if (BlockUtils.canBreak(p)) {
                         if (getAir(p).isEmpty()) {
                             for (BlockPos position : getCity(pos)) {
-                                if (VectorUtils.canBreak(position)) mine(pos, pick);
+                                if (BlockUtils.canBreak(position)) mine(pos, pick);
                             }
                         }
 
@@ -235,7 +235,7 @@ public class AutoCityPlus extends Module {
         ArrayList<BlockPos> city = new ArrayList<>();
 
         for (BlockPos position : allPositions) {
-            if (!VectorUtils.getBlockState(pos.add(position)).isAir() && VectorUtils.canBreak(pos.add(position))) city.add(pos.add(position));
+            if (!VectorUtils.getBlockState(pos.add(position)).isAir() && BlockUtils.canBreak(pos.add(position))) city.add(pos.add(position));
         }
 
         city.sort(Comparator.comparingDouble(pos2 -> VectorUtils.distance(mc.player.getPos(), Utils.vec3d(pos2))));
@@ -257,7 +257,7 @@ public class AutoCityPlus extends Module {
         int i = 0;
 
         for (BlockPos position : surrPositions) {
-            if (VectorUtils.canBreak(pos.add(position))) i++;
+            if (BlockUtils.canBreak(pos.add(position))) i++;
         }
 
         return i != 0;

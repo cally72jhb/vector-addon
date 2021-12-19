@@ -1,7 +1,6 @@
 package cally72jhb.addon.system.modules.movement;
 
 import cally72jhb.addon.VectorAddon;
-import cally72jhb.addon.utils.VectorUtils;
 import cally72jhb.addon.utils.misc.SystemTimer;
 import meteordevelopment.meteorclient.events.entity.player.PlayerMoveEvent;
 import meteordevelopment.meteorclient.events.game.GameJoinedEvent;
@@ -16,21 +15,20 @@ import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.meteorclient.systems.modules.world.Timer;
+import meteordevelopment.meteorclient.utils.entity.EntityUtils;
 import meteordevelopment.meteorclient.utils.misc.Keybind;
 import meteordevelopment.meteorclient.utils.player.ChatUtils;
 import meteordevelopment.meteorclient.utils.player.PlayerUtils;
 import meteordevelopment.meteorclient.utils.world.Dimension;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.client.gui.screen.DownloadingTerrainScreen;
 import net.minecraft.network.packet.c2s.play.ClientCommandC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.network.packet.c2s.play.TeleportConfirmC2SPacket;
 import net.minecraft.network.packet.s2c.play.PlayerPositionLookS2CPacket;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.Vec3f;
-import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.shape.VoxelShapes;
+import net.minecraft.world.GameMode;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -46,7 +44,8 @@ public class PacketFly extends Module {
         SLOW,
         ELYTRA,
         DESYNC,
-        VECTOR
+        VECTOR,
+        OFFGROUND
     }
 
     public enum Mode {
@@ -159,6 +158,15 @@ public class PacketFly extends Module {
         .name("factor")
         .description("Your flight factor.")
         .defaultValue(5)
+        .min(0)
+        .visible(() -> type.get() == Type.FACTOR || type.get() == Type.DESYNC)
+        .build()
+    );
+
+    private final Setting<Integer> ignoreSteps = sgFly.add(new IntSetting.Builder()
+        .name("ignore-steps")
+        .description("How many steps in a row should be ignored.")
+        .defaultValue(0)
         .min(0)
         .visible(() -> type.get() == Type.FACTOR || type.get() == Type.DESYNC)
         .build()
@@ -347,8 +355,11 @@ public class PacketFly extends Module {
             mc.player.setVelocity(0, 0, 0);
         }
 
-        mc.player.getAbilities().flying = false;
-        mc.player.getAbilities().allowFlying = false;
+        GameMode mode = EntityUtils.getGameMode(mc.player);
+        if (mode != GameMode.CREATIVE && mode != GameMode.SPECTATOR) {
+            mc.player.getAbilities().flying = false;
+            mc.player.getAbilities().allowFlying = false;
+        }
 
         Modules.get().get(Timer.class).setOverride(Timer.OFF);
     }
@@ -410,6 +421,17 @@ public class PacketFly extends Module {
         } else {
             Modules.get().get(Timer.class).setOverride(Timer.OFF);
         }
+
+        if (type.get() == Type.OFFGROUND) {
+            if (isMoving() && onGround()) {
+                for (double i = 0.0625; i < factor.get(); i += 0.262) {
+                    double[] dir = directionSpeed(i);
+                    mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX() + dir[0], mc.player.getY(), mc.player.getZ() + dir[1], mc.player.isOnGround()));
+                }
+
+                if (strict.get()) mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX() + (bounds.get() ? mc.player.getVelocity().x : 0), mc.player.getY() + 1, mc.player.getZ() + (bounds.get() ? mc.player.getVelocity().z : 0), mc.player.isOnGround()));
+            }
+        }
     }
 
     // Main Loop
@@ -441,6 +463,8 @@ public class PacketFly extends Module {
 
             return;
         }
+
+        if (type.get() == Type.OFFGROUND) return;
 
         if (ticksExisted % 20 == 0) {
             posLooks.forEach((tp, timeVec3d) -> {
@@ -555,6 +579,7 @@ public class PacketFly extends Module {
                 }
 
                 int factorInt = (int) Math.floor(rawFactor);
+                int ignore = 0;
 
                 factorCounter++;
                 if (factorCounter > (int) (20D / ((rawFactor - (double) factorInt) * 20D))) {
@@ -563,8 +588,13 @@ public class PacketFly extends Module {
                 }
 
                 for (int i = 1; i <= factorInt; ++i) {
-                    mc.player.setVelocity(speedX * i, speedY * i, speedZ * i);
-                    sendPackets(isMoving() ? speedX * i : 0, speedY * i, isMoving() ? speedZ * i : 0, packetMode.get(), true, false);
+                    if (ignore <= 0) {
+                        ignore = ignoreSteps.get();
+                        mc.player.setVelocity(speedX * i, speedY * i, speedZ * i);
+                        sendPackets(isMoving() ? speedX * i : 0, speedY * i, isMoving() ? speedZ * i : 0, packetMode.get(), true, false);
+                    } else {
+                        ignore--;
+                    }
                 }
 
                 speedX = mc.player.getVelocity().x;
@@ -600,44 +630,40 @@ public class PacketFly extends Module {
     public void onReceivePacket(PacketEvent.Receive event) {
         if (type.get() == Type.ELYTRA) return;
         if (event.packet instanceof PlayerPositionLookS2CPacket) {
-            if (!(mc.currentScreen instanceof DownloadingTerrainScreen)) {
-                PlayerPositionLookS2CPacket packet = (PlayerPositionLookS2CPacket) event.packet;
-                if (mc.player.isAlive()) {
-                    if (this.teleportId <= 0) {
-                        this.teleportId = ((PlayerPositionLookS2CPacket) event.packet).getTeleportId();
-                    } else {
-                        if (mc.world.isPosLoaded(mc.player.getBlockX(), mc.player.getBlockZ()) &&
-                            type.get() != Type.SETBACK) {
-                            if (type.get() == Type.DESYNC) {
+            PlayerPositionLookS2CPacket packet = (PlayerPositionLookS2CPacket) event.packet;
+            if (mc.player.isAlive()) {
+                if (this.teleportId <= 0) {
+                    this.teleportId = ((PlayerPositionLookS2CPacket) event.packet).getTeleportId();
+                } else {
+                    if (mc.world.isPosLoaded(mc.player.getBlockX(), mc.player.getBlockZ()) &&
+                        type.get() != Type.SETBACK) {
+                        if (type.get() == Type.DESYNC) {
+                            posLooks.remove(packet.getTeleportId());
+                            event.cancel();
+                            if (type.get() == Type.SLOW) {
+                                mc.player.setPosition(packet.getX(), packet.getY(), packet.getZ());
+                            }
+                            return;
+                        } else if (posLooks.containsKey(packet.getTeleportId())) {
+                            TimeVec3d vec = posLooks.get(packet.getTeleportId());
+                            if (vec.x == packet.getX() && vec.y == packet.getY() && vec.z == packet.getZ()) {
                                 posLooks.remove(packet.getTeleportId());
                                 event.cancel();
                                 if (type.get() == Type.SLOW) {
                                     mc.player.setPosition(packet.getX(), packet.getY(), packet.getZ());
                                 }
                                 return;
-                            } else if (posLooks.containsKey(packet.getTeleportId())) {
-                                TimeVec3d vec = posLooks.get(packet.getTeleportId());
-                                if (vec.x == packet.getX() && vec.y == packet.getY() && vec.z == packet.getZ()) {
-                                    posLooks.remove(packet.getTeleportId());
-                                    event.cancel();
-                                    if (type.get() == Type.SLOW) {
-                                        mc.player.setPosition(packet.getX(), packet.getY(), packet.getZ());
-                                    }
-                                    return;
-                                }
                             }
                         }
                     }
                 }
-
-                ((PlayerPositionLookS2CPacketAccessor) event.packet).setYaw(mc.player.getYaw());
-                ((PlayerPositionLookS2CPacketAccessor) event.packet).setPitch(mc.player.getPitch());
-                packet.getFlags().remove(PlayerPositionLookS2CPacket.Flag.X_ROT);
-                packet.getFlags().remove(PlayerPositionLookS2CPacket.Flag.Y_ROT);
-                teleportId = packet.getTeleportId();
-            } else {
-                teleportId = 0;
             }
+
+            ((PlayerPositionLookS2CPacketAccessor) event.packet).setYaw(mc.player.getYaw());
+            ((PlayerPositionLookS2CPacketAccessor) event.packet).setPitch(mc.player.getPitch());
+            packet.getFlags().remove(PlayerPositionLookS2CPacket.Flag.X_ROT);
+            packet.getFlags().remove(PlayerPositionLookS2CPacket.Flag.Y_ROT);
+            teleportId = packet.getTeleportId();
         }
     }
 
@@ -645,6 +671,7 @@ public class PacketFly extends Module {
 
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent event) {
+        if (type.get() == Type.OFFGROUND) return;
         if (type.get() == Type.ELYTRA) {
             mc.player.getAbilities().flying = true;
             mc.player.getAbilities().setFlySpeed(speed.get().floatValue() / 20);
@@ -657,6 +684,8 @@ public class PacketFly extends Module {
 
     @EventHandler
     public void onSend(PacketEvent.Send event) {
+        if (type.get() == Type.OFFGROUND) return;
+
         if (type.get() == Type.ELYTRA && event.packet instanceof PlayerMoveC2SPacket) {
             mc.player.networkHandler.sendPacket(new ClientCommandC2SPacket(mc.player, ClientCommandC2SPacket.Mode.START_FALL_FLYING));
             return;
@@ -766,7 +795,7 @@ public class PacketFly extends Module {
     private double[] directionSpeed(double speed) {
         float forward = mc.player.forwardSpeed;
         float side = mc.player.sidewaysSpeed;
-        float yaw = mc.player.prevYaw + (mc.player.getYaw() - mc.player.prevYaw);  // * mc.getRenderPartialTicks();
+        float yaw = mc.player.prevYaw + (mc.player.getYaw() - mc.player.prevYaw);
 
         if (forward != 0.0f) {
             if (side > 0.0f) {
@@ -786,7 +815,7 @@ public class PacketFly extends Module {
         final double cos = Math.cos(Math.toRadians(yaw + 90.0f));
         final double posX = forward * speed * cos + side * speed * sin;
         final double posZ = forward * speed * sin - side * speed * cos;
-        return new double[]{posX, posZ};
+        return new double[] {posX, posZ};
     }
 
     private boolean checkCollisionBox() {
@@ -794,7 +823,7 @@ public class PacketFly extends Module {
     }
 
     private boolean onGround() {
-        if (stopOnGround.get()) return !VectorUtils.isSolid(mc.player.getBlockPos().down());
+        if (stopOnGround.get()) return !mc.world.getBlockCollisions(mc.player, mc.player.getBoundingBox().offset(0, -0.01, 0)).iterator().hasNext();
 
         return true;
     }
@@ -812,25 +841,23 @@ public class PacketFly extends Module {
     private boolean isMoving() {
         if (onlyOnMove.get()) {
             if (mc.options.keyJump.isPressed()) return true;
+            if (mc.options.keySneak.isPressed()) return true;
             if (mc.options.keyForward.isPressed()) return true;
             if (mc.options.keyBack.isPressed()) return true;
             if (mc.options.keyLeft.isPressed()) return true;
             if (mc.options.keyRight.isPressed()) return true;
+
+            return false;
         }
 
         return true;
     }
 
-    class TimeVec3d extends Vec3d {
+    private static class TimeVec3d extends Vec3d {
         private final long time;
 
         public TimeVec3d(double xIn, double yIn, double zIn, long time) {
             super(xIn, yIn, zIn);
-            this.time = time;
-        }
-
-        public TimeVec3d(Vec3i vec, long time) {
-            super(new Vec3f(vec.getX(), vec.getY(), vec.getZ()));
             this.time = time;
         }
 

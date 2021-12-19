@@ -19,22 +19,28 @@ public class Systems {
     public static void init() {
         // Modules
         //add(new AutoCityPlus());
+        add(new AntiDesync());
         add(new AutoEz());
         add(new BedrockWalk());
         add(new BowBomb());
         add(new CevBreaker());
         add(new ColorPlace());
+        add(new ChorusPredict());
         add(new ClipPhase());
+        add(new DebugTools());
         add(new EntityFly());
         add(new PortalGodMode());
         add(new PacketFly());
         add(new PingSpoof());
+        add(new ReverseStep());
+        add(new SilentAntiGhost());
         add(new SkeletonESP());
         add(new StepPlus());
         add(new Strafe());
         add(new SurroundPlus());
         //add(new SurroundPlusPlus());
         add(new Tower());
+        add(new Welcomer());
         add(new VectorPresence());
 
         // Commands

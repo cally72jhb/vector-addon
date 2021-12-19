@@ -26,6 +26,13 @@ public class AutoEz extends Module {
     private final SettingGroup sgKills = settings.createGroup("Kills");
     private final SettingGroup sgTargeting = settings.createGroup("Targeting");
 
+    private final Setting<Boolean> clearOnDeath = sgGeneral.add(new BoolSetting.Builder()
+        .name("clear-on-death")
+        .description("Resets your scores on death.")
+        .defaultValue(true)
+        .build()
+    );
+
     private final Setting<Boolean> message = sgGeneral.add(new BoolSetting.Builder()
         .name("message")
         .description("Sends messages in the chat when you kill or pop players.")
@@ -44,13 +51,6 @@ public class AutoEz extends Module {
         .name("small-caps")
         .description("Sends all messages with small caps.")
         .defaultValue(false)
-        .build()
-    );
-
-    private final Setting<Boolean> clearOnDeath = sgGeneral.add(new BoolSetting.Builder()
-        .name("clear-on-death")
-        .description("Resets your scores on death.")
-        .defaultValue(true)
         .build()
     );
 
@@ -88,7 +88,7 @@ public class AutoEz extends Module {
 
     private final Setting<Integer> popDelay = sgPops.add(new IntSetting.Builder()
         .name("pop-delay")
-        .description("How long to wait in ticks after sending a pop message again.")
+        .description("How long to wait in ticks before sending a pop message again.")
         .defaultValue(15)
         .min(0)
         .visible(popMsg::get)
@@ -122,7 +122,7 @@ public class AutoEz extends Module {
 
     private final Setting<Integer> killDelay = sgKills.add(new IntSetting.Builder()
         .name("kill-delay")
-        .description("How long to wait in ticks after sending a kill message again.")
+        .description("How long to wait in ticks before sending a kill message again.")
         .defaultValue(5)
         .min(0)
         .visible(killMsg::get)
@@ -164,10 +164,10 @@ public class AutoEz extends Module {
     private int popTimer;
 
     public AutoEz() {
-        super(VectorAddon.CATEGORY, "auto-ez", "Send a chat message after killing a player.");
+        super(VectorAddon.CATEGORY, "auto-ez", "Send a chat message after killing or poping a player.");
 
         String[] a = "abcdefghijklmnopqrstuvwxyz".split("");
-        String[] b = "ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴩqʀꜱᴛᴜᴠᴡxyᴢ".split("");
+        String[] b = "ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘqʀꜱᴛᴜᴠᴡxʏᴢ".split("");
         for (int i = 0; i < a.length; i++) SMALL_CAPS.put(a[i].charAt(0), b[i].charAt(0));
     }
 
@@ -207,15 +207,27 @@ public class AutoEz extends Module {
             if (target) return;
         }
 
-        if (packet.getStatus() == 35 && popMsg.get() && (popTimer >= popDelay.get() || popDelay.get() == 0)) {
-            sendPopMsg((PlayerEntity) entity);
-            popTimer = 0;
-            return;
+        if (packet.getStatus() == 35) {
+            pops.putIfAbsent(entity.getUuid(), 0);
+            pops.replace(entity.getUuid(), pops.get(entity.getUuid()) + 1);
+
+            if (popMsg.get() && (popTimer >= popDelay.get() || popDelay.get() == 0)) {
+                sendPopMsg((PlayerEntity) entity);
+                popTimer = 0;
+                return;
+            }
         }
 
-        if (packet.getStatus() == 3 && killMsg.get() && (killTimer >= killDelay.get() || killDelay.get() == 0)) {
-            sendKillMsg((PlayerEntity) entity);
-            killTimer = 0;
+        if (packet.getStatus() == 3) {
+            kills.putIfAbsent(entity.getUuid(), 0);
+            kills.replace(entity.getUuid(), kills.get(entity.getUuid()) + 1);
+
+            allKills++;
+
+            if (killMsg.get() && (killTimer >= killDelay.get() || killDelay.get() == 0)) {
+                sendKillMsg((PlayerEntity) entity);
+                killTimer = 0;
+            }
         }
     }
 
@@ -228,23 +240,11 @@ public class AutoEz extends Module {
     // Messaging
 
     private void sendPopMsg(PlayerEntity player) {
-        pops.putIfAbsent(player.getUuid(), 0);
-        pops.replace(player.getUuid(), pops.get(player.getUuid()) + 1);
-
-        String string = apply(player, randomMsg.get() ? popMessages.get() : List.of(popString.get()));
-
-        sendMsg(string);
+        sendMsg(apply(player, randomMsg.get() ? popMessages.get().get(random.nextInt(popMessages.get().size())) : popString.get()));
     }
 
     private void sendKillMsg(PlayerEntity player) {
-        kills.putIfAbsent(player.getUuid(), 0);
-        kills.replace(player.getUuid(), kills.get(player.getUuid()) + 1);
-
-        allKills++;
-
-        String string = apply(player, randomMsg.get() ? killMessages.get() : List.of(killString.get()));
-
-        if (message.get()) sendMsg(string);
+        if (message.get()) sendMsg(apply(player, randomMsg.get() ? killMessages.get().get(random.nextInt(killMessages.get().size())) : killString.get()));
 
         int pop = pops.get(player.getUuid()) == null ? 0 : pops.get(player.getUuid());
         int kill = kills.get(player.getUuid()) == null ? 0 : kills.get(player.getUuid());
@@ -252,8 +252,6 @@ public class AutoEz extends Module {
                 + " " + pop + (pop == 1 ? " time" : " times") + " and killed him "
                 + kill + (kill == 1 ? " time." : " times."));
     }
-
-    // Utils
 
     private void sendMsg(String string) {
         StringBuilder sb = new StringBuilder();
@@ -274,8 +272,10 @@ public class AutoEz extends Module {
         }
     }
 
-    private String apply(PlayerEntity player, List<String> strings) {
-        String string = strings.get(random.nextInt(strings.size())).replace("{player}", player.getEntityName());
+    // Utils
+
+    private String apply(PlayerEntity player, String message) {
+        String string = message.replace("{player}", player.getEntityName());
 
         string = string.replace("{pops}", String.valueOf(pops.get(player.getUuid())));
         string = string.replace("{playerkills}", String.valueOf(kills.get(player.getUuid())));

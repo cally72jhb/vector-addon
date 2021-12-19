@@ -57,6 +57,15 @@ public class VectorConfigTab extends Tab {
             }).build()
     );
 
+    public static final Setting<Boolean> customTitleScreen = sgMisc.add(new BoolSetting.Builder()
+        .name("custom-title-screen")
+        .description("Changes the default title screen to a custom one.")
+        .defaultValue(false)
+        .onChanged(bool -> VectorConfig.get().customTitleScreen = bool)
+        .onModuleActivated(bool -> bool.set(VectorConfig.get().customTitleScreen))
+        .build()
+    );
+
     public static final Setting<Boolean> highlightMembers = sgMisc.add(new BoolSetting.Builder()
             .name("highlight-members")
             .description("Highlights Vector Users for you.")

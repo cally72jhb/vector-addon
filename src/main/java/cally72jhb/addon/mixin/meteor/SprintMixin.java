@@ -21,8 +21,6 @@ public class SprintMixin {
 
     @Inject(method = "<init>", at = @At("TAIL"), remap = false)
     private void onInit(CallbackInfo info) {
-        ((SettingAccessor) sgGeneral.get("when-stationary")).setDefaultValue(false);
-
         disable = sgGeneral.add(new BoolSetting.Builder()
                 .name("disable-afterwards")
                 .description("Stops sprinting when you deactivate the module.")
@@ -33,10 +31,10 @@ public class SprintMixin {
 
     @Inject(method = "onDeactivate", at = @At("HEAD"), remap = false, cancellable = true)
     private void onDeactivate(CallbackInfo info) {
-        info.cancel();
-
         if (mc.player == null || disable == null || !disable.get()) return;
 
         mc.player.setSprinting(false);
+
+        info.cancel();
     }
 }

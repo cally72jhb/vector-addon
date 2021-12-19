@@ -117,6 +117,13 @@ public class CevBreaker extends Module {
             .build()
     );
 
+    private final Setting<Boolean> burrow = sgGeneral.add(new BoolSetting.Builder()
+        .name("break-burrow")
+        .description("Breaks the burrow block from the target.")
+        .defaultValue(true)
+        .build()
+    );
+
     private final Setting<Boolean> rotate = sgGeneral.add(new BoolSetting.Builder()
         .name("rotate")
         .description("Sends rotation packets to the server when placing.")
@@ -192,7 +199,7 @@ public class CevBreaker extends Module {
     private final Setting<SettingColor> sideColor = sgRender.add(new ColorSetting.Builder()
         .name("side-color")
         .description("The color of the sides of the blocks being rendered.")
-        .defaultValue(new SettingColor(140, 245, 165, 255))
+        .defaultValue(new SettingColor(140, 245, 165, 25))
         .visible(render::get)
         .build()
     );
@@ -282,23 +289,23 @@ public class CevBreaker extends Module {
             // Interfering
 
             if (interfering.get()) {
-                if (VectorUtils.isSolid(target.getBlockPos())) {
-                    mine(target.getBlockPos(), pick);
-                    obbypos = target.getBlockPos();
-                    return;
-                }
-
-                if (VectorUtils.isSolid(target.getBlockPos().up())) {
+                if (!VectorUtils.getBlockState(target.getBlockPos().up()).isAir()) {
                     mine(target.getBlockPos().up(), pick);
                     obbypos = target.getBlockPos().up();
                     return;
                 }
 
-                if (VectorUtils.isSolid(pos.up())) {
+                if (!VectorUtils.getBlockState(pos.up()).isAir()) {
                     mine(pos.up(), pick);
                     obbypos = pos.up();
                     return;
                 }
+            }
+
+            if (burrow.get() && !VectorUtils.getBlockState(target.getBlockPos()).isAir()) {
+                mine(target.getBlockPos(), pick);
+                obbypos = target.getBlockPos();
+                return;
             }
 
             if (antiSuicide.get()) {

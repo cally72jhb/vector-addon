@@ -10,6 +10,7 @@ import meteordevelopment.meteorclient.events.world.CollisionShapeEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.mixin.PlayerPositionLookS2CPacketAccessor;
 import meteordevelopment.meteorclient.mixininterface.IVec3d;
+import meteordevelopment.meteorclient.settings.BoolSetting;
 import meteordevelopment.meteorclient.settings.DoubleSetting;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
@@ -31,10 +32,25 @@ import java.util.concurrent.TimeUnit;
 public class ClipPhase extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
 
-    private final Setting<Double> speed = sgGeneral.add(new DoubleSetting.Builder()
-        .name("speed")
-        .description("At which speed to travel.")
+    private final Setting<Boolean> extreme = sgGeneral.add(new BoolSetting.Builder()
+        .name("extreme")
+        .description("Whether or not to do random big moves.")
+        .defaultValue(true)
+        .build()
+    );
+
+    private final Setting<Double> hspeed = sgGeneral.add(new DoubleSetting.Builder()
+        .name("horizontal-speed")
+        .description("At which speed to travel horizontal.")
         .defaultValue(1)
+        .min(0)
+        .build()
+    );
+
+    private final Setting<Double> vspeed = sgGeneral.add(new DoubleSetting.Builder()
+        .name("vertical-speed")
+        .description("At which speed to travel up and down.")
+        .defaultValue(0.1)
         .min(0)
         .build()
     );
@@ -66,18 +82,6 @@ public class ClipPhase extends Module {
     }
 
     @EventHandler
-    public void isCube(CollisionShapeEvent event) {
-        if (VectorUtils.distance(mc.player.getX(), mc.player.getY(), mc.player.getZ(), event.pos.getX(), event.pos.getY(), event.pos.getZ()) > 3) return;
-
-        event.shape = VoxelShapes.empty();
-    }
-
-    @EventHandler
-    public void onChunkOcclusion(ChunkOcclusionEvent event) {
-        event.cancel();
-    }
-
-    @EventHandler
     public void onPostTick(TickEvent.Post event) {
         if (ticksExisted % 20 == 0) {
             posLooks.forEach((tp, timeVec3d) -> {
@@ -89,7 +93,7 @@ public class ClipPhase extends Module {
 
         ticksExisted++;
 
-        mc.player.setVelocity(0.0D, 0.0D, 0.0D);
+        mc.player.setVelocity(0, 0, 0);
 
         if (teleportId <= 0) {
             PlayerMoveC2SPacket startingOutOfBoundsPos = new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), mc.player.getY() + randomLimitedVertical(), mc.player.getZ(), mc.player.isOnGround());
@@ -97,14 +101,14 @@ public class ClipPhase extends Module {
             mc.getNetworkHandler().sendPacket(startingOutOfBoundsPos);
         }
 
-        double[] dir = VectorUtils.directionSpeed(speed.get().floatValue());
+        double[] dir = VectorUtils.directionSpeed(hspeed.get().floatValue());
 
         speedX = dir[0];
-        speedY = 0;
+        speedY = mc.options.keyJump.isPressed() ? vspeed.get() : (mc.options.keySneak.isPressed() ? -vspeed.get() : 0);
         speedZ = dir[1];
 
         Vec3d newPos = new Vec3d(mc.player.getX() + speedX, mc.player.getY(), mc.player.getZ() + speedZ);
-        Vec3d blockCenter = new Vec3d(Math.floor(mc.player.getX()), Math.floor(mc.player.getY()), Math.floor(mc.player.getZ())).add(0.5, 0, 0.5);
+        Vec3d blockCenter = new Vec3d(mc.player.getBlockX(), mc.player.getBlockY(), mc.player.getBlockZ()).add(0.5, 0, 0.5);
 
         Vec3d min = newPos.subtract(0.3, 0, 0.3);
         Vec3d max = newPos.add(0.3, 0, 0.3);
@@ -112,10 +116,10 @@ public class ClipPhase extends Module {
         Vec3i minI = new Vec3i(Math.floor(min.x), Math.floor(min.y), Math.floor(min.z));
         Vec3i maxI = new Vec3i(Math.floor(max.x), Math.floor(max.y), Math.floor(max.z));
 
-        if (!minI.equals(maxI) && newPos.distanceTo(blockCenter) > mc.player.getPos().distanceTo(blockCenter)) {
-            dir = VectorUtils.directionSpeed(0.062f);
+        if (!minI.equals(maxI) && newPos.distanceTo(blockCenter) > mc.player.getPos().distanceTo(blockCenter) && !extreme.get()) {
+            dir = VectorUtils.directionSpeed(0.064f);
             speedX = dir[0];
-            speedY = 0;
+            speedY = mc.options.keyJump.isPressed() ? vspeed.get() : (mc.options.keySneak.isPressed() ? -vspeed.get() : 0);
             speedZ = dir[1];
 
             PlayerMoveC2SPacket move = new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX() + speedX, mc.player.getY() + speedY, mc.player.getZ() + speedZ, mc.player.isOnGround());
@@ -138,9 +142,19 @@ public class ClipPhase extends Module {
 
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent event) {
-        mc.player.noClip = true;
-
         ((IVec3d) event.movement).set(speedX, speedY, speedZ);
+    }
+
+    @EventHandler
+    public void isCube(CollisionShapeEvent event) {
+        if (VectorUtils.distance(mc.player.getX(), mc.player.getY(), mc.player.getZ(), event.pos.getX(), event.pos.getY(), event.pos.getZ()) > 3) return;
+
+        event.shape = VoxelShapes.empty();
+    }
+
+    @EventHandler
+    public void onChunkOcclusion(ChunkOcclusionEvent event) {
+        event.cancel();
     }
 
     @EventHandler
