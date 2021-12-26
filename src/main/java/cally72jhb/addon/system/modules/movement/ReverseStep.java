@@ -40,7 +40,7 @@ public class ReverseStep extends Module {
     private boolean valid = false;
 
     public ReverseStep() {
-        super(VectorAddon.CATEGORY, "reverse-step-plus", "Fall faster down.");
+        super(VectorAddon.MOVEMENT, "reverse-step-plus", "Fall faster down.");
     }
 
     @Override
@@ -79,6 +79,6 @@ public class ReverseStep extends Module {
     }
 
     private boolean onGround() {
-        return mc.world.getBlockCollisions(mc.player, mc.player.getBoundingBox().offset(0, -0.01, 0)).iterator().hasNext();
+        return mc.world.getBlockCollisions(mc.player, mc.player.getBoundingBox().offset(0, -0.05, 0)).iterator().hasNext();
     }
 }

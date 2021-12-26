@@ -2,6 +2,7 @@ package cally72jhb.addon.mixin.meteor;
 
 import cally72jhb.addon.system.players.Players;
 import cally72jhb.addon.utils.config.VectorConfig;
+import cally72jhb.addon.utils.titlescreen.TitleScreenConfig;
 import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.systems.System;
 import meteordevelopment.meteorclient.systems.Systems;
@@ -48,6 +49,7 @@ public class SystemsMixin {
         add(new Proxies());
         add(new Players());
         add(new VectorConfig());
+        add(new TitleScreenConfig());
 
         MeteorClient.EVENT_BUS.subscribe(Systems.class);
     }

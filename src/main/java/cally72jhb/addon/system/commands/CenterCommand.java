@@ -15,17 +15,17 @@ public class CenterCommand extends Command {
 
     @Override
     public void build(LiteralArgumentBuilder<CommandSource> builder) {
-        builder.then(literal("middle").executes(context -> {
+        builder.then(literal("middle")).executes(context -> {
             centerPlayer();
 
             return SINGLE_SUCCESS;
-        }));
+        });
 
-        builder.then(literal("center").executes(context -> {
+        builder.then(literal("center")).executes(context -> {
             middlePlayer();
 
             return SINGLE_SUCCESS;
-        }));
+        });
     }
 
     public static void centerPlayer() {

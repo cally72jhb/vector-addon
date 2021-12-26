@@ -4,9 +4,11 @@ import cally72jhb.addon.utils.titlescreen.modules.ScreenElement;
 import cally72jhb.addon.utils.titlescreen.modules.SkinTitleScreen;
 import cally72jhb.addon.utils.titlescreen.modules.PressableElement;
 import cally72jhb.addon.utils.titlescreen.modules.TextTitleScreen;
+import com.mojang.blaze3d.systems.RenderSystem;
 import meteordevelopment.meteorclient.events.render.Render2DEvent;
 import meteordevelopment.meteorclient.gui.GuiThemes;
 import meteordevelopment.meteorclient.gui.tabs.Tabs;
+import meteordevelopment.meteorclient.renderer.GL;
 import meteordevelopment.meteorclient.renderer.Renderer2D;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.utils.Utils;
@@ -18,14 +20,18 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.multiplayer.MultiplayerScreen;
 import net.minecraft.client.gui.screen.option.OptionsScreen;
 import net.minecraft.client.gui.screen.world.SelectWorldScreen;
+import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static cally72jhb.addon.utils.VectorUtils.mc;
+import static meteordevelopment.meteorclient.utils.Utils.WHITE;
 
 public class CustomTitleScreen extends Screen {
     public static CustomTitleScreen INSTANCE;
@@ -39,7 +45,7 @@ public class CustomTitleScreen extends Screen {
 
     private static final ScreenRenderer RENDERER = new ScreenRenderer();
 
-    public final List<ScreenElement> elements = new ArrayList<>();
+    public static final List<ScreenElement> elements = new ArrayList<>();
     public final ElementLayer bottomLeft, topRight;
 
     public final Runnable reset = () -> {
@@ -97,6 +103,7 @@ public class CustomTitleScreen extends Screen {
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (keyCode == GLFW.GLFW_KEY_E || keyCode == GLFW.GLFW_KEY_ESCAPE) {
+            //mc.setScreen(new TitleScreenConfigScreen(GuiThemes.get()));
             editing = !editing;
             selectedElements.clear();
             selecting = false;

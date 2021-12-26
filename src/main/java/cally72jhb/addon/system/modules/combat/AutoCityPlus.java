@@ -154,7 +154,7 @@ public class AutoCityPlus extends Module {
     private PlayerEntity target;
 
     public AutoCityPlus() {
-        super(VectorAddon.CATEGORY, "auto-city-plus", "Breaks the targets surround.");
+        super(VectorAddon.MISC, "auto-city-plus", "Breaks the targets surround.");
     }
 
     @Override

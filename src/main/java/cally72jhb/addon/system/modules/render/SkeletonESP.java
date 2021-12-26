@@ -48,7 +48,7 @@ public class SkeletonESP extends Module {
     private Freecam freecam;
 
     public SkeletonESP() {
-        super(VectorAddon.CATEGORY, "skeleton-esp", "Renders the skeleton of players.");
+        super(VectorAddon.MISC, "skeleton-esp", "Renders the skeleton of players.");
     }
 
     @Override

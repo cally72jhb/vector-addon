@@ -7,9 +7,12 @@ import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.renderer.ShapeMode;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
+import meteordevelopment.meteorclient.utils.misc.Keybind;
+import meteordevelopment.meteorclient.utils.player.PlayerUtils;
 import meteordevelopment.meteorclient.utils.render.RenderUtils;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.orbit.EventHandler;
+import net.minecraft.item.Items;
 import net.minecraft.network.packet.c2s.play.TeleportConfirmC2SPacket;
 import net.minecraft.network.packet.s2c.play.PlayerPositionLookS2CPacket;
 import net.minecraft.util.math.BlockPos;
@@ -23,6 +26,20 @@ public class ChorusPredict extends Module {
         .name("accurate")
         .description("Whether or not to render the position accurate.")
         .defaultValue(false)
+        .build()
+    );
+
+    private final Setting<Boolean> onSneak = sgGeneral.add(new BoolSetting.Builder()
+        .name("on-sneak")
+        .description("Only predicts when you are sneaking.")
+        .defaultValue(true)
+        .build()
+    );
+
+    private final Setting<Keybind> key = sgGeneral.add(new KeybindSetting.Builder()
+        .name("tp-key")
+        .description("The key that teleports you to the current spot.")
+        .defaultValue(Keybind.fromKey(-1))
         .build()
     );
 
@@ -59,17 +76,19 @@ public class ChorusPredict extends Module {
     private Vec3d pos;
 
     public ChorusPredict() {
-        super(VectorAddon.CATEGORY, "chorus-predict", "Predicts the spot where the chorus-fruit will teleport you.");
+        super(VectorAddon.MISC, "chorus-predict", "Predicts the spot where the chorus-fruit will teleport you.");
     }
 
     @Override
-    public void  onActivate() {
+    public void onActivate() {
         teleportId = -1;
+        bpos = null;
+        pos = null;
     }
 
     @EventHandler
     private void onPreTick(TickEvent.Pre event) {
-        if (!mc.player.isSneaking()) {
+        if ((!mc.player.isSneaking() && onSneak.get()) || key.get().isPressed()) {
             if (teleportId != -1) {
                 mc.getNetworkHandler().sendPacket(new TeleportConfirmC2SPacket(teleportId));
                 teleportId = -1;
@@ -81,7 +100,7 @@ public class ChorusPredict extends Module {
 
     @EventHandler
     private void onReceivePacket(PacketEvent.Receive event) {
-        if (!(event.packet instanceof PlayerPositionLookS2CPacket packet) || !mc.player.isSneaking() || !(mc.player.isUsingItem() && (mc.player.getMainHandStack().getItem().isFood() || mc.player.getOffHandStack().getItem().isFood()))) return;
+        if (!(event.packet instanceof PlayerPositionLookS2CPacket packet) || (!mc.player.isSneaking() && onSneak.get()) || !(mc.player.getMainHandStack().getItem() == Items.CHORUS_FRUIT && mc.player.isUsingItem() && (mc.player.getMainHandStack().getItem().isFood() || mc.player.getOffHandStack().getItem().isFood()))) return;
 
         teleportId = packet.getTeleportId();
 
@@ -93,7 +112,10 @@ public class ChorusPredict extends Module {
 
     @EventHandler
     private void onSentPacket(PacketEvent.Sent event) {
-        if (event.packet instanceof TeleportConfirmC2SPacket packet && packet.getTeleportId() == teleportId) event.cancel();
+        if (event.packet instanceof TeleportConfirmC2SPacket packet && packet.getTeleportId() == teleportId) {
+            event.cancel();
+            teleportId = -1;
+        }
     }
 
     @EventHandler

@@ -23,7 +23,8 @@ import org.apache.logging.log4j.Logger;
 import java.lang.invoke.MethodHandles;
 
 public class VectorAddon extends MeteorAddon {
-    public static final Category CATEGORY = new Category("Vector", Items.AMETHYST_SHARD.getDefaultStack());
+    public static final Category MISC = new Category("Vector Misc", Items.AMETHYST_SHARD.getDefaultStack());
+    public static final Category MOVEMENT = new Category("Vector Motion", Items.AMETHYST_SHARD.getDefaultStack());
     public static final Logger LOG = LogManager.getLogger();
 
     private final MinecraftClient mc = MinecraftClient.getInstance();
@@ -51,7 +52,8 @@ public class VectorAddon extends MeteorAddon {
 
     @Override
     public void onRegisterCategories() {
-        Modules.registerCategory(CATEGORY);
+        Modules.registerCategory(MISC);
+        Modules.registerCategory(MOVEMENT);
     }
 
     @EventHandler

@@ -56,7 +56,7 @@ public class DebugTools extends Module {
     public static Object2BooleanMap<Class<? extends Packet<?>>> C2S_PACKETS = new Object2BooleanArrayMap<>();
 
     public DebugTools() {
-        super(VectorAddon.CATEGORY, "debug-tools", "Uses the chat to write debug stuff.");
+        super(VectorAddon.MISC, "debug-tools", "Uses the chat to write debug stuff.");
 
         for (Class<? extends Packet<?>> packet : PacketUtils.getS2CPackets()) S2C_PACKETS.put(packet, false);
         for (Class<? extends Packet<?>> packet : PacketUtils.getC2SPackets()) C2S_PACKETS.put(packet, false);

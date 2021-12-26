@@ -31,7 +31,7 @@ public class AntiDesync extends Module {
     private ArrayList<Integer> teleportIDs;
 
     public AntiDesync() {
-        super(VectorAddon.CATEGORY, "anti-desync", "Stops you from desyncing with the server.");
+        super(VectorAddon.MISC, "anti-desync", "Stops you from desyncing with the server.");
     }
 
     @Override

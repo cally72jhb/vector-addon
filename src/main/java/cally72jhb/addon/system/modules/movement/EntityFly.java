@@ -41,7 +41,7 @@ public class EntityFly extends Module {
     );
 
     public EntityFly() {
-        super(VectorAddon.CATEGORY, "entity-fly", "Fly with any rideable entity.");
+        super(VectorAddon.MOVEMENT, "entity-fly", "Fly with any rideable entity.");
     }
 
     @EventHandler

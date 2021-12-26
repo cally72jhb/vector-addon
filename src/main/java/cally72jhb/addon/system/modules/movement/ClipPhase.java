@@ -69,7 +69,7 @@ public class ClipPhase extends Module {
     private static final Random random = new Random();
 
     public ClipPhase() {
-        super(VectorAddon.CATEGORY, "clip-phase", "Allows you to phase with packets.");
+        super(VectorAddon.MOVEMENT, "clip-phase", "Allows you to phase with packets.");
     }
 
     @Override
@@ -101,7 +101,7 @@ public class ClipPhase extends Module {
             mc.getNetworkHandler().sendPacket(startingOutOfBoundsPos);
         }
 
-        double[] dir = VectorUtils.directionSpeed(hspeed.get().floatValue());
+        double[] dir = VectorUtils.directionSpeed(hspeed.get().floatValue() / 10);
 
         speedX = dir[0];
         speedY = mc.options.keyJump.isPressed() ? vspeed.get() : (mc.options.keySneak.isPressed() ? -vspeed.get() : 0);

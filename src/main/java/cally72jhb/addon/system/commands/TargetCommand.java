@@ -15,10 +15,10 @@ public class TargetCommand extends Command {
 
     @Override
     public void build(LiteralArgumentBuilder<CommandSource> builder) {
-        builder.then(argument("player", PlayerArgumentType.player()).executes(context -> {
+        builder.then(argument("player", PlayerArgumentType.player())).executes(context -> {
             Players.get().target(PlayerArgumentType.getPlayer(context));
 
             return SINGLE_SUCCESS;
-        }));
+        });
     }
 }

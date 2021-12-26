@@ -2,55 +2,32 @@ package cally72jhb.addon.system.modules.player;
 
 import cally72jhb.addon.VectorAddon;
 import cally72jhb.addon.utils.VectorUtils;
-import cally72jhb.addon.utils.misc.VectorStarscript;
 import it.unimi.dsi.fastutil.chars.Char2CharArrayMap;
 import it.unimi.dsi.fastutil.chars.Char2CharMap;
 import meteordevelopment.meteorclient.events.packets.PacketEvent;
-import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.friends.Friends;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.systems.modules.Modules;
-import meteordevelopment.meteorclient.utils.Utils;
 import meteordevelopment.orbit.EventHandler;
-import meteordevelopment.starscript.Script;
-import meteordevelopment.starscript.compiler.Compiler;
-import meteordevelopment.starscript.compiler.Parser;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.network.packet.s2c.play.EntityEquipmentUpdateS2CPacket;
-import net.minecraft.network.packet.s2c.play.EntityStatusS2CPacket;
 
 import java.util.*;
 
-public class AutoEz extends Module {
+public class ArmorAlert extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
-    private final SettingGroup sgPops = settings.createGroup("Pops");
-    private final SettingGroup sgKills = settings.createGroup("Kills");
     private final SettingGroup sgArmor = settings.createGroup("Armor");
     private final SettingGroup sgTargeting = settings.createGroup("Targeting");
-
-    private final Setting<Boolean> clearOnDeath = sgGeneral.add(new BoolSetting.Builder()
-        .name("clear-on-death")
-        .description("Resets your scores on death.")
-        .defaultValue(true)
-        .build()
-    );
 
     private final Setting<Boolean> message = sgGeneral.add(new BoolSetting.Builder()
         .name("message")
         .description("Sends messages in the chat when you kill or pop players.")
         .defaultValue(true)
-        .build()
-    );
-
-    private final Setting<Boolean> notify = sgGeneral.add(new BoolSetting.Builder()
-        .name("notify")
-        .description("Sends client-side messages with your kill and pop streak after you kill players.")
-        .defaultValue(false)
         .build()
     );
 
@@ -68,80 +45,12 @@ public class AutoEz extends Module {
         .build()
     );
 
-    // Pops
-
-    private final Setting<Boolean> popMsg = sgPops.add(new BoolSetting.Builder()
-        .name("pop")
-        .description("Sends a messages everytime you pop a player.")
-        .defaultValue(true)
-        .build()
-    );
-
-    private final Setting<String> popString = sgPops.add(new StringSetting.Builder()
-        .name("pop-message")
-        .description("The message to send when you poped a player.")
-        .defaultValue("ez pop {player}")
-        .visible(() -> !randomMsg.get() && popMsg.get())
-        .build()
-    );
-
-    private final Setting<List<String>> popMessages = sgPops.add(new StringListSetting.Builder()
-        .name("pop-messages")
-        .description("The random messages to send when you poped a player.")
-        .defaultValue(List.of("vector on top", "ez {player}", "poped {player} with vector", "{pops} pops on {player} already"))
-        .visible(() -> randomMsg.get() && popMsg.get())
-        .build()
-    );
-
-    private final Setting<Integer> popDelay = sgPops.add(new IntSetting.Builder()
-        .name("pop-delay")
-        .description("How long to wait in ticks before sending a pop message again.")
-        .defaultValue(15)
-        .min(0)
-        .visible(popMsg::get)
-        .build()
-    );
-
-    // Kills
-
-    private final Setting<Boolean> killMsg = sgKills.add(new BoolSetting.Builder()
-        .name("kill")
-        .description("Sends a messages everytime you kill a player.")
-        .defaultValue(true)
-        .build()
-    );
-
-    private final Setting<String> killString = sgKills.add(new StringSetting.Builder()
-        .name("kill-message")
-        .description("The message to send when you killed someone.")
-        .defaultValue("killed {player}")
-        .visible(() -> !randomMsg.get() && killMsg.get())
-        .build()
-    );
-
-    private final Setting<List<String>> killMessages = sgKills.add(new StringListSetting.Builder()
-        .name("kill-messages")
-        .description("The random messages to send when you kill someone.")
-        .defaultValue(List.of("ez {player}", "killed {player} with vector", "currently at {kills} kill streak", "{playerkills} kills on {player} already", "join vector for free: https://discord.gg/A3nYgbKeXR", "{players} people saw {player} die to the power of vector"))
-        .visible(() -> randomMsg.get() && killMsg.get())
-        .build()
-    );
-
-    private final Setting<Integer> killDelay = sgKills.add(new IntSetting.Builder()
-        .name("kill-delay")
-        .description("How long to wait in ticks before sending a kill message again.")
-        .defaultValue(5)
-        .min(0)
-        .visible(killMsg::get)
-        .build()
-    );
-
     // Armor
 
     private final Setting<Boolean> armorMsg = sgArmor.add(new BoolSetting.Builder()
         .name("armor")
         .description("Sends a messages everytime you break a armor piece of a player.")
-        .defaultValue(false)
+        .defaultValue(true)
         .build()
     );
 
@@ -189,15 +98,10 @@ public class AutoEz extends Module {
     private final Char2CharMap SMALL_CAPS = new Char2CharArrayMap();
 
     private HashMap<UUID, ArrayList<Armor>> armor;
-    private HashMap<UUID, Integer> kills;
-    private HashMap<UUID, Integer> pops;
     private Random random;
-    private int allKills;
-    private int killTimer;
-    private int popTimer;
 
-    public AutoEz() {
-        super(VectorAddon.MISC, "auto-ez", "Send a chat message after killing or poping a player.");
+    public ArmorAlert() {
+        super(VectorAddon.MISC, "armor-alert", "Sends a chat message when a players armor gets on low durability.");
 
         String[] a = "abcdefghijklmnopqrstuvwxyz".split("");
         String[] b = "ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘqʀꜱᴛᴜᴠᴡxʏᴢ".split("");
@@ -207,48 +111,12 @@ public class AutoEz extends Module {
     @Override
     public void onActivate() {
         armor = new HashMap<>();
-        kills = new HashMap<>();
-        pops = new HashMap<>();
         random = new Random();
-
-        allKills = 0;
-        killTimer = 0;
-        popTimer = 0;
     }
 
     @EventHandler
     private void onReceivePacket(PacketEvent.Receive event) {
-        if (event.packet instanceof EntityStatusS2CPacket packet) {
-            if (packet.getStatus() != 35 && packet.getStatus() != 3) return;
-            if (packet.getStatus() == 3 && packet.getEntity(mc.world) == mc.player && clearOnDeath.get()) onActivate();
-
-            Entity entity = packet.getEntity(mc.world);
-
-            if (!check(entity)) return;
-
-            if (packet.getStatus() == 35) {
-                pops.putIfAbsent(entity.getUuid(), 0);
-                pops.replace(entity.getUuid(), pops.get(entity.getUuid()) + 1);
-
-                if (popMsg.get() && (popTimer >= popDelay.get() || popDelay.get() == 0)) {
-                    sendPopMsg((PlayerEntity) entity);
-                    popTimer = 0;
-                    return;
-                }
-            }
-
-            if (packet.getStatus() == 3) {
-                kills.putIfAbsent(entity.getUuid(), 0);
-                kills.replace(entity.getUuid(), kills.get(entity.getUuid()) + 1);
-
-                allKills++;
-
-                if (killMsg.get() && (killTimer >= killDelay.get() || killDelay.get() == 0)) {
-                    sendKillMsg((PlayerEntity) entity);
-                    killTimer = 0;
-                }
-            }
-        } else if (event.packet instanceof EntityEquipmentUpdateS2CPacket packet && armorMsg.get()) {
+        if (event.packet instanceof EntityEquipmentUpdateS2CPacket packet) {
             Entity entity = mc.world.getEntityById(packet.getId());
 
             if (!check(entity) || packet.getEquipmentList() == null || packet.getEquipmentList().isEmpty()) return;
@@ -288,34 +156,14 @@ public class AutoEz extends Module {
         }
     }
 
-    @EventHandler
-    private void onPostTick(TickEvent.Post event) {
-        killTimer++;
-        popTimer++;
-    }
-
     // Messaging
 
-    private void sendPopMsg(PlayerEntity player) {
-        sendMsg(apply(player, randomMsg.get() ? popMessages.get().get(random.nextInt(popMessages.get().size())) : popString.get()));
-    }
-
     private void sendArmorMsg(PlayerEntity player, Armor piece) {
-        if (piece == Armor.None) return;
+        if (piece != Armor.None) {
+            String string = apply(player, randomMsg.get() ? armorMessages.get().get(random.nextInt(armorMessages.get().size())) : armorString.get(), piece);
 
-        sendMsg(apply(player, randomMsg.get() ? armorMessages.get().get(random.nextInt(armorMessages.get().size())) : armorString.get()).replace("{piece}", piece.name()));
-    }
-
-    private void sendKillMsg(PlayerEntity player) {
-        if (message.get()) {
-            sendMsg(apply(player, randomMsg.get() ? killMessages.get().get(random.nextInt(killMessages.get().size())) : killString.get()));
+            info(string);
         }
-
-        int pop = pops.get(player.getUuid()) == null ? 0 : pops.get(player.getUuid());
-        int kill = kills.get(player.getUuid()) == null ? 0 : kills.get(player.getUuid());
-        if (notify.get()) info("poped " + player.getEntityName()
-                + " " + pop + (pop == 1 ? " time" : " times") + " and killed him "
-                + kill + (kill == 1 ? " time." : " times."));
     }
 
     private void sendMsg(String string) {
@@ -339,31 +187,12 @@ public class AutoEz extends Module {
 
     // Utils
 
-    private String apply(PlayerEntity player, String message) {
+    private String apply(PlayerEntity player, String message, Armor piece) {
         String string = message.replace("{player}", player.getEntityName());
 
-        string = string.replace("{players}", String.valueOf(mc.getNetworkHandler() != null ? mc.getNetworkHandler().getPlayerList().size() : 0));
-        string = string.replace("{pops}", String.valueOf(pops.get(player.getUuid())));
-        string = string.replace("{playerkills}", String.valueOf(kills.get(player.getUuid())));
-        string = string.replace("{kills}", String.valueOf(allKills));
+        string = string.replace("{piece}", piece.name());
 
         return string;
-    }
-
-    private void recompile(List<String> messages, List<Script> scripts) {
-        scripts.clear();
-
-        for (int i = 0; i < messages.size(); i++) {
-            Parser.Result result = Parser.parse(messages.get(i));
-
-            if (result.hasErrors()) {
-                if (Utils.canUpdate()) VectorStarscript.printChatError(i, result.errors.get(0));
-
-                continue;
-            }
-
-            scripts.add(Compiler.compile(result));
-        }
     }
 
     private boolean check(Entity entity) {

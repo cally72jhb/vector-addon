@@ -53,7 +53,7 @@ public class Phase extends Module {
     private static final Random random = new Random();
 
     public Phase() {
-        super(VectorAddon.CATEGORY, "clip-phase", "Allows you to phase with packets.");
+        super(VectorAddon.MOVEMENT, "clip-phase", "Allows you to phase with packets.");
     }
 
     @Override

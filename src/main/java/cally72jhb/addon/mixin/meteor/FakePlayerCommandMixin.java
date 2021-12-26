@@ -26,7 +26,7 @@ public class FakePlayerCommandMixin extends Command {
     @Inject(method = "build", at = @At("HEAD"), remap = false)
     private void onInit(LiteralArgumentBuilder<CommandSource> builder, CallbackInfo info) {
         builder.then(literal("spawn").executes(context -> {
-                            if (active()) FakePlayerManager.add(mc.getSession().getProfile().getName(), 72, false);
+                            if (active()) FakePlayerManager.add(mc.getSession().getProfile().getName(), 72, true);
                             return SINGLE_SUCCESS;
                         })
                         .then(argument("name", StringArgumentType.word())

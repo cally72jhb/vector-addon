@@ -20,7 +20,7 @@ public class Strafe extends Module {
     private final Setting<Double> moveSpeed = sgGeneral.add(new DoubleSetting.Builder()
             .name("speed")
             .description("How much to multiply your movement speed.")
-            .defaultValue(0.5)
+            .defaultValue(0.3)
             .build()
     );
 
@@ -34,7 +34,7 @@ public class Strafe extends Module {
     private long timer = 0L;
 
     public Strafe() {
-        super(VectorAddon.CATEGORY, "strafe", "Increases your movement speed in every direction.");
+        super(VectorAddon.MOVEMENT, "strafe", "Increases your movement speed in every direction.");
     }
 
     @EventHandler

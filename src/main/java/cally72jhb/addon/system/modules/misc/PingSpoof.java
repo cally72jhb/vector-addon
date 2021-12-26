@@ -4,6 +4,7 @@ import cally72jhb.addon.VectorAddon;
 import cally72jhb.addon.utils.misc.SystemTimer;
 import meteordevelopment.meteorclient.events.packets.PacketEvent;
 import meteordevelopment.meteorclient.events.render.Render3DEvent;
+import meteordevelopment.meteorclient.settings.BoolSetting;
 import meteordevelopment.meteorclient.settings.IntSetting;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
@@ -18,13 +19,21 @@ public class PingSpoof extends Module {
         .name("ping")
         .description("The Ping to set.")
         .defaultValue(200)
+        .min(0)
         .sliderMin(0)
         .sliderMax(1000)
         .build()
     );
 
+    private final Setting<Boolean> negative = sgGeneral.add(new BoolSetting.Builder()
+        .name("negative")
+        .description("Makes you ping go down.")
+        .defaultValue(false)
+        .build()
+    );
+
     public PingSpoof() {
-        super(VectorAddon.CATEGORY, "ping-spoof", "Modify your ping.");
+        super(VectorAddon.MISC, "ping-spoof", "Modify your ping.");
     }
 
     private SystemTimer timer;
@@ -37,7 +46,7 @@ public class PingSpoof extends Module {
 
     @EventHandler
     public void onPacketSend(PacketEvent.Send event) {
-        if(event.packet instanceof KeepAliveC2SPacket && packet != event.packet && ping.get() != 0) {
+        if (event.packet instanceof KeepAliveC2SPacket && packet != event.packet && ping.get() != 0) {
             packet = (KeepAliveC2SPacket) event.packet;
             event.cancel();
             timer.reset();
@@ -46,7 +55,7 @@ public class PingSpoof extends Module {
 
     @EventHandler
     public void onUpdate(Render3DEvent event) {
-        if(timer.hasPassed(ping.get()) && packet != null) {
+        if (timer.hasPassed(negative.get() ? -ping.get() : ping.get()) && packet != null) {
             mc.getNetworkHandler().sendPacket(packet);
             packet = null;
         }

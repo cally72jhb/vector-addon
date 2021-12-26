@@ -98,7 +98,7 @@ public class CevBreaker extends Module {
 
     private final Setting<Boolean> silentSwitch = sgGeneral.add(new BoolSetting.Builder()
             .name("silent-switch")
-            .description("Changes slots only clientside.")
+            .description("Whether or not to change slots silently.")
             .defaultValue(false)
             .build()
     );
@@ -219,7 +219,7 @@ public class CevBreaker extends Module {
     private int timer;
 
     public CevBreaker() {
-        super(VectorAddon.CATEGORY,"cev-breaker", "Places and explodes crystals on top of the target.");
+        super(VectorAddon.MISC,"cev-breaker", "Places and explodes crystals on top of the target.");
     }
 
     @Override
@@ -344,7 +344,7 @@ public class CevBreaker extends Module {
                 } else ctimer++;
             }
 
-            if (VectorUtils.getBlock(pos) == Blocks.OBSIDIAN && getCrystal(pos) != null) {
+            if (VectorUtils.getBlock(pos) == Blocks.OBSIDIAN) {
                 mine(pos, pick);
 
                 ctimer = crystalDelay.get() + 1;

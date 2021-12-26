@@ -15,10 +15,10 @@ public class MuteCommand extends Command {
 
     @Override
     public void build(LiteralArgumentBuilder<CommandSource> builder) {
-        builder.then(argument("player", PlayerArgumentType.player()).executes(context -> {
+        builder.then(argument("player", PlayerArgumentType.player())).executes(context -> {
             Players.get().mute(PlayerArgumentType.getPlayer(context));
 
             return SINGLE_SUCCESS;
-        }));
+        });
     }
 }

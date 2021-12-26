@@ -6,12 +6,15 @@ import it.unimi.dsi.fastutil.chars.Char2CharMap;
 import meteordevelopment.meteorclient.events.packets.PacketEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.*;
+import meteordevelopment.meteorclient.systems.friends.Friend;
 import meteordevelopment.meteorclient.systems.friends.Friends;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
@@ -24,6 +27,14 @@ public class Welcomer extends Module {
         .name("ignore-friends")
         .description("Ignores friended players.")
         .defaultValue(true)
+        .build()
+    );
+
+    private final Setting<Boolean> onlyFriends = sgGeneral.add(new BoolSetting.Builder()
+        .name("only-friends")
+        .description("Only welcomes / goodbyes friended players.")
+        .defaultValue(true)
+        .visible(() -> !ignoreFriends.get())
         .build()
     );
 
@@ -61,7 +72,7 @@ public class Welcomer extends Module {
     private final Setting<List<String>> welcomeMessages = sgWelcome.add(new StringListSetting.Builder()
         .name("welcome-messages")
         .description("The random messages to send when a player joins.")
-        .defaultValue(List.of("welcome {player}", "hello"))
+        .defaultValue(List.of("welcome {player}", "hello {player}"))
         .visible(() -> randomMsg.get() && welcome.get())
         .build()
     );
@@ -87,7 +98,7 @@ public class Welcomer extends Module {
     private final Setting<String> byeString = sgGoodbye.add(new StringSetting.Builder()
         .name("bye-message")
         .description("The message to send when a player joins.")
-        .defaultValue("welcome {player}")
+        .defaultValue("farewell {player}")
         .visible(() -> !randomMsg.get() && bye.get())
         .build()
     );
@@ -95,7 +106,7 @@ public class Welcomer extends Module {
     private final Setting<List<String>> byeMessages = sgGoodbye.add(new StringListSetting.Builder()
         .name("bye-messages")
         .description("The random messages to send when a player joins.")
-        .defaultValue(List.of("welcome {player}", "hello"))
+        .defaultValue(List.of("goodbye {player}", "farewell {player}", "bye {player}"))
         .visible(() -> randomMsg.get() && bye.get())
         .build()
     );
@@ -118,7 +129,7 @@ public class Welcomer extends Module {
     private int bTimer;
 
     public Welcomer() {
-        super(VectorAddon.CATEGORY, "welcomer", "Send a chat message when a player joins.");
+        super(VectorAddon.MISC, "welcomer", "Send a chat message when a player joins.");
 
         String[] a = "abcdefghijklmnopqrstuvwxyz".split("");
         String[] b = "ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘqʀꜱᴛᴜᴠᴡxʏᴢ".split("");
@@ -128,6 +139,7 @@ public class Welcomer extends Module {
     @Override
     public void onActivate() {
         prevEntries = new ArrayList<>();
+        entries = new ArrayList<>();
         random = new Random();
         wTimer = 0;
         bTimer = 0;
@@ -140,10 +152,10 @@ public class Welcomer extends Module {
 
         entries = packet.getEntries();
 
-        if (packet.getAction() == PlayerListS2CPacket.Action.ADD_PLAYER) {
+        if (welcome.get() && (wTimer >= welcomeDelay.get() || welcomeDelay.get() == 0) && packet.getAction() == PlayerListS2CPacket.Action.ADD_PLAYER) {
             for (PlayerListS2CPacket.Entry entry : entries) {
-                if (entry != null && entry.getProfile() != null && entry.getDisplayName() != null && welcome.get()) {
-                    String name = entry.getDisplayName().asString();
+                if (entry != null && entry.getProfile() != null && !entry.getProfile().getName().equals(mc.player.getGameProfile().getName())) {
+                    String name = entry.getProfile().getName();
 
                     boolean existed = true;
 
@@ -152,17 +164,18 @@ public class Welcomer extends Module {
                             && entry.getDisplayName().asString().equals(prevEntry.getDisplayName().asString())) existed = false;
                     }
 
-                    if ((Friends.get().get(name) != null && ignoreFriends.get()) && existed) {
-                        info(apply(name, randomMsg.get() ? welcomeMessages.get() : List.of(welcomeString.get())));
+                    if (existed && isFriend(name)) {
+                        sendMsg(apply(name, randomMsg.get() ? welcomeMessages.get() : List.of(welcomeString.get())));
+                        wTimer = 0;
                     }
                 }
             }
         }
 
-        if (packet.getAction() == PlayerListS2CPacket.Action.REMOVE_PLAYER) {
+        if (bye.get() && (bTimer >= byeDelay.get() || byeDelay.get() == 0) && packet.getAction() == PlayerListS2CPacket.Action.REMOVE_PLAYER) {
             for (PlayerListS2CPacket.Entry entry : entries) {
-                if (entry != null && entry.getProfile() != null && entry.getDisplayName() != null && bye.get()) {
-                    String name = entry.getDisplayName().asString();
+                if (entry != null && entry.getDisplayName() != null) {
+                    String name = entry.getDisplayName().getString();
 
                     boolean existed = true;
 
@@ -171,8 +184,9 @@ public class Welcomer extends Module {
                             && entry.getDisplayName().asString().equals(prevEntry.getDisplayName().asString())) existed = false;
                     }
 
-                    if ((Friends.get().get(name) != null && ignoreFriends.get()) && existed) {
-                        info(apply(name, randomMsg.get() ? byeMessages.get() : List.of(byeString.get())));
+                    if (!existed && isFriend(name)) {
+                        sendMsg(apply(name, randomMsg.get() ? byeMessages.get() : List.of(byeString.get())));
+                        bTimer = 0;
                     }
                 }
             }
@@ -208,5 +222,20 @@ public class Welcomer extends Module {
 
     private String apply(String player, List<String> strings) {
         return strings.get(random.nextInt(strings.size())).replace("{player}", player);
+    }
+
+    private boolean isFriend(String name) {
+        if (!ignoreFriends.get()) return true;
+
+        boolean friended = false;
+
+        for (Friend friend : Friends.get()) {
+            if (friend.name.contains(name)) {
+                friended = true;
+                break;
+            }
+        }
+
+        return (onlyFriends.get() && !ignoreFriends.get()) != friended;
     }
 }

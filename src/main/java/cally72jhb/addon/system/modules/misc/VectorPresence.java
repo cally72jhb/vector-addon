@@ -2,6 +2,7 @@ package cally72jhb.addon.system.modules.misc;
 
 import cally72jhb.addon.VectorAddon;
 import cally72jhb.addon.utils.config.VectorConfig;
+import cally72jhb.addon.utils.misc.VectorStarscript;
 import club.minnced.discord.rpc.DiscordEventHandlers;
 import club.minnced.discord.rpc.DiscordRPC;
 import club.minnced.discord.rpc.DiscordRichPresence;
@@ -9,7 +10,6 @@ import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.Utils;
-import meteordevelopment.meteorclient.utils.misc.MeteorStarscript;
 import meteordevelopment.meteorclient.utils.player.ChatUtils;
 import meteordevelopment.orbit.EventHandler;
 import meteordevelopment.starscript.Script;
@@ -112,7 +112,7 @@ public class VectorPresence extends Module {
     private int line2Ticks, line2I;
 
     public VectorPresence() {
-        super(VectorAddon.CATEGORY, "vector-presence", "Displays a custom message as your presence on Discord.");
+        super(VectorAddon.MISC, "vector-presence", "Displays a custom message as your presence on Discord.");
     }
 
     @Override
@@ -138,7 +138,7 @@ public class VectorPresence extends Module {
 
             if (result.hasErrors()) {
                 if (Utils.canUpdate()) {
-                    MeteorStarscript.printChatError(i, result.errors.get(0));
+                    VectorStarscript.printChatError(i, result.errors.get(0));
                 }
 
                 continue;
@@ -214,7 +214,7 @@ public class VectorPresence extends Module {
                 }
 
                 try {
-                    rpc.details = MeteorStarscript.ss.run(line1Scripts.get(i));
+                    rpc.details = VectorStarscript.ss.run(line1Scripts.get(i));
                 } catch (StarscriptError ex) {
                     ChatUtils.error("Starscript", ex.getMessage());
                 }
@@ -235,7 +235,7 @@ public class VectorPresence extends Module {
                 }
 
                 try {
-                    rpc.state = MeteorStarscript.ss.run(line2Scripts.get(i));
+                    rpc.state = VectorStarscript.ss.run(line2Scripts.get(i));
                 } catch (StarscriptError e) {
                     ChatUtils.error("Starscript", e.getMessage());
                 }

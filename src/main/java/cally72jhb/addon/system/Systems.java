@@ -9,6 +9,7 @@ import cally72jhb.addon.system.modules.movement.*;
 import cally72jhb.addon.system.modules.player.*;
 import cally72jhb.addon.system.modules.render.*;
 import cally72jhb.addon.system.players.Players;
+import cally72jhb.addon.utils.misc.VectorStarscript;
 import meteordevelopment.meteorclient.gui.tabs.Tabs;
 import meteordevelopment.meteorclient.systems.commands.Command;
 import meteordevelopment.meteorclient.systems.commands.Commands;
@@ -20,25 +21,27 @@ public class Systems {
         // Modules
         //add(new AutoCityPlus());
         add(new AntiDesync());
+        add(new ArmorAlert());
         add(new AutoEz());
         add(new BedrockWalk());
-        add(new BowBomb());
+        add(new BlinkPlus());
         add(new CevBreaker());
-        add(new ColorPlace());
+        add(new ActionRenderer());
         add(new ChorusPredict());
         add(new ClipPhase());
         add(new DebugTools());
         add(new EntityFly());
+        add(new NoFallPlus());
         add(new PortalGodMode());
         add(new PacketFly());
+        add(new PearlPredict());
         add(new PingSpoof());
         add(new ReverseStep());
-        add(new SilentAntiGhost());
+        add(new AntiGhost());
         add(new SkeletonESP());
         add(new StepPlus());
         add(new Strafe());
-        add(new SurroundPlus());
-        //add(new SurroundPlusPlus());
+        add(new SurroundPlusPlus());
         add(new Tower());
         add(new Welcomer());
         add(new VectorPresence());
@@ -48,11 +51,14 @@ public class Systems {
         add(new HeadsCommand());
         add(new MuteCommand());
         add(new TargetCommand());
+        add(new VelocityCommand());
 
         Players.get().init();
 
         Tabs.get().add(new VectorConfigTab());
         Tabs.get().add(new PlayersTab());
+
+        VectorStarscript.init();
     }
 
     // Utils

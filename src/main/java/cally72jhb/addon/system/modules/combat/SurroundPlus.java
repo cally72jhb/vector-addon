@@ -647,7 +647,7 @@ public class SurroundPlus extends Module {
     private boolean return_;
 
     public SurroundPlus() {
-        super(VectorAddon.CATEGORY, "surround-plus", "Surrounds you in blocks to prevent you from taking crystal damage.");
+        super(VectorAddon.MISC, "surround-plus", "Surrounds you in blocks to prevent you from taking crystal damage.");
     }
 
     // Burrow
@@ -785,7 +785,7 @@ public class SurroundPlus extends Module {
     // Main Loop
 
     @EventHandler
-    private void onTickPre(TickEvent.Post event) {
+    private void onPreTick(TickEvent.Post event) {
         renderBlocks.forEach(RenderBlock::tick);
         renderBlocks.removeIf(renderBlock -> renderBlock.ticks <= 0);
 

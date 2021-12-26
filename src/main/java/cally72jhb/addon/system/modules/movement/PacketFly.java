@@ -37,51 +37,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 public class PacketFly extends Module {
-    public enum Type {
-        FACTOR,
-        SETBACK,
-        FAST,
-        SLOW,
-        ELYTRA,
-        DESYNC,
-        VECTOR,
-        OFFGROUND
-    }
-
-    public enum Mode {
-        PRESERVE,
-        UP,
-        DOWN,
-        LIMITJITTER,
-        BYPASS,
-        OBSCURE
-    }
-
-    public enum Bypass {
-        NONE,
-        DEFAULT,
-        NCP
-    }
-
-    public enum Phase {
-        NONE,
-        VANILLA,
-        NCP
-    }
-
-    public enum AntiKick {
-        NONE,
-        NORMAL,
-        LIMITED,
-        STRICT
-    }
-
-    public enum Limit {
-        NONE,
-        STRONG,
-        STRICT
-    }
-
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
     private final SettingGroup sgFly = settings.createGroup("Fly");
     private final SettingGroup sgAntiKick = settings.createGroup("Anti Kick");
@@ -126,7 +81,7 @@ public class PacketFly extends Module {
 
     private final Setting<Boolean> strict = sgGeneral.add(new BoolSetting.Builder()
         .name("strict")
-        .description("How to handle the vertical movement.")
+        .description("How to handle certain packets.")
         .defaultValue(false)
         .build()
     );
@@ -187,9 +142,17 @@ public class PacketFly extends Module {
     );
 
     private final Setting<Double> speed = sgFly.add(new DoubleSetting.Builder()
-        .name("speed")
-        .description("Your flight speed.")
+        .name("horizontal-speed")
+        .description("Your flight speed when flying horizontal.")
         .defaultValue(1)
+        .min(0)
+        .build()
+    );
+
+    private final Setting<Double> vspeed = sgFly.add(new DoubleSetting.Builder()
+        .name("vertical-speed")
+        .description("Your flight speed when flying up and down.")
+        .defaultValue(2)
         .min(0)
         .build()
     );
@@ -290,45 +253,88 @@ public class PacketFly extends Module {
         .build()
     );
 
+    public enum Type {
+        FACTOR,
+        SETBACK,
+        FAST,
+        SLOW,
+        ELYTRA,
+        DESYNC,
+        VECTOR,
+        OFFGROUND
+    }
+
+    public enum Mode {
+        PRESERVE,
+        UP,
+        DOWN,
+        LIMITJITTER,
+        BYPASS,
+        OBSCURE
+    }
+
+    public enum Bypass {
+        NONE,
+        DEFAULT,
+        NCP
+    }
+
+    public enum Phase {
+        NONE,
+        VANILLA,
+        NCP
+    }
+
+    public enum AntiKick {
+        NONE,
+        NORMAL,
+        LIMITED,
+        STRICT
+    }
+
+    public enum Limit {
+        NONE,
+        STRONG,
+        STRICT
+    }
+
     private int teleportId;
 
     private PlayerMoveC2SPacket.PositionAndOnGround startingOutOfBoundsPos;
 
-    private ArrayList<PlayerMoveC2SPacket> packets = new ArrayList<>();
-    private Map<Integer, TimeVec3d> posLooks = new ConcurrentHashMap<>();
+    private ArrayList<PlayerMoveC2SPacket> packets;
+    private Map<Integer, TimeVec3d> posLooks;
 
-    private int antiKickTicks = 0;
-    private int vDelay = 0;
-    private int hDelay = 0;
+    private int antiKickTicks;
+    private int vDelay;
+    private int hDelay;
 
-    private boolean limitStrict = false;
-    private int limitTicks = 0;
-    private int jitterTicks = 0;
-    private int ticksExisted = 0;
+    private boolean limitStrict;
+    private int limitTicks;
+    private int jitterTicks;
+    private int ticksExisted;
 
-    private boolean oddJitter = false;
+    private boolean oddJitter;
 
-    private boolean forceAntiKick = true;
-    private boolean forceLimit = true;
+    private boolean forceAntiKick;
+    private boolean forceLimit;
 
-    double speedX = 0;
-    double speedY = 0;
-    double speedZ = 0;
+    double speedX;
+    double speedY;
+    double speedZ;
 
-    boolean lastDown = false;
-
-    private int factorCounter = 0;
+    private int factorCounter;
     private SystemTimer intervalTimer = new SystemTimer();
     private static final Random random = new Random();
 
     public PacketFly() {
-        super(VectorAddon.CATEGORY, "packet-fly", "Fly with packets.");
+        super(VectorAddon.MOVEMENT, "packet-fly", "Fly with packets.");
     }
 
     @Override
     public void onActivate() {
-        packets.clear();
-        posLooks.clear();
+        packets = new ArrayList<>();
+        posLooks = new ConcurrentHashMap<>();
         teleportId = 0;
         vDelay = 0;
         hDelay = 0;
@@ -336,10 +342,10 @@ public class PacketFly extends Module {
         limitTicks = 0;
         jitterTicks = 0;
         ticksExisted = 0;
+        limitStrict = false;
         speedX = 0;
         speedY = 0;
         speedZ = 0;
-        lastDown = false;
         oddJitter = false;
         forceAntiKick = true;
         forceLimit = true;
@@ -393,6 +399,7 @@ public class PacketFly extends Module {
 
     @EventHandler
     public void isCube(CollisionShapeEvent event) {
+        if (phase.get() == Phase.VANILLA) mc.player.noClip = true;
         if (phase.get() != Phase.NONE && noCollision.get()) event.shape = VoxelShapes.empty();
     }
 
@@ -415,22 +422,11 @@ public class PacketFly extends Module {
     // For Boost
 
     @EventHandler
-    public void onPreTick(TickEvent.Pre event) {
+    private void onPreTick(TickEvent.Pre event) {
         if (boost.get()) {
             Modules.get().get(Timer.class).setOverride(boostTimer.get().floatValue());
         } else {
             Modules.get().get(Timer.class).setOverride(Timer.OFF);
-        }
-
-        if (type.get() == Type.OFFGROUND) {
-            if (isMoving() && onGround()) {
-                for (double i = 0.0625; i < factor.get(); i += 0.262) {
-                    double[] dir = directionSpeed(i);
-                    mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX() + dir[0], mc.player.getY(), mc.player.getZ() + dir[1], mc.player.isOnGround()));
-                }
-
-                if (strict.get()) mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX() + (bounds.get() ? mc.player.getVelocity().x : 0), mc.player.getY() + 1, mc.player.getZ() + (bounds.get() ? mc.player.getVelocity().z : 0), mc.player.isOnGround()));
-            }
         }
     }
 
@@ -452,9 +448,9 @@ public class PacketFly extends Module {
             }
 
             if (mc.options.keyJump.isPressed()) {
-                vec3d.add(0, speed.get(), 0);
+                vec3d.add(0, vspeed.get(), 0);
             } else if (mc.options.keySneak.isPressed()) {
-                vec3d.add(0, -speed.get(), 0);
+                vec3d.add(0, -vspeed.get(), 0);
             }
 
             mc.player.setVelocity(vec3d);
@@ -463,8 +459,6 @@ public class PacketFly extends Module {
 
             return;
         }
-
-        if (type.get() == Type.OFFGROUND) return;
 
         if (ticksExisted % 20 == 0) {
             posLooks.forEach((tp, timeVec3d) -> {
@@ -587,7 +581,7 @@ public class PacketFly extends Module {
                     factorCounter = 0;
                 }
 
-                for (int i = 1; i <= factorInt; ++i) {
+                for (int i = 1; i <= factorInt; i++) {
                     if (ignore <= 0) {
                         ignore = ignoreSteps.get();
                         mc.player.setVelocity(speedX * i, speedY * i, speedZ * i);
@@ -600,6 +594,17 @@ public class PacketFly extends Module {
                 speedX = mc.player.getVelocity().x;
                 speedY = mc.player.getVelocity().y;
                 speedZ = mc.player.getVelocity().z;
+
+                break;
+            case OFFGROUND:
+                if (!isMoving()) break;
+
+                for (double i = 0.0625; i < speed.get(); i += 0.262) {
+                    sendPackets(speedX, speedY, speedZ, packetMode.get(), false, false);
+                    sendPackets(speedX, speedY, speedZ, packetMode.get(), true, true);
+                }
+
+                mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX() + speedX, mc.player.getY() + (strict.get() ? 1 : 5), mc.player.getZ() + speedZ, mc.player.isOnGround()));
 
                 break;
         }
@@ -635,8 +640,7 @@ public class PacketFly extends Module {
                 if (this.teleportId <= 0) {
                     this.teleportId = ((PlayerPositionLookS2CPacket) event.packet).getTeleportId();
                 } else {
-                    if (mc.world.isPosLoaded(mc.player.getBlockX(), mc.player.getBlockZ()) &&
-                        type.get() != Type.SETBACK) {
+                    if (mc.world.isPosLoaded(mc.player.getBlockX(), mc.player.getBlockZ()) && type.get() != Type.SETBACK) {
                         if (type.get() == Type.DESYNC) {
                             posLooks.remove(packet.getTeleportId());
                             event.cancel();
@@ -671,7 +675,6 @@ public class PacketFly extends Module {
 
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent event) {
-        if (type.get() == Type.OFFGROUND) return;
         if (type.get() == Type.ELYTRA) {
             mc.player.getAbilities().flying = true;
             mc.player.getAbilities().setFlySpeed(speed.get().floatValue() / 20);
@@ -684,8 +687,6 @@ public class PacketFly extends Module {
 
     @EventHandler
     public void onSend(PacketEvent.Send event) {
-        if (type.get() == Type.OFFGROUND) return;
-
         if (type.get() == Type.ELYTRA && event.packet instanceof PlayerMoveC2SPacket) {
             mc.player.networkHandler.sendPacket(new ClientCommandC2SPacket(mc.player, ClientCommandC2SPacket.Mode.START_FALL_FLYING));
             return;
@@ -767,7 +768,7 @@ public class PacketFly extends Module {
         }
     }
 
-    public double randomHorizontal() {
+    private double randomHorizontal() {
         int randomValue = random.nextInt(bounds.get() ? 80 : (packetMode.get() == Mode.OBSCURE ? (ticksExisted % 2 == 0 ? 480 : 100) : 29000000)) + (bounds.get() ? 5 : 500);
         if (random.nextBoolean()) {
             return randomValue;

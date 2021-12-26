@@ -56,7 +56,7 @@ public class StepPlus extends Module {
     private float prevStepHeight;
 
     public StepPlus() {
-        super(VectorAddon.CATEGORY, "step-plus", "Allows you to walk up full blocks.");
+        super(VectorAddon.MOVEMENT, "step-plus", "Allows you to walk up full blocks.");
     }
 
     @Override

@@ -53,7 +53,7 @@ public class Tower extends Module {
     private final Setting<Double> speed = sgGeneral.add(new DoubleSetting.Builder()
         .name("vertical-speed")
         .description("How far to attempt to cause rubberband.")
-        .defaultValue(5)
+        .defaultValue(1)
         .sliderMin(0)
         .sliderMax(30)
         .min(0)
@@ -64,7 +64,7 @@ public class Tower extends Module {
     private final Setting<Integer> delay = sgGeneral.add(new IntSetting.Builder()
         .name("delay")
         .description("How long to wait after towering up once in ticks.")
-        .defaultValue(1)
+        .defaultValue(0)
         .sliderMin(0)
         .sliderMax(10)
         .min(0)
@@ -133,7 +133,7 @@ public class Tower extends Module {
     private int timer;
 
     public Tower() {
-        super(VectorAddon.CATEGORY, "tower", "Automatically towers up fast.");
+        super(VectorAddon.MOVEMENT, "tower", "Automatically towers up fast.");
     }
 
     @Override
