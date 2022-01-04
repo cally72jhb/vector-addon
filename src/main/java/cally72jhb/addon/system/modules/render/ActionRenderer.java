@@ -110,14 +110,18 @@ public class ActionRenderer extends Module {
 
     @Override
     public void onActivate() {
-        for (RenderBlock block : renderBlocks) renderBlockPool.free(block);
-        renderBlocks.clear();
+        if (!renderBlocks.isEmpty()) {
+            for (RenderBlock block : renderBlocks) renderBlockPool.free(block);
+            renderBlocks.clear();
+        }
     }
 
     @Override
     public void onDeactivate() {
-        for (RenderBlock block : renderBlocks) renderBlockPool.free(block);
-        renderBlocks.clear();
+        if (!renderBlocks.isEmpty()) {
+            for (RenderBlock block : renderBlocks) renderBlockPool.free(block);
+            renderBlocks.clear();
+        }
     }
 
     // Events
@@ -126,14 +130,18 @@ public class ActionRenderer extends Module {
     private void onPlace(PlaceBlockEvent event) {
         if (!place.get() || shouldRender(event.block)) return;
 
-        renderBlocks.add(renderBlockPool.get().set(event.blockPos));
+        RenderBlock block = renderBlockPool.get().set(event.blockPos);
+
+        if (!renderBlocks.contains(block)) renderBlocks.add(block);
     }
 
     @EventHandler
     private void onBreak(BreakBlockEvent event) {
         if (!breaking.get() || shouldRender(VectorUtils.getBlock(event.blockPos))) return;
 
-        renderBlocks.add(renderBlockPool.get().set(event.blockPos));
+        RenderBlock block = renderBlockPool.get().set(event.blockPos);
+
+        if (!renderBlocks.contains(block)) renderBlocks.add(block);
     }
 
     @EventHandler
@@ -142,13 +150,15 @@ public class ActionRenderer extends Module {
         if (!interact.get() || shouldRender(VectorUtils.getBlock(event.result.getBlockPos()))) return;
         if (mc.player.getStackInHand(event.hand).getItem() instanceof BlockItem) return;
 
-        renderBlocks.add(renderBlockPool.get().set(event.result.getBlockPos()));
+        RenderBlock block = renderBlockPool.get().set(event.result.getBlockPos());
+
+        if (!renderBlocks.contains(block)) renderBlocks.add(block);
     }
 
     // Ticking fade animation
 
     @EventHandler
-    private void onTick(TickEvent.Post event) {
+    private void onPostTick(TickEvent.Post event) {
         renderBlocks.forEach(RenderBlock::tick);
         renderBlocks.removeIf(renderBlock -> renderBlock.ticks <= 0);
     }
@@ -157,8 +167,10 @@ public class ActionRenderer extends Module {
 
     @EventHandler
     private void onRender(Render3DEvent event) {
-        renderBlocks.sort(Comparator.comparingInt(block -> -block.ticks));
-        renderBlocks.forEach(block -> block.render(event, sideColor.get(), lineColor.get(), shapeMode.get()));
+        if (!renderBlocks.isEmpty()) {
+            renderBlocks.sort(Comparator.comparingInt(block -> -block.ticks));
+            renderBlocks.forEach(block -> block.render(event, shapeMode.get()));
+        }
     }
 
     private boolean shouldRender(Block block) {
@@ -177,10 +189,16 @@ public class ActionRenderer extends Module {
         public BlockState state;
         public int ticks;
 
+        private Color sides;
+        private Color lines;
+
         public RenderBlock set(BlockPos blockPos) {
             pos.set(blockPos);
             state = VectorUtils.getBlockState(blockPos);
             ticks = renderTicks.get();
+
+            sides = new Color(sideColor.get());
+            lines = new Color(lineColor.get());
 
             return this;
         }
@@ -189,7 +207,7 @@ public class ActionRenderer extends Module {
             ticks--;
         }
 
-        public void render(Render3DEvent event, Color sides, Color lines, ShapeMode shapeMode) {
+        public void render(Render3DEvent event, ShapeMode shapeMode) {
             int preSideA = sides.a;
             int preLineA = lines.a;
 

@@ -104,7 +104,7 @@ public class ClipPhase extends Module {
         double[] dir = VectorUtils.directionSpeed(hspeed.get().floatValue() / 10);
 
         speedX = dir[0];
-        speedY = mc.options.keyJump.isPressed() ? vspeed.get() : (mc.options.keySneak.isPressed() ? -vspeed.get() : 0);
+        speedY = mc.options.keyJump.isPressed() ? (vspeed.get() / 10) : (mc.options.keySneak.isPressed() ? -(vspeed.get() / 10) : 0);
         speedZ = dir[1];
 
         Vec3d newPos = new Vec3d(mc.player.getX() + speedX, mc.player.getY(), mc.player.getZ() + speedZ);
@@ -119,7 +119,7 @@ public class ClipPhase extends Module {
         if (!minI.equals(maxI) && newPos.distanceTo(blockCenter) > mc.player.getPos().distanceTo(blockCenter) && !extreme.get()) {
             dir = VectorUtils.directionSpeed(0.064f);
             speedX = dir[0];
-            speedY = mc.options.keyJump.isPressed() ? vspeed.get() : (mc.options.keySneak.isPressed() ? -vspeed.get() : 0);
+            speedY = mc.options.keyJump.isPressed() ? (vspeed.get() / 10) : (mc.options.keySneak.isPressed() ? -(vspeed.get() / 10) : 0);
             speedZ = dir[1];
 
             PlayerMoveC2SPacket move = new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX() + speedX, mc.player.getY() + speedY, mc.player.getZ() + speedZ, mc.player.isOnGround());

@@ -10,6 +10,7 @@ import meteordevelopment.meteorclient.systems.friends.Friend;
 import meteordevelopment.meteorclient.systems.friends.Friends;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
+import net.minecraft.client.network.PlayerListEntry;
 import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
 import org.jetbrains.annotations.NotNull;
 
@@ -122,14 +123,14 @@ public class Welcomer extends Module {
 
     private final Char2CharMap SMALL_CAPS = new Char2CharArrayMap();
 
-    private List<PlayerListS2CPacket.Entry> prevEntries;
+    private List<PlayerListEntry> prevEntries;
     private List<PlayerListS2CPacket.Entry> entries;
     private Random random;
     private int wTimer;
     private int bTimer;
 
     public Welcomer() {
-        super(VectorAddon.MISC, "welcomer", "Send a chat message when a player joins.");
+        super(VectorAddon.MISC, "welcomer", "Sends a chat message when a player joins or leaves.");
 
         String[] a = "abcdefghijklmnopqrstuvwxyz".split("");
         String[] b = "ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘqʀꜱᴛᴜᴠᴡxʏᴢ".split("");
@@ -143,6 +144,8 @@ public class Welcomer extends Module {
         random = new Random();
         wTimer = 0;
         bTimer = 0;
+
+        prevEntries = List.copyOf(mc.getNetworkHandler().getPlayerList());
     }
 
     @EventHandler
@@ -159,7 +162,7 @@ public class Welcomer extends Module {
 
                     boolean existed = true;
 
-                    for (PlayerListS2CPacket.Entry prevEntry : prevEntries) {
+                    for (PlayerListEntry prevEntry : prevEntries) {
                         if (prevEntry != null && prevEntry.getDisplayName() != null
                             && entry.getDisplayName().asString().equals(prevEntry.getDisplayName().asString())) existed = false;
                     }
@@ -179,7 +182,7 @@ public class Welcomer extends Module {
 
                     boolean existed = true;
 
-                    for (PlayerListS2CPacket.Entry prevEntry : prevEntries) {
+                    for (PlayerListEntry prevEntry : prevEntries) {
                         if (prevEntry != null && prevEntry.getDisplayName() != null
                             && entry.getDisplayName().asString().equals(prevEntry.getDisplayName().asString())) existed = false;
                     }
@@ -192,7 +195,7 @@ public class Welcomer extends Module {
             }
         }
 
-        prevEntries = packet.getEntries();
+        prevEntries = List.copyOf(mc.getNetworkHandler().getPlayerList());
     }
 
     @EventHandler

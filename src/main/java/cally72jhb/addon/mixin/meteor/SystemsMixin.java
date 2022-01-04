@@ -33,7 +33,7 @@ public class SystemsMixin {
         info.cancel();
     }
 
-    @Inject(method = "init", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "init", at = @At("HEAD"), remap = false)
     private static void onInit(CallbackInfo info) {
         System<?> config = add(new Config());
         config.init();

@@ -8,6 +8,7 @@ import meteordevelopment.meteorclient.renderer.ShapeMode;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.Utils;
+import meteordevelopment.meteorclient.utils.entity.EntityUtils;
 import meteordevelopment.meteorclient.utils.entity.SortPriority;
 import meteordevelopment.meteorclient.utils.entity.TargetUtils;
 import meteordevelopment.meteorclient.utils.player.FindItemResult;
@@ -16,18 +17,17 @@ import meteordevelopment.meteorclient.utils.player.PlayerUtils;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.meteorclient.utils.world.BlockUtils;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.block.Blocks;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.decoration.EndCrystalEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Items;
+import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerInteractEntityC2SPacket;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -58,6 +58,14 @@ public class AutoCityPlus extends Module {
             .description("Will mine the blocks using packets.")
             .defaultValue(false)
             .build()
+    );
+
+    private final Setting<Boolean> extraSwing = sgGeneral.add(new BoolSetting.Builder()
+        .name("extra-swing")
+        .description("Will send a extra hand swing packet.")
+        .defaultValue(false)
+        .visible(packetMine::get)
+        .build()
     );
 
     private final Setting<Boolean> silentSwitch = sgGeneral.add(new BoolSetting.Builder()
@@ -110,7 +118,7 @@ public class AutoCityPlus extends Module {
     private final Setting<SettingColor> sideColor = sgRender.add(new ColorSetting.Builder()
             .name("side-color")
             .description("The color of the sides of the blocks being rendered.")
-            .defaultValue(new SettingColor(140, 245, 165, 25))
+            .defaultValue(new SettingColor(140, 170, 245, 25))
             .visible(render::get)
             .build()
     );
@@ -118,19 +126,19 @@ public class AutoCityPlus extends Module {
     private final Setting<SettingColor> lineColor = sgRender.add(new ColorSetting.Builder()
             .name("line-color")
             .description("The color of the lines of the blocks being rendered.")
-            .defaultValue(new SettingColor(140, 245, 165, 255))
+            .defaultValue(new SettingColor(140, 170, 245, 255))
             .visible(render::get)
             .build()
     );
 
-    public static ArrayList<BlockPos> surrPositions = new ArrayList<>() {{
+    public static ArrayList<BlockPos> surround = new ArrayList<>() {{
         add(new BlockPos(1, 0, 0));
         add(new BlockPos(-1, 0, 0));
         add(new BlockPos(0, 0, 1));
         add(new BlockPos(0, 0, -1));
     }};
 
-    public static ArrayList<BlockPos> allPositions = new ArrayList<>() {{
+    private final ArrayList<BlockPos> plus = new ArrayList<>() {{
         add(new BlockPos(1, 0, 0));
         add(new BlockPos(1, 0, 1));
         add(new BlockPos(-1, 0, 0));
@@ -139,19 +147,11 @@ public class AutoCityPlus extends Module {
         add(new BlockPos(-1, 0, 1));
         add(new BlockPos(0, 0, -1));
         add(new BlockPos(1, 0, -1));
-
-        add(new BlockPos(1, -1, 0));
-        add(new BlockPos(1, -1, 1));
-        add(new BlockPos(-1, -1, 0));
-        add(new BlockPos(-1, -1, -1));
-        add(new BlockPos(0, -1, 1));
-        add(new BlockPos(-1, -1, 1));
-        add(new BlockPos(0, -1, -1));
-        add(new BlockPos(1, -1, -1));
     }};
 
     private ArrayList<BlockPos> positions = new ArrayList<>();
     private PlayerEntity target;
+    private BlockPos breakingPos;
 
     public AutoCityPlus() {
         super(VectorAddon.MISC, "auto-city-plus", "Breaks the targets surround.");
@@ -160,10 +160,11 @@ public class AutoCityPlus extends Module {
     @Override
     public void onActivate() {
         target = null;
+        breakingPos = null;
     }
 
     @EventHandler
-    private void onTick(TickEvent.Pre event) {
+    private void onPreTick(TickEvent.Pre event) {
         target = TargetUtils.getPlayerTarget(range.get(), priority.get());
 
         FindItemResult obby = InvUtils.findInHotbar(Items.OBSIDIAN);
@@ -190,29 +191,14 @@ public class AutoCityPlus extends Module {
 
         if (PlayerUtils.shouldPause(false, eatPause.get(), drinkPause.get())) return;
 
-        if (target != null) {
+        if (target != null && shouldCity(target.getBlockPos())) {
             BlockPos pos = target.getBlockPos();
 
-            if (canCity(pos) && shouldCity(pos)) {
+            if (breakingPos != null && !getSurround(pos).isEmpty()) {
                 for (BlockPos p : getSurround(pos)) {
-                    if (BlockUtils.canBreak(p)) {
-                        if (getAir(p).isEmpty()) {
-                            for (BlockPos position : getCity(pos)) {
-                                if (BlockUtils.canBreak(position)) mine(pos, pick);
-                            }
-                        }
+                    if (!getCrystals(pos.add(p)).isEmpty()) {
+                        for (BlockPos position : plus) {
 
-                        if (!getAir(p).isEmpty() && getCrystal(p) == null) {
-                            for (BlockPos position : getAir(p)) {
-                                if (VectorUtils.getBlock(position.down()) == Blocks.OBSIDIAN && canInteract(position)) {
-                                    interact(position.down(), crystal, Direction.UP);
-                                    return;
-                                }
-                            }
-                        }
-
-                        if (getCrystal(p) != null) {
-                            mine(p, pick);
                         }
                     }
                 }
@@ -223,7 +209,7 @@ public class AutoCityPlus extends Module {
     private ArrayList<BlockPos> getAir(BlockPos pos) {
         ArrayList<BlockPos> air = new ArrayList<>();
 
-        for (BlockPos position : allPositions) {
+        for (BlockPos position : surround) {
             if (VectorUtils.getBlockState(pos.add(position)).isAir()) air.add(pos.add(position));
         }
 
@@ -234,7 +220,7 @@ public class AutoCityPlus extends Module {
     private ArrayList<BlockPos> getCity(BlockPos pos) {
         ArrayList<BlockPos> city = new ArrayList<>();
 
-        for (BlockPos position : allPositions) {
+        for (BlockPos position : surround) {
             if (!VectorUtils.getBlockState(pos.add(position)).isAir() && BlockUtils.canBreak(pos.add(position))) city.add(pos.add(position));
         }
 
@@ -245,42 +231,49 @@ public class AutoCityPlus extends Module {
     private ArrayList<BlockPos> getSurround(BlockPos pos) {
         ArrayList<BlockPos> surr = new ArrayList<>();
 
-        for (BlockPos position : surrPositions) {
-            if (!VectorUtils.getBlockState(pos.add(position)).isAir()) surr.add(pos.add(position));
+        for (BlockPos position : surround) {
+            if (!VectorUtils.getBlockState(pos.add(position)).isAir() && BlockUtils.canBreak(pos.add(position))) surr.add(pos.add(position));
         }
 
-        surr.sort(Comparator.comparingDouble(pos2 -> VectorUtils.distance(mc.player.getPos(), Utils.vec3d(pos2))));
+        surr.sort(Comparator.comparingDouble(position -> VectorUtils.distance(mc.player.getPos(), Utils.vec3d(position))));
         return surr;
     }
 
-    private boolean canCity(BlockPos pos) {
-        int i = 0;
+    private ArrayList<BlockPos> getCrystals(BlockPos pos) {
+        ArrayList<BlockPos> crystals = new ArrayList<>();
 
-        for (BlockPos position : surrPositions) {
-            if (BlockUtils.canBreak(pos.add(position))) i++;
+        if (canInteract(pos.down())) crystals.add(pos.down());
+
+        for (int i = 0; i <= 1; i++) {
+            for (BlockPos position : plus) {
+                if (canInteract(pos.add(position).down(i))) crystals.add(pos.add(position).down(i));
+            }
         }
 
-        return i != 0;
+        crystals.sort(Comparator.comparingDouble(position -> VectorUtils.distance(mc.player.getPos(), Utils.vec3d(position))));
+        return crystals;
     }
 
     private boolean shouldCity(BlockPos pos) {
         int i = 0;
 
-        for (BlockPos position : surrPositions) {
-            if (VectorUtils.getBlockState(pos.add(position)).isAir()) i++;
+        for (BlockPos position : surround) {
+            if (VectorUtils.getBlockState(pos.add(position)).isAir() || !BlockUtils.canBreak(pos.add(position))) i++;
         }
 
         return i == 0;
     }
 
     private boolean canInteract(BlockPos pos) {
-        Entity entity = null;
+        if (!VectorUtils.getBlockState(pos).isAir()) return false;
 
-        for (Entity e : mc.world.getEntities()) {
-            if (pos.equals(e.getBlockPos())) entity = e;
-        }
+        double x = pos.getX();
+        double y = pos.getY() + 1;
+        double z = pos.getZ();
 
-        return entity == null && VectorUtils.getBlockState(pos).isAir();
+        Box box = new Box(x - 0.5, y, z - 0.5, x + 1.5, y + 1.5, z + 1.5);
+
+        return !EntityUtils.intersectsWithEntity(box, entity -> !entity.isSpectator());
     }
 
     private void mine(BlockPos pos, FindItemResult pick) {
@@ -290,8 +283,9 @@ public class AutoCityPlus extends Module {
             if (mc.player.getInventory().selectedSlot != pick.getSlot()) InvUtils.swap(pick.getSlot(), false);
 
             mc.getNetworkHandler().sendPacket(new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.START_DESTROY_BLOCK, pos, Direction.UP));
-            mc.player.swingHand(Hand.MAIN_HAND);
+            swingHand(Hand.MAIN_HAND);
             mc.getNetworkHandler().sendPacket(new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.STOP_DESTROY_BLOCK, pos, Direction.UP));
+            if (extraSwing.get()) swingHand(Hand.MAIN_HAND);
         }
     }
 
@@ -305,23 +299,16 @@ public class AutoCityPlus extends Module {
 
         if (silentSwitch.get() && item.getHand() != null) {
             mc.interactionManager.interactBlock(mc.player, mc.world, item.getHand(), new BlockHitResult(mc.player.getPos(), direction, pos, true));
+            swingHand(item.getHand());
         } else {
             mc.interactionManager.interactBlock(mc.player, mc.world, Hand.MAIN_HAND, new BlockHitResult(mc.player.getPos(), direction, pos, true));
+            swingHand(Hand.MAIN_HAND);
         }
     }
 
-    private Entity getCrystal(BlockPos pos) {
-        for (Entity entity : mc.world.getEntities()) {
-            Vec3d epos = entity.getPos();
-            if (entity instanceof EndCrystalEntity
-                    && VectorUtils.distance(Utils.vec3d(pos), epos) <= 2.5
-                    && (entity.getBlockPos().getY() == pos.getY()
-                    || entity.getBlockPos().getY() == pos.getY() - 1)) {
-                return entity;
-            }
-        }
-
-        return null;
+    private void swingHand(Hand hand) {
+        if (renderSwing.get()) mc.player.swingHand(hand);
+        else mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(hand));
     }
 
     @Override

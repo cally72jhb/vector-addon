@@ -232,7 +232,7 @@ public class CevBreaker extends Module {
     }
 
     @EventHandler
-    public void onTick(TickEvent.Pre event) {
+    public void onPreTick(TickEvent.Pre event) {
         PlayerEntity target = TargetUtils.getPlayerTarget(range.get(), priority.get());
 
         obbypos = null;

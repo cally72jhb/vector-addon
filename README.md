@@ -8,27 +8,41 @@ Releases:
 https://github.com/cally72jhb/vector-addon/releases/
 
 **Modules:**
+- AutoCityPlus
 - AntiDesync
 - AntiGhost
+- AntiPistonPush
+- ArmorAlert
 - AutoEz
 - BedrockWalk
 - BlinkPlus
 - BowBomb
 - CevBreaker
+- CrystalAuraRewrite
+- ActionRenderer
 - ChorusPredict
 - ClipPhase
-- ColorPlace
 - DebugTools
 - EntityFly
 - NoFallPlus
 - PortalGodMode
 - PacketFly
+- PearlPredict
 - PingSpoof
 - ReverseStep
-- RPC
 - SkeletonESP
+- SpeedBypass
+- SpeedMineBypass
 - StepPlus
+- StorageInvESP
 - Strafe
-- SurroundPlus
+- SurroundPlusPlus
 - Tower
 - Welcomer
+- VectorPresence
+
+**Commands:**
+- Center
+- Mute
+- Target
+- Velocity

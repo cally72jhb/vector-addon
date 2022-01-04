@@ -6,6 +6,8 @@ import meteordevelopment.meteorclient.gui.GuiTheme;
 import meteordevelopment.meteorclient.gui.tabs.Tab;
 import meteordevelopment.meteorclient.gui.tabs.TabScreen;
 import meteordevelopment.meteorclient.gui.tabs.WindowTabScreen;
+import meteordevelopment.meteorclient.gui.widgets.containers.WTable;
+import meteordevelopment.meteorclient.gui.widgets.pressable.WButton;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.utils.misc.NbtUtils;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
@@ -113,6 +115,14 @@ public class VectorConfigTab extends Tab {
         @Override
         public void initWidgets() {
             add(theme.settings(settings)).expandX();
+
+            WTable table = add(theme.table()).expandX().minWidth(300).widget();
+
+            WButton reload = table.add(theme.button("Reload")).widget();
+
+            reload.action = VectorUtils::members;
+
+            table.row();
         }
 
         @Override

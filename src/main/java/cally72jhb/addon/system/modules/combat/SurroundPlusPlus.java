@@ -21,6 +21,7 @@ import meteordevelopment.meteorclient.systems.modules.movement.Blink;
 import meteordevelopment.meteorclient.systems.modules.movement.ReverseStep;
 import meteordevelopment.meteorclient.systems.modules.movement.Step;
 import meteordevelopment.meteorclient.utils.Utils;
+import meteordevelopment.meteorclient.utils.entity.EntityUtils;
 import meteordevelopment.meteorclient.utils.misc.Keybind;
 import meteordevelopment.meteorclient.utils.misc.Pool;
 import meteordevelopment.meteorclient.utils.player.*;
@@ -32,6 +33,8 @@ import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.render.BlockBreakingInfo;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.ItemEntity;
+import net.minecraft.entity.TntEntity;
 import net.minecraft.entity.decoration.EndCrystalEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
@@ -45,10 +48,7 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.shape.VoxelShapes;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.function.Predicate;
 
 public class SurroundPlusPlus extends Module {
@@ -87,11 +87,36 @@ public class SurroundPlusPlus extends Module {
         .build()
     );
 
-    private final Setting<Integer> delay = sgGeneral.add(new IntSetting.Builder()
-        .name("delay")
+    private final Setting<Integer> generalDelay = sgGeneral.add(new IntSetting.Builder()
+        .name("general-delay")
+        .description("The delay in ticks between every action.")
+        .min(0)
+        .defaultValue(0)
+        .build()
+    );
+
+    private final Setting<Integer> placeDelay = sgGeneral.add(new IntSetting.Builder()
+        .name("place-delay")
         .description("The delay in ticks between block placements.")
         .min(0)
         .defaultValue(0)
+        .build()
+    );
+
+    private final Setting<Integer> blocksPerTick = sgGeneral.add(new IntSetting.Builder()
+        .name("blocks-per-tick")
+        .description("The maximum amount of blocks placed in a tick.")
+        .min(1)
+        .defaultValue(4)
+        .sliderMin(1)
+        .sliderMax(5)
+        .build()
+    );
+
+    private final Setting<Mode> mode = sgGeneral.add(new EnumSetting.Builder<Mode>()
+        .name("mode")
+        .description("What blocks to place first.")
+        .defaultValue(Mode.Strict)
         .build()
     );
 
@@ -165,17 +190,37 @@ public class SurroundPlusPlus extends Module {
 
     private final Setting<Boolean> rotate = sgGeneral.add(new BoolSetting.Builder()
         .name("rotate")
-        .description("Automatically faces towards the obsidian being placed.")
+        .description("Automatically faces towards the obsidian being placed or crystals being broken.")
         .defaultValue(false)
         .build()
     );
 
     // Center
 
-    private final Setting<Center> center = sgCenter.add(new EnumSetting.Builder<Center>()
+    private final Setting<Center> centerMode = sgCenter.add(new EnumSetting.Builder<Center>()
         .name("center")
         .description("Teleports you to the center of the block.")
         .defaultValue(Center.OnActivate)
+        .build()
+    );
+
+    private final Setting<Boolean> inAir = sgCenter.add(new BoolSetting.Builder()
+        .name("in-air")
+        .description("Whether or not to center you in air.")
+        .defaultValue(false)
+        .visible(() -> centerMode.get() != Center.Never)
+        .build()
+    );
+
+    private final Setting<Double> inAirHeight = sgCenter.add(new DoubleSetting.Builder()
+        .name("over-ground")
+        .description("How many blocks you have to be in air to center you.")
+        .defaultValue(2)
+        .min(0)
+        .sliderMin(0)
+        .sliderMax(2)
+        .visible(inAir::get)
+        .visible(() -> centerMode.get() != Center.Never)
         .build()
     );
 
@@ -183,7 +228,7 @@ public class SurroundPlusPlus extends Module {
         .name("smooth-center")
         .description("How smooth to center you.")
         .defaultValue(SmoothCenter.Default)
-        .visible(() -> center.get() != Center.Never)
+        .visible(() -> centerMode.get() != Center.Never)
         .build()
     );
 
@@ -194,7 +239,7 @@ public class SurroundPlusPlus extends Module {
         .min(0)
         .sliderMin(0.75)
         .sliderMax(2)
-        .visible(() -> center.get() != Center.Never && smoothCenter.get() != SmoothCenter.None)
+        .visible(() -> centerMode.get() != Center.Never && smoothCenter.get() != SmoothCenter.None)
         .build()
     );
 
@@ -206,15 +251,15 @@ public class SurroundPlusPlus extends Module {
         .max(5)
         .sliderMin(0.1)
         .sliderMax(5)
-        .visible(() -> center.get() != Center.Never && smoothCenter.get() != SmoothCenter.None)
+        .visible(() -> centerMode.get() != Center.Never && smoothCenter.get() != SmoothCenter.None)
         .build()
     );
 
-    private final Setting<CenterMode> centerMode = sgCenter.add(new EnumSetting.Builder<CenterMode>()
+    private final Setting<CenterMode> centerType = sgCenter.add(new EnumSetting.Builder<CenterMode>()
         .name("center-mode")
         .description("How to center you.")
         .defaultValue(CenterMode.Fast)
-        .visible(() -> center.get() != Center.Never && smoothCenter.get() != SmoothCenter.None)
+        .visible(() -> centerMode.get() != Center.Never && smoothCenter.get() != SmoothCenter.None)
         .build()
     );
 
@@ -226,7 +271,7 @@ public class SurroundPlusPlus extends Module {
         .max(50)
         .sliderMin(2)
         .sliderMax(5)
-        .visible(() -> center.get() != Center.Never && smoothCenter.get() != SmoothCenter.None && centerMode.get() == CenterMode.Fast)
+        .visible(() -> centerMode.get() != Center.Never && smoothCenter.get() != SmoothCenter.None && centerType.get() == CenterMode.Fast)
         .build()
     );
 
@@ -237,23 +282,23 @@ public class SurroundPlusPlus extends Module {
         .min(0)
         .sliderMin(0)
         .sliderMax(5)
-        .visible(() -> center.get() != Center.Never && smoothCenter.get() != SmoothCenter.None && centerMode.get() == CenterMode.Fast)
+        .visible(() -> centerMode.get() != Center.Never && smoothCenter.get() != SmoothCenter.None && centerType.get() == CenterMode.Fast)
         .build()
     );
 
     // Keybindings
 
     private final Setting<Boolean> message = sgKeybindings.add(new BoolSetting.Builder()
-        .name("keybind-message")
+        .name("message")
         .description("Whether or not to send you a message when toggled.")
         .defaultValue(true)
         .build()
     );
 
-    private final Setting<Mode> keybindMode = sgKeybindings.add(new EnumSetting.Builder<Mode>()
+    private final Setting<KeybindMode> keybindMode = sgKeybindings.add(new EnumSetting.Builder<KeybindMode>()
         .name("keybind-mode")
         .description("Weather to toggle or hold the keybinds for them to function.")
-        .defaultValue(Mode.Toggle)
+        .defaultValue(KeybindMode.Toggle)
         .build()
     );
 
@@ -288,6 +333,13 @@ public class SurroundPlusPlus extends Module {
     private final Setting<Keybind> forceProtect = sgKeybindings.add(new KeybindSetting.Builder()
         .name("force-protect")
         .description("Enables / Disables protect mode.")
+        .defaultValue(Keybind.fromKey(-1))
+        .build()
+    );
+
+    private final Setting<Keybind> forceCenter = sgKeybindings.add(new KeybindSetting.Builder()
+        .name("force-center")
+        .description("Enables / Disables centering.")
         .defaultValue(Keybind.fromKey(-1))
         .build()
     );
@@ -335,7 +387,7 @@ public class SurroundPlusPlus extends Module {
 
     private final Setting<Integer> interferingDelay = sgInterfering.add(new IntSetting.Builder()
         .name("interfering-delay")
-        .description("The delay when hitting crystals that are in the way.")
+        .description("The delay in ticks before hitting a crystal again.")
         .defaultValue(5)
         .min(0)
         .visible(interfering::get)
@@ -514,7 +566,7 @@ public class SurroundPlusPlus extends Module {
 
     private final Setting<List<Block>> antiButtonBlocks = agAntiButton.add(new BlockListSetting.Builder()
         .name("anti-button-blocks")
-        .description("Blocks to break if they are in your surounnd.")
+        .description("Blocks to break if they are in your surround.")
         .defaultValue(new ArrayList<>() {{
             add(Blocks.ACACIA_BUTTON);
             add(Blocks.BIRCH_BUTTON);
@@ -536,7 +588,7 @@ public class SurroundPlusPlus extends Module {
 
     private final Setting<Boolean> replace = sgReplace.add(new BoolSetting.Builder()
         .name("replace")
-        .description("When a block is broken it will be replaced with obby again.")
+        .description("When a block is broken it will be replaced with obsidian again.")
         .defaultValue(false)
         .build()
     );
@@ -567,6 +619,21 @@ public class SurroundPlusPlus extends Module {
         .build()
     );
 
+    private final Setting<Boolean> onInterfere = sgExtra.add(new BoolSetting.Builder()
+        .name("on-interfere")
+        .description("Toggles the extra layer when a entity stands in your surround.")
+        .defaultValue(false)
+        .build()
+    );
+
+    private final Setting<Boolean> checkCollision = sgExtra.add(new BoolSetting.Builder()
+        .name("check-collision")
+        .description("Checks if the entity is in one of your surround blocks.")
+        .defaultValue(true)
+        .visible(onInterfere::get)
+        .build()
+    );
+
     private final Setting<Boolean> onBreak = sgExtra.add(new BoolSetting.Builder()
         .name("on-break")
         .description("Toggles the extra layer when a surround block is broken.")
@@ -591,10 +658,18 @@ public class SurroundPlusPlus extends Module {
         .build()
     );
 
-    public final Setting<SurroundPlus.ToggleMode> autoToggleMode = sgAuto.add(new EnumSetting.Builder<SurroundPlus.ToggleMode>()
+    public final Setting<ScanMode> scanMode = sgAuto.add(new EnumSetting.Builder<ScanMode>()
+        .name("scan-mode")
+        .description("How to search for the selected blocks.")
+        .defaultValue(ScanMode.Update)
+        .visible(autoToggle::get)
+        .build()
+    );
+
+    public final Setting<ToggleMode> autoToggleMode = sgAuto.add(new EnumSetting.Builder<ToggleMode>()
         .name("auto-toggle-mode")
         .description("The mode for toggling.")
-        .defaultValue(SurroundPlus.ToggleMode.Both)
+        .defaultValue(ToggleMode.Both)
         .visible(autoToggle::get)
         .build()
     );
@@ -699,23 +774,27 @@ public class SurroundPlusPlus extends Module {
     private ArrayList<Module> toActivate;
     private ArrayList<BlockPos> bedPositions;
     private ArrayList<BlockPos> placePositions;
-    private HashMap<Integer, Integer> crystals;
+    private ArrayList<Integer> crystals;
 
     private final Pool<RenderBlock> renderBlockPool = new Pool<>(RenderBlock::new);
     private final List<RenderBlock> renderBlocks = new ArrayList<>();
 
     private boolean complete;
-    private boolean centered;
+
+    private int blocksInTick;
 
     private int ticks;
+    private int placeTicks;
     private int centerTicks;
     private int protectTicks;
+    private int interferingTimer;
 
     private boolean high;
     private boolean top;
     private boolean cev;
     private boolean layer;
     private boolean protect;
+    private boolean center;
 
     public SurroundPlusPlus() {
         super(VectorAddon.MISC, "surround-plus", "Surrounds you in blocks to prevent you from taking crystal damage.");
@@ -725,25 +804,29 @@ public class SurroundPlusPlus extends Module {
 
     @Override
     public void onActivate() {
-        if (center.get() == Center.OnActivate) center();
+        if (centerMode.get() == Center.OnActivate) center();
 
         toActivate = new ArrayList<>();
         bedPositions = new ArrayList<>();
         placePositions = new ArrayList<>();
-        crystals = new HashMap<>();
+        crystals = new ArrayList<>();
 
         complete = false;
-        centered = false;
+
+        blocksInTick = 0;
 
         high = false;
         top = false;
         cev = false;
         layer = false;
         protect = false;
+        center = true;
 
         ticks = 0;
+        placeTicks = 0;
         centerTicks = 0;
         protectTicks = 0;
+        interferingTimer = Math.max(0, interferingDelay.get() - 5);
 
         for (RenderBlock block : renderBlocks) renderBlockPool.free(block);
         renderBlocks.clear();
@@ -754,13 +837,7 @@ public class SurroundPlusPlus extends Module {
         for (RenderBlock renderBlock : renderBlocks) renderBlockPool.free(renderBlock);
         renderBlocks.clear();
 
-        if (mc.world == null || mc.player == null) return;
-
-        for (Module module : toActivate) {
-            if (!module.isActive()) {
-                module.toggle();
-            }
-        }
+        if (mc.world != null || mc.player != null) activate();
     }
 
     // Info Sting
@@ -775,12 +852,14 @@ public class SurroundPlusPlus extends Module {
             if (cev) info += "[Cev] ";
             if (protect) info += "[Protect] ";
             if (layer) info += "[Extra] ";
+            if (center) info += "[Center] ";
         } else if (shortInfo.get()) {
             if (high) info += "[D] ";
             if (top) info += "[T] ";
             if (cev) info += "[C] ";
             if (protect) info += "[P] ";
             if (layer) info += "[E] ";
+            if (center) info += "[C]";
         }
 
         return !info.equals("") ? info : null;
@@ -792,25 +871,29 @@ public class SurroundPlusPlus extends Module {
     private void onKey(KeyEvent event) {
         if (!(mc.currentScreen == null)) return;
 
-        if (forceDoubleHeight.get().isPressed() && keybindMode.get() == Mode.Toggle) {
+        if (forceDoubleHeight.get().isPressed() && keybindMode.get() == KeybindMode.Toggle) {
             high = !high;
             if (message.get()) ChatUtils.sendMsg(Text.of(high ? "Activated Double Height" : "Disabled Double Height"));
         }
-        if (forceTop.get().isPressed() && keybindMode.get() == Mode.Toggle) {
+        if (forceTop.get().isPressed() && keybindMode.get() == KeybindMode.Toggle) {
             top = !top;
             if (message.get()) ChatUtils.sendMsg(Text.of(top ? "Activated Top Block" : "Disabled Top Block"));
         }
-        if (forceCev.get().isPressed() && keybindMode.get() == Mode.Toggle) {
+        if (forceCev.get().isPressed() && keybindMode.get() == KeybindMode.Toggle) {
             cev = !cev;
             if (message.get()) ChatUtils.sendMsg(Text.of(cev ? "Activated Anti Cev" : "Disabled Anti Cev"));
         }
-        if (forceProtect.get().isPressed() && keybindMode.get() == Mode.Toggle) {
+        if (forceProtect.get().isPressed() && keybindMode.get() == KeybindMode.Toggle) {
             protect = !protect;
             if (message.get()) ChatUtils.sendMsg(Text.of(protect ? "Activated Protect" : "Disabled Protect"));
         }
-        if (forceExtra.get().isPressed() && keybindMode.get() == Mode.Toggle) {
+        if (forceExtra.get().isPressed() && keybindMode.get() == KeybindMode.Toggle) {
             layer = !layer;
             if (message.get()) ChatUtils.sendMsg(Text.of(layer ? "Activated Extra Layer" : "Disabled Extra Layer"));
+        }
+        if (forceCenter.get().isPressed() && keybindMode.get() == KeybindMode.Toggle) {
+            center = !center;
+            if (message.get()) ChatUtils.sendMsg(Text.of(cev ? "Activated Centering" : "Disabled Centering"));
         }
     }
 
@@ -824,13 +907,13 @@ public class SurroundPlusPlus extends Module {
 
         if (replace.get() && !ignoreOwn.get() && VectorUtils.distance(mc.player.getPos(), Vec3d.ofCenter(pos)) <= replaceRange.get()) placePositions.add(pos);
 
-        if (onBreak.get() && fullBreak.get() && isSurround(pos)) {
-            for (BlockPos position : surround) {
+        if (onBreak.get() && fullBreak.get() && isInSurround(pos) && blocks.get().contains(event.oldState.getBlock()) && !blocks.get().contains(event.newState.getBlock())) {
+            for (BlockPos position : getSurround()) {
                 if (VectorUtils.canPlace(pos.add(position))) placePositions.add(pos.add(position));
             }
         }
 
-        if (autoToggle.get() && (toggleBlocks.get().contains(event.newState.getBlock()) || toggleBlocks.get().contains(event.oldState.getBlock())) && VectorUtils.distance(mc.player.getX(), mc.player.getY(), mc.player.getZ(), pos.getX(), pos.getY(), pos.getZ()) <= toggleRange.get()) {
+        if (autoToggle.get() && (scanMode.get() == ScanMode.Update || scanMode.get() == ScanMode.Both) && (toggleBlocks.get().contains(event.newState.getBlock()) || toggleBlocks.get().contains(event.oldState.getBlock())) && VectorUtils.distance(mc.player.getX(), mc.player.getY(), mc.player.getZ(), pos.getX(), pos.getY(), pos.getZ()) <= toggleRange.get()) {
             switch (autoToggleMode.get()) {
                 case Both -> {
                     top = true;
@@ -873,7 +956,10 @@ public class SurroundPlusPlus extends Module {
         renderBlocks.forEach(RenderBlock::tick);
         renderBlocks.removeIf(block -> block.ticks <= 0);
 
-        if (blink.get() && (Modules.get().get(Blink.class).isActive() || Modules.get().get(BlinkPlus.class).isActive())) return;
+        if (blink.get() && (Modules.get().get(Blink.class).isActive() || Modules.get().get(BlinkPlus.class).isActive())) {
+            activate();
+            return;
+        }
 
         if (toggleOnYChange.get() && mc.player.prevY + yLevel.get() < mc.player.getY()) {
             toggle();
@@ -882,21 +968,80 @@ public class SurroundPlusPlus extends Module {
 
         if (onlyOnGround.get() && !mc.player.isOnGround() || !getBestBlock().found() || PlayerUtils.shouldPause(minePause.get(), eatPause.get(), drinkPause.get())) return;
 
-        for (Module module : modules.get()) {
-            if (module.isActive()) {
-                module.toggle();
-                toActivate.add(module);
-            }
-        }
+        deactivate();
 
-        if (ticks >= delay.get() && delay.get() != 0) {
+        if (ticks >= generalDelay.get() && generalDelay.get() != 0) {
             ticks = 0;
             return;
         } else {
             ticks++;
         }
 
+        blocksInTick = 0;
+
         protectTicks++;
+        interferingTimer++;
+
+        // Extra Layer on Entity
+
+        if (onInterfere.get()) {
+            for (Entity entity : mc.world.getEntities()) {
+                if (VectorUtils.distanceBetweenXZ(mc.player.getPos(), entity.getPos())<= 3.15) {
+                    if (isInSurround(entity.getBlockPos()) && entity instanceof PlayerEntity && entity != mc.player) {
+                        for (BlockPos pos : surround) {
+                            BlockPos position = entity.getBlockPos().add(pos);
+                            if (VectorUtils.canPlace(position) && !placePositions.contains(position)) {
+                                placePositions.add(position);
+                            }
+                        }
+                    } else if (isInSurround(entity.getBlockPos().up()) && entity instanceof PlayerEntity && entity != mc.player) {
+                        for (BlockPos pos : surround) {
+                            BlockPos position = entity.getBlockPos().add(pos).up();
+                            if (VectorUtils.canPlace(position) && !placePositions.contains(position)) {
+                                placePositions.add(position);
+                            }
+                        }
+                    } else if (checkCollision.get() && entity != mc.player) {
+                        for (BlockPos pos : surround) {
+                            Box box = new Box(
+                                pos.getX(), pos.getY(), pos.getZ(),
+                                pos.getX() + 1, pos.getY() + 1, pos.getZ() + 1
+                            );
+
+                            if (doesIntersect(box)) {
+                                for (BlockPos p : surround) {
+                                    BlockPos position = entity.getBlockPos().add(p);
+                                    if (VectorUtils.canPlace(position) && !placePositions.contains(position)) {
+                                        placePositions.add(position);
+                                        break;
+                                    }
+                                }
+                            }
+
+                            box = new Box(
+                                pos.getX(), pos.getY() + 1, pos.getZ(),
+                                pos.getX() + 1, pos.getY() + 2, pos.getZ() + 1
+                            );
+
+                            if (doesIntersect(box)) {
+                                for (BlockPos p : surround) {
+                                    BlockPos position = entity.getBlockPos().add(p).up();
+                                    if (VectorUtils.canPlace(position) && !placePositions.contains(position)) {
+                                        placePositions.add(position);
+                                    } else if (!VectorUtils.canPlace(position) && !blocks.get().contains(VectorUtils.getBlock(position))) {
+                                        for (BlockPos blockPos : surround) {
+                                            if (VectorUtils.canPlace(position.add(blockPos)) && !placePositions.contains(position.add(blockPos))) {
+                                                placePositions.add(position.add(blockPos));
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         // Anti bed
 
@@ -931,16 +1076,56 @@ public class SurroundPlusPlus extends Module {
             }
         }
 
+        // Interfering
+
+        if (interfering.get() && !crystals.isEmpty()) {
+            for (Integer id : new ArrayList<>(crystals)) {
+                Entity entity = mc.world.getEntityById(id);
+
+                if (entity == null) crystals.remove(id);
+
+                if (crystals.contains(id) && entity != null) {
+                    if (interferingTimer >= interferingDelay.get()) {
+                        attack(entity);
+
+                        interferingTimer = 0;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Auto Toggle
+
+        if (autoToggle.get() && (scanMode.get() == ScanMode.Accurate || scanMode.get() == ScanMode.Both)) {
+            ArrayList<BlockPos> positions;
+
+            positions = VectorUtils.getPositionsAroundPlayer(toggleRange.get());
+            positions.removeIf(pos -> !toggleBlocks.get().contains(VectorUtils.getBlock(pos)) || VectorUtils.distance(mc.player.getPos(), Vec3d.ofCenter(pos)) > toggleRange.get());
+
+            if (!positions.isEmpty()) {
+                switch (autoToggleMode.get()) {
+                    case Both -> {
+                        top = true;
+                        high = true;
+                    }
+
+                    case Double -> high = true;
+                    case Top    -> top = true;
+                }
+            }
+        }
+
         // Extra Layer & Replace
 
-        for (BlockBreakingInfo value : ((WorldRendererAccessor) mc.worldRenderer).getBlockBreakingInfos().values()) {
-            Entity entity = mc.world.getEntityById(value.getActorId());
-            BlockPos pos = value.getPos();
+        for (BlockBreakingInfo info : ((WorldRendererAccessor) mc.worldRenderer).getBlockBreakingInfos().values()) {
+            Entity entity = mc.world.getEntityById(info.getActorId());
+            BlockPos pos = info.getPos();
 
             if (entity instanceof PlayerEntity && entity != mc.player && !Friends.get().isFriend((PlayerEntity) entity)) {
                 if (onBreak.get() && !fullBreak.get() && VectorUtils.distance(mc.player.getPos(), Vec3d.ofCenter(pos)) <= replaceRange.get()) {
                     for (BlockPos p : surround) {
-                        if (VectorUtils.canPlace(mc.player.getBlockPos().add(pos).add(p)) && place(pos.add(p), 0) && delay.get() != 0) break;
+                        if (VectorUtils.canPlace(mc.player.getBlockPos().add(pos).add(p)) && place(pos.add(p), 0) && placeDelay.get() != 0) break;
                     }
                 }
 
@@ -981,7 +1166,7 @@ public class SurroundPlusPlus extends Module {
                 for (BlockPos pos : new ArrayList<>(bedPositions)) {
                     if (place(pos, item)) {
                         if (bedOnlyOnce.get()) bedPositions.remove(pos);
-                        if (delay.get() != 0) break;
+                        if (placeDelay.get() != 0) break;
                     }
                 }
             }
@@ -993,7 +1178,7 @@ public class SurroundPlusPlus extends Module {
             for (BlockPos pos : new ArrayList<>(placePositions)) {
                 if (place(pos)) {
                     if (replaceOnce.get()) placePositions.remove(pos);
-                    if (delay.get() != 0) break;
+                    if (placeDelay.get() != 0) break;
                 }
             }
         }
@@ -1009,6 +1194,8 @@ public class SurroundPlusPlus extends Module {
                             placePositions.add(pos.add(p));
                         } else if (antiButtonBlocks.get().contains(VectorUtils.getBlock(pos.add(p))) && BlockUtils.canBreak(pos.add(p))) {
                             BlockUtils.breakBlock(pos, renderSwing.get());
+
+                            break;
                         }
                     }
 
@@ -1017,39 +1204,31 @@ public class SurroundPlusPlus extends Module {
             }
         }
 
-        int i = 0;
-
-        // Default Surround
-        for (BlockPos pos : surround) {
-            if (place(pos, 0)) {
-                if (delay.get() != 0) break;
-                i++;
-            }
+        if (placeTicks >= placeDelay.get() && placeDelay.get() != 0) {
+            placeTicks = 0;
+            return;
+        } else {
+            placeTicks++;
         }
 
-        // wait a tick before placing the second layer
-        if (i == 4) return;
-
-        i = 0;
+        // Default Surround
+        for (BlockPos pos : getSurround()) {
+            if (place(pos, 0) && placeDelay.get() != 0) break;
+        }
 
         // Double Surround
         if ((doubleHeight.get() || forceDoubleHeight.get().isPressed() || high) && isSurrounded(mc.player.getBlockPos())) {
-            for (BlockPos pos : surround) {
-                if (place(pos, 1)) {
-                    i++;
-                    if (delay.get() != 0) break;
-                }
+            for (BlockPos pos : getSurround()) {
+                if (place(pos, 1) && placeDelay.get() != 0) break;
             }
         }
-
-        if (i == 4) return;
 
         if (forceTop.get().isPressed() || top) place(mc.player.getBlockPos().up(2));
         if (forceCev.get().isPressed() || cev) place(mc.player.getBlockPos().up(3));
 
         if (forceExtra.get().isPressed() || layer || extraLayer.get()) {
             for (BlockPos pos : extra) {
-                if (place(pos, 0) && delay.get() != 0) break;
+                if (place(pos, 0) && placeDelay.get() != 0) break;
             }
         }
 
@@ -1068,10 +1247,10 @@ public class SurroundPlusPlus extends Module {
             return;
         }
 
-        if (onlyOnGround.get() && !mc.player.isOnGround() || !getBestBlock().found() || PlayerUtils.shouldPause(minePause.get(), eatPause.get(), drinkPause.get())) return;
-        if (!centered && center.get() == Center.OnActivate && smoothCenter.get() != SmoothCenter.None && VectorUtils.distance(mc.player.getPos(), Vec3d.ofCenter(mc.player.getBlockPos())) >= 0.05) center();
-        if (VectorUtils.distance(mc.player.getPos(), Vec3d.ofCenter(mc.player.getBlockPos())) <= 0.05) centered = true;
-        if (center.get() == Center.Always || (!complete && center.get() == Center.Incomplete)) center();
+        if (!inAir.get() && !mc.player.isOnGround() || (inAir.get() && !mc.world.getBlockCollisions(mc.player, mc.player.getBoundingBox().stretch(0, -inAirHeight.get() + 0.05, 0)).iterator().hasNext())) return;
+        if ((centerMode.get() == Center.OnActivate && smoothCenter.get() != SmoothCenter.None
+            && VectorUtils.distanceBetweenXZ(mc.player.getPos(), Vec3d.ofBottomCenter(mc.player.getBlockPos())) >= 0.05)
+            || (centerMode.get() == Center.Always || (!complete && centerMode.get() == Center.Incomplete))) center();
     }
 
     // Render
@@ -1084,32 +1263,44 @@ public class SurroundPlusPlus extends Module {
 
     // Utils
 
-    private boolean place(BlockPos position, int y) {
-        if (mc.player.getBlockPos().equals(position)) return false;
-        BlockPos pos = mc.player.getBlockPos().add(position).up(y);
+    private boolean place(BlockPos pos, int y) {
+        if (mc.player.getBlockPos().equals(pos) || blocksInTick >= blocksPerTick.get()) return false;
+        BlockPos position = mc.player.getBlockPos().add(pos).up(y);
 
-        boolean placed = VectorUtils.place(pos, getBestBlock(), rotate.get(), 100, !onEntityPlace.get());
+        boolean placed = VectorUtils.place(position, getBestBlock(), rotate.get(), 100, !onEntityPlace.get());
 
-        if (placed) renderBlocks.add(renderBlockPool.get().set(pos));
-        if (!placed) checkForInterfering(pos);
+        if (placed) {
+            blocksInTick++;
+            renderBlocks.add(renderBlockPool.get().set(position));
+        } else {
+            checkForInterfering(position);
+        }
 
         return placed;
     }
 
-    private boolean place(BlockPos position) {
-        boolean placed = VectorUtils.place(position, getBestBlock(), rotate.get(), 100, !onEntityPlace.get());
+    private boolean place(BlockPos pos) {
+        if (mc.player.getBlockPos().equals(pos) || blocksInTick >= blocksPerTick.get()) return false;
+        boolean placed = VectorUtils.place(pos, getBestBlock(), rotate.get(), 100, !onEntityPlace.get());
 
-        if (placed) renderBlocks.add(renderBlockPool.get().set(position));
-        if (!placed) checkForInterfering(position);
+        if (placed) {
+            blocksInTick++;
+            renderBlocks.add(renderBlockPool.get().set(pos));
+        } else {
+            checkForInterfering(pos);
+        }
 
         return placed;
     }
 
     private boolean place(BlockPos position, FindItemResult item) {
-        boolean placed = VectorUtils.place(position, item, rotate.get(), 100, !onEntityPlace.get());
+        if (blocksInTick >= blocksPerTick.get()) return false;
+        boolean placed = VectorUtils.place(position, item, rotate.get(), 100, false);
 
-        if (placed) renderBlocks.add(renderBlockPool.get().set(position));
-        if (!placed) checkForInterfering(position);
+        if (placed) {
+            blocksInTick++;
+            renderBlocks.add(renderBlockPool.get().set(position));
+        }
 
         return placed;
     }
@@ -1117,45 +1308,40 @@ public class SurroundPlusPlus extends Module {
     private void checkForInterfering(BlockPos pos) {
         boolean mined = false;
         for (BlockBreakingInfo info : ((WorldRendererAccessor) mc.worldRenderer).getBlockBreakingInfos().values()) {
-            if (info.getPos().equals(pos) && mc.world.getEntityById(info.getActorId()) != mc.player) {
+            if (info.getPos().equals(pos)) {
                 mined = true;
                 break;
             }
         }
 
-        if (breakBlocks.get() && !blocks.get().contains(VectorUtils.getBlock(pos))) {
+        if (breakBlocks.get() && !BlockUtils.breaking && !blocks.get().contains(VectorUtils.getBlock(pos))) {
             BlockUtils.breakBlock(pos, renderSwing.get());
-            return;
         }
 
-        if (interfering.get() && VectorUtils.getBlock(pos).getBlastResistance() >= 1200.0F || mined) {
+        if (interfering.get() || mined) {
             if (VectorUtils.getCollision(pos) == null || VectorUtils.getCollision(pos).isEmpty()) return;
 
             Box box = new Box(
-                pos.getX() - 1, pos.getY() - 1, pos.getZ() - 1,
+                pos.getX(), pos.getY(), pos.getZ(),
                 pos.getX() + 1, pos.getY() + 1, pos.getZ() + 1
             );
 
-            Predicate<Entity> entityPredicate = entity -> entity instanceof EndCrystalEntity && DamageUtils.crystalDamage(mc.player, entity.getPos()) < PlayerUtils.getTotalHealth();
+            Predicate<Entity> predicate = entity -> entity instanceof EndCrystalEntity && DamageUtils.crystalDamage(mc.player, entity.getPos()) < PlayerUtils.getTotalHealth();
 
-            for (Entity crystal : mc.world.getOtherEntities(null, box, entityPredicate)) {
+            for (Entity crystal : mc.world.getOtherEntities(null, box, predicate)) {
                 int id = crystal.getId();
 
-                if (isDangerousCrystal(crystal.getBlockPos()) && (!crystals.containsKey(id) || (crystals.containsKey(id) && crystals.get(id) >= interferingDelay.get()))) {
+                if (isDangerousCrystal(crystal.getBlockPos()) && !crystals.contains(id)) {
                     if (interferingReplace.get()) placePositions.add(crystal.getBlockPos());
-                    if (crystals.containsKey(id)) {
-                        crystals.replace(id, crystals.get(id) + 1);
-                    } else {
-                        crystals.putIfAbsent(id, 0);
-                    }
-
-                    attack(crystal);
+                    crystals.add(id);
                 }
             }
         }
     }
 
     private void center() {
+        if (!center) return;
+
         if (smoothCenter.get() != SmoothCenter.None) {
             double[] dir = VectorUtils.directionSpeed(1.0F);
 
@@ -1167,7 +1353,7 @@ public class SurroundPlusPlus extends Module {
             double x = (dir[0] > (unlock.get() / 10) || dir[0] < -(unlock.get() / 10)) ? vel.x : (speed.get() != 0 ? deltaX / speed.get() : deltaX);
             double z = (dir[1] > (unlock.get() / 10) || dir[1] < -(unlock.get() / 10)) ? vel.z : (speed.get() != 0 ? deltaZ / speed.get() : deltaZ);
 
-            switch (centerMode.get()) {
+            switch (centerType.get()) {
                 case Normal:
                     mc.player.setVelocity(x, mc.player.getVelocity().y, z);
                     break;
@@ -1197,7 +1383,7 @@ public class SurroundPlusPlus extends Module {
     }
 
     private boolean isDangerousCrystal(BlockPos position) {
-        for (BlockPos pos : surround) {
+        for (BlockPos pos : getSurround()) {
             for (BlockPos p : plus) {
                 BlockPos crystal = mc.player.getBlockPos().add(pos.add(p));
                 if (crystal.equals(position) || crystal.down().equals(position)
@@ -1232,8 +1418,8 @@ public class SurroundPlusPlus extends Module {
         return InvUtils.findInHotbar(stack -> blocks.get().contains(Block.getBlockFromItem(stack.getItem())));
     }
 
-    private boolean isSurround(BlockPos position) {
-        for (BlockPos pos : surround) {
+    private boolean isInSurround(BlockPos position) {
+        for (BlockPos pos : getSurround()) {
             if (position.equals(mc.player.getBlockPos().add(pos))) return true;
         }
 
@@ -1243,7 +1429,7 @@ public class SurroundPlusPlus extends Module {
     private boolean isSurrounded(BlockPos position) {
         int i = 0;
 
-        for (BlockPos pos : surround) {
+        for (BlockPos pos : getSurround()) {
             Block block = VectorUtils.getBlock(position.add(pos));
             if (block != null && block.getBlastResistance() >= 1200.0F) i++;
         }
@@ -1254,7 +1440,7 @@ public class SurroundPlusPlus extends Module {
     private int getSurround(BlockPos position) {
         int i = 0;
 
-        for (BlockPos pos : surround) {
+        for (BlockPos pos : getSurround()) {
             Block block = VectorUtils.getBlock(position.add(pos));
             if (block != null && block.getBlastResistance() >= 1200.0F) i++;
         }
@@ -1262,10 +1448,35 @@ public class SurroundPlusPlus extends Module {
         return i;
     }
 
+    private boolean doesIntersect(Box box) {
+        return EntityUtils.intersectsWithEntity(box, entity -> !entity.isSpectator() && !(entity instanceof EndCrystalEntity) && !(entity instanceof ItemEntity) && !(entity instanceof TntEntity));
+    }
+
+    private void activate() {
+        if (!toActivate.isEmpty() && Utils.canUpdate()) {
+            for (Module module : toActivate) {
+                if (!module.isActive()) {
+                    module.toggle();
+                }
+            }
+        }
+    }
+
+    private void deactivate() {
+        if (!modules.get().isEmpty() && Utils.canUpdate()) {
+            for (Module module : modules.get()) {
+                if (module.isActive()) {
+                    module.toggle();
+                    toActivate.add(module);
+                }
+            }
+        }
+    }
+
     // Constants
 
     private boolean blockFilter(Block block) {
-        return block.getBlastResistance() >= 1000.0F && (
+        return
             block == Blocks.ANCIENT_DEBRIS ||
             block == Blocks.ANVIL ||
             block == Blocks.CHIPPED_ANVIL ||
@@ -1274,8 +1485,8 @@ public class SurroundPlusPlus extends Module {
             block == Blocks.ENCHANTING_TABLE ||
             block == Blocks.ENDER_CHEST ||
             block == Blocks.NETHERITE_BLOCK ||
-            block == Blocks.RESPAWN_ANCHOR
-        );
+            block == Blocks.OBSIDIAN ||
+            block == Blocks.RESPAWN_ANCHOR;
     }
 
     private boolean bedFilter(Block block) {
@@ -1292,7 +1503,7 @@ public class SurroundPlusPlus extends Module {
             block == Blocks.TRIPWIRE;
     }
 
-    public static ArrayList<BlockPos> extra = new ArrayList<>() {{
+    private final ArrayList<BlockPos> extra = new ArrayList<>() {{
         add(new BlockPos(2, 0, 0));
         add(new BlockPos(-2, 0, 0));
         add(new BlockPos(0, 0, 2));
@@ -1303,7 +1514,7 @@ public class SurroundPlusPlus extends Module {
         add(new BlockPos(-1, 0, -1));
     }};
 
-    public static ArrayList<BlockPos> plus = new ArrayList<>() {{
+    private final ArrayList<BlockPos> plus = new ArrayList<>() {{
         add(new BlockPos(1, 0, 0));
         add(new BlockPos(1, 0, 1));
         add(new BlockPos(-1, 0, 0));
@@ -1314,12 +1525,20 @@ public class SurroundPlusPlus extends Module {
         add(new BlockPos(1, 0, -1));
     }};
 
-    public static ArrayList<BlockPos> surround = new ArrayList<>() {{
+    private final ArrayList<BlockPos> surround = new ArrayList<>() {{
         add(new BlockPos(1, 0, 0));
         add(new BlockPos(-1, 0, 0));
         add(new BlockPos(0, 0, 1));
         add(new BlockPos(0, 0, -1));
     }};
+
+    private ArrayList<BlockPos> getSurround() {
+        ArrayList<BlockPos> surr = new ArrayList<>(surround);
+
+        Collections.shuffle(surr);
+
+        return mode.get() == Mode.Strict ? surround : surr;
+    }
 
     public enum Center {
         Never,
@@ -1340,7 +1559,24 @@ public class SurroundPlusPlus extends Module {
         TP
     }
 
+    public enum ToggleMode {
+        Both,
+        Double,
+        Top
+    }
+
+    public enum ScanMode {
+        Update,
+        Accurate,
+        Both
+    }
+
     public enum Mode {
+        Strict,
+        Random
+    }
+
+    public enum KeybindMode {
         Toggle,
         Hold
     }

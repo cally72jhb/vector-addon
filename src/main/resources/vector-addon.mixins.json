@@ -3,9 +3,9 @@
   "package": "cally72jhb.addon.mixin",
   "compatibilityLevel": "JAVA_16",
   "client": [
+    "EntityMixin",
     "MinecraftClientMixin",
-    "TitleScreenMixin",
-    "TitleScreenSplashesMixin"
+    "TitleScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1

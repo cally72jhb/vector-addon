@@ -62,7 +62,7 @@ public class VectorAddon extends MeteorAddon {
     }
 
     @EventHandler
-    private void onTick(TickEvent.Post event) {
+    private void onPostTick(TickEvent.Post event) {
         if (screen != null && mc.currentScreen == null) {
             mc.setScreen(screen);
             screen = null;

@@ -19,13 +19,17 @@ import meteordevelopment.meteorclient.systems.modules.Modules;
 public class Systems {
     public static void init() {
         // Modules
-        //add(new AutoCityPlus());
+        add(new AutoCityPlus());
         add(new AntiDesync());
+        add(new AntiGhost());
+        add(new AntiPistonPush());
         add(new ArmorAlert());
         add(new AutoEz());
         add(new BedrockWalk());
         add(new BlinkPlus());
+        add(new BowBomb());
         add(new CevBreaker());
+        add(new CrystalAuraRewrite());
         add(new ActionRenderer());
         add(new ChorusPredict());
         add(new ClipPhase());
@@ -37,18 +41,21 @@ public class Systems {
         add(new PearlPredict());
         add(new PingSpoof());
         add(new ReverseStep());
-        add(new AntiGhost());
         add(new SkeletonESP());
+        add(new SpeedBypass());
+        add(new SpeedMineBypass());
         add(new StepPlus());
+        add(new StorageInvESP());
         add(new Strafe());
         add(new SurroundPlusPlus());
         add(new Tower());
         add(new Welcomer());
         add(new VectorPresence());
 
+        //add(new Pathing());
+
         // Commands
         add(new CenterCommand());
-        add(new HeadsCommand());
         add(new MuteCommand());
         add(new TargetCommand());
         add(new VelocityCommand());

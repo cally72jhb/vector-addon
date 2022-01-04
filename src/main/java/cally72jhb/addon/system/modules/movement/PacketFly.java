@@ -1,6 +1,7 @@
 package cally72jhb.addon.system.modules.movement;
 
 import cally72jhb.addon.VectorAddon;
+import cally72jhb.addon.utils.VectorUtils;
 import cally72jhb.addon.utils.misc.SystemTimer;
 import meteordevelopment.meteorclient.events.entity.player.PlayerMoveEvent;
 import meteordevelopment.meteorclient.events.game.GameJoinedEvent;
@@ -123,6 +124,15 @@ public class PacketFly extends Module {
         .description("How many steps in a row should be ignored.")
         .defaultValue(0)
         .min(0)
+        .visible(() -> type.get() == Type.FACTOR || type.get() == Type.DESYNC)
+        .build()
+    );
+
+    private final Setting<Integer> exponent = sgFly.add(new IntSetting.Builder()
+        .name("exponent")
+        .description("How far to go per loop.")
+        .defaultValue(1)
+        .min(1)
         .visible(() -> type.get() == Type.FACTOR || type.get() == Type.DESYNC)
         .build()
     );
@@ -261,7 +271,8 @@ public class PacketFly extends Module {
         ELYTRA,
         DESYNC,
         VECTOR,
-        OFFGROUND
+        OFFGROUND,
+        ONGROUND
     }
 
     public enum Mode {
@@ -583,6 +594,7 @@ public class PacketFly extends Module {
 
                 for (int i = 1; i <= factorInt; i++) {
                     if (ignore <= 0) {
+                        i *= exponent.get();
                         ignore = ignoreSteps.get();
                         mc.player.setVelocity(speedX * i, speedY * i, speedZ * i);
                         sendPackets(isMoving() ? speedX * i : 0, speedY * i, isMoving() ? speedZ * i : 0, packetMode.get(), true, false);
@@ -605,6 +617,19 @@ public class PacketFly extends Module {
                 }
 
                 mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX() + speedX, mc.player.getY() + (strict.get() ? 1 : 5), mc.player.getZ() + speedZ, mc.player.isOnGround()));
+
+                break;
+            case ONGROUND:
+                if (!isMoving()) break;
+
+                Vec3d vel = mc.player.getVelocity();
+
+                for (double i = 0.0625; i < speed.get(); i += 0.262) {
+                    double[] dir = VectorUtils.directionSpeed((float) i);
+                    mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX() + dir[0], mc.player.getY(), mc.player.getZ() + dir[1], mc.player.isOnGround()));
+                }
+
+                if (bypass.get() == Bypass.DEFAULT) mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX() + vel.x, mc.player.getY() <= 10 ? (strict.get() ? 10 : 255) : (strict.get() ? 0.5 : 1), mc.player.getZ() + vel.z, mc.player.isOnGround()));
 
                 break;
         }

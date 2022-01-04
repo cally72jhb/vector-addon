@@ -1,6 +1,7 @@
 package cally72jhb.addon.system.modules.movement;
 
 import cally72jhb.addon.VectorAddon;
+import cally72jhb.addon.system.modules.combat.SurroundPlusPlus;
 import cally72jhb.addon.utils.VectorUtils;
 import meteordevelopment.meteorclient.events.entity.player.PlayerMoveEvent;
 import meteordevelopment.meteorclient.events.meteor.KeyEvent;
@@ -27,6 +28,7 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Vec3d;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +52,13 @@ public class Tower extends Module {
         .build()
     );
 
+    private final Setting<Mode> mode = sgGeneral.add(new EnumSetting.Builder<Mode>()
+        .name("mode")
+        .description("What mode to use for tower.")
+        .defaultValue(Mode.Bypass)
+        .build()
+    );
+
     private final Setting<Double> speed = sgGeneral.add(new DoubleSetting.Builder()
         .name("vertical-speed")
         .description("How far to attempt to cause rubberband.")
@@ -68,7 +77,7 @@ public class Tower extends Module {
         .sliderMin(0)
         .sliderMax(10)
         .min(0)
-        .visible(this::getBypass)
+        .visible(() -> getBypass() && mode.get() == Mode.Bypass)
         .build()
     );
 
@@ -83,19 +92,21 @@ public class Tower extends Module {
         .name("instant")
         .description("Jumps with packets rather than vanilla jump.")
         .defaultValue(true)
+        .visible(() -> mode.get() == Mode.Bypass)
         .build()
     );
 
     private final Setting<Boolean> bypass = sgGeneral.add(new BoolSetting.Builder()
-            .name("bypass")
-            .description("Bypasses some anti cheats.")
-            .defaultValue(false)
-            .build()
+        .name("bypass")
+        .description("Bypasses some anti cheats.")
+        .defaultValue(false)
+        .visible(() -> mode.get() == Mode.Bypass)
+        .build()
     );
 
     private final Setting<Boolean> onGround = sgGeneral.add(new BoolSetting.Builder()
         .name("only-on-ground")
-        .description("Sends on ground position packets.")
+        .description("Sends packets to the server as if you are on ground.")
         .defaultValue(true)
         .build()
     );
@@ -104,6 +115,7 @@ public class Tower extends Module {
         .name("rotate")
         .description("Faces the block you place server-side.")
         .defaultValue(true)
+        .visible(() -> mode.get() == Mode.Bypass)
         .build()
     );
 
@@ -142,31 +154,49 @@ public class Tower extends Module {
     }
 
     @EventHandler
-    private void onTick(TickEvent.Pre event) {
-        if (validBlock(mc.player.getBlockPos())) return;
-        if (validBlock(mc.player.getBlockPos().down())) return;
-        if (isDangerousCrystal() || !InvUtils.findInHotbar(itemStack -> validItem(itemStack, mc.player.getBlockPos())).found()) return;
+    private void onPreTick(TickEvent.Pre event) {
+        mc.player.setJumping(false);
 
-        if ((mc.options.keyJump.isPressed() && jump.get()) || !jump.get()) {
-            if (stopmove.get() && mc.player.prevY < mc.player.getY()) mc.player.setVelocity(0, 0, 0);
+        FindItemResult item = InvUtils.findInHotbar(itemStack -> validItem(itemStack, mc.player.getBlockPos()));
 
-            if (timer > delay.get() || delay.get() == 0) {
-                if (rotate.get())
-                    Rotations.rotate(Rotations.getYaw(mc.player.getBlockPos()), Rotations.getPitch(mc.player.getBlockPos()), 50, this::tower);
-                else tower();
+        if (!item.found()) return;
 
-                timer = 0;
+        if (mode.get() == Mode.Bypass) {
+            if (validBlock(mc.player.getBlockPos()) || validBlock(mc.player.getBlockPos().down()) || isDangerousCrystal()) return;
+
+            if ((mc.options.keyJump.isPressed() && jump.get()) || !jump.get()) {
+                if (stopmove.get() && mc.player.prevY < mc.player.getY()) mc.player.setVelocity(0, 0, 0);
+
+                if (timer > delay.get() || delay.get() == 0) {
+                    if (rotate.get())
+                        Rotations.rotate(Rotations.getYaw(mc.player.getBlockPos()), Rotations.getPitch(mc.player.getBlockPos()), 50, this::tower);
+                    else tower();
+
+                    timer = 0;
+                }
+
+                timer++;
+            }
+        } else if ((mc.options.keyJump.isPressed() && jump.get()) || !jump.get()) {
+            Vec3d vel = mc.player.getVelocity();
+
+            int y = mc.player.getBlockY();
+
+            for (int i = mc.player.getBlockY(); i < mc.world.getHeight(); i--) {
+                if (!VectorUtils.getBlockState(new BlockPos(mc.player.getBlockX(), i, mc.player.getBlockZ())).isAir()) {
+                    y = i + 1;
+                    break;
+                }
             }
 
-            timer++;
-        }
-    }
+            if (mc.player.getY() - y >= 7.5) {
+                VectorUtils.place(mc.player.getBlockPos().down(), item, rotate.get(), 50);
+            } else {
+                VectorUtils.place(new BlockPos(mc.player.getBlockX(), y, mc.player.getBlockZ()), item, rotate.get(), 50);
+            }
 
-    @EventHandler
-    private void onKey(KeyEvent event) {
-        if (validBlock(mc.player.getBlockPos())) return;
-        if (validBlock(mc.player.getBlockPos().down())) return;
-        if (mc.options.keyJump.isPressed()) mc.options.keyJump.setPressed(false);
+            mc.player.setVelocity(vel.x, speed.get(), vel.z);
+        }
     }
 
     @EventHandler
@@ -276,5 +306,10 @@ public class Tower extends Module {
     public enum ListMode {
         Whitelist,
         Blacklist
+    }
+
+    public enum Mode {
+        Normal,
+        Bypass
     }
 }

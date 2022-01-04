@@ -122,7 +122,7 @@ public class AutoEz extends Module {
     private final Setting<List<String>> killMessages = sgKills.add(new StringListSetting.Builder()
         .name("kill-messages")
         .description("The random messages to send when you kill someone.")
-        .defaultValue(List.of("ez {player}", "killed {player} with vector", "currently at {kills} kill streak", "{playerkills} kills on {player} already", "join vector for free: https://discord.gg/A3nYgbKeXR", "{players} people saw {player} die to the power of vector"))
+        .defaultValue(List.of("ez {player}", "killed {player} with vector", "currently at {kills} kill streak", "{playerkills} kills on {player} already", "join vector for free: https://discord.gg/A3nYgbKeXR", "{online} people saw {player} die to the power of vector"))
         .visible(() -> randomMsg.get() && killMsg.get())
         .build()
     );
@@ -342,7 +342,7 @@ public class AutoEz extends Module {
     private String apply(PlayerEntity player, String message) {
         String string = message.replace("{player}", player.getEntityName());
 
-        string = string.replace("{players}", String.valueOf(mc.getNetworkHandler() != null ? mc.getNetworkHandler().getPlayerList().size() : 0));
+        string = string.replace("{online}", String.valueOf(mc.getNetworkHandler() != null ? mc.getNetworkHandler().getPlayerList().size() : 0));
         string = string.replace("{pops}", String.valueOf(pops.get(player.getUuid())));
         string = string.replace("{playerkills}", String.valueOf(kills.get(player.getUuid())));
         string = string.replace("{kills}", String.valueOf(allKills));

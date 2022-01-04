@@ -9,6 +9,8 @@ import meteordevelopment.meteorclient.mixin.PlayerPositionLookS2CPacketAccessor;
 import meteordevelopment.meteorclient.mixininterface.IVec3d;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
+import meteordevelopment.meteorclient.systems.modules.Modules;
+import meteordevelopment.meteorclient.systems.modules.world.Timer;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.network.packet.c2s.play.TeleportConfirmC2SPacket;
@@ -31,6 +33,7 @@ public class NoFallPlus extends Module {
         .name("packet-mode")
         .description("Which packets to send to the server.")
         .defaultValue(PacketMode.DOWN)
+        .visible(() -> mode.get() != Mode.SLOW)
         .build()
     );
 
@@ -42,13 +45,24 @@ public class NoFallPlus extends Module {
         .build()
     );
 
-    private final Setting<Double> fallSpeed = sgGeneral.add(new DoubleSetting.Builder()
-        .name("fall-speed")
-        .description("After what fall distance to trigger this module.")
-        .defaultValue(0.062)
-        .min(0)
-        .sliderMin(0.01)
-        .sliderMax(1)
+    private final Setting<Double> overGroundDistance = sgGeneral.add(new DoubleSetting.Builder()
+        .name("over-ground-distance")
+        .description("How much you need to be above the ground to trigger this module.")
+        .defaultValue(1)
+        .min(0.1)
+        .visible(() -> mode.get() == Mode.SLOW)
+        .build()
+    );
+
+    private final Setting<Double> speed = sgGeneral.add(new DoubleSetting.Builder()
+        .name("speed")
+        .description("The speed for nofall.")
+        .defaultValue(5)
+        .min(0.1)
+        .max(10)
+        .sliderMin(0.1)
+        .sliderMax(7.5)
+        .visible(() -> mode.get() == Mode.SLOW)
         .build()
     );
 
@@ -63,6 +77,7 @@ public class NoFallPlus extends Module {
         VANILLA,
         PACKET,
         ANTI,
+        SLOW,
         TP
     }
 
@@ -119,11 +134,13 @@ public class NoFallPlus extends Module {
                         mc.getNetworkHandler().sendPacket(new TeleportConfirmC2SPacket(teleportId + 1));
                     }
                 }
+
                 break;
             case TP:
-                if (mc.player.fallDistance > fallDistance.get()) {
-                    mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), 10000, mc.player.getZ(), mc.player.isOnGround()));
+                if (mc.player.fallDistance >= fallDistance.get()) {
+                    mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), -1000, mc.player.getZ(), mc.player.isOnGround()));
                 }
+
                 break;
         }
     }
@@ -142,6 +159,7 @@ public class NoFallPlus extends Module {
                             mc.player.fallDistance = 0;
                         }
                     }
+
                     break;
                 case VANILLA:
                     if (mc.player.fallDistance > fallDistance.get()) ((PlayerMoveC2SPacketAccessor) event.packet).setOnGround(true);
@@ -163,16 +181,22 @@ public class NoFallPlus extends Module {
 
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent event) {
-        if (mode.get() == Mode.PACKET && mc.player.fallDistance > fallDistance.get() && !mc.player.isOnGround()) {
-            ((IVec3d) event.movement).set(0, -fallSpeed.get(), 0);
+        if (mode.get() == Mode.PACKET && mc.player.fallDistance >= fallDistance.get() && !mc.world.getBlockCollisions(mc.player, mc.player.getBoundingBox().offset(0, -0.05, 0)).iterator().hasNext()) {
+            ((IVec3d) event.movement).set(0, -0.062, 0);
+        }
+
+        if (mode.get() == Mode.SLOW && !mc.world.isSpaceEmpty(mc.player.getBoundingBox().stretch(0, -overGroundDistance.get(), 0))
+            && !mc.world.getBlockCollisions(mc.player, mc.player.getBoundingBox().offset(0, -0.05, 0)).iterator().hasNext()
+            && mc.player.fallDistance >= fallDistance.get() && mc.player.prevY > mc.player.getY()) {
+            Modules.get().get(Timer.class).setOverride(speed.get() / 10);
+        } else {
+            Modules.get().get(Timer.class).setOverride(Timer.OFF);
         }
     }
 
     private double randomHorizontal() {
-        int randomValue = random.nextInt(bounds.get() ? 80 : (packetMode.get() == PacketMode.OBSCURE ? (ticksExisted % 2 == 0 ? 480 : 100) : 29000000)) + (bounds.get() ? 5 : 500);
-        if (random.nextBoolean()) {
-            return randomValue;
-        }
-        return -randomValue;
+        int value = random.nextInt(bounds.get() ? 80 : (packetMode.get() == PacketMode.OBSCURE ? (ticksExisted % 2 == 0 ? 480 : 100) : 320000)) + (bounds.get() ? 5 : 50);
+
+        return random.nextBoolean() ? -value : value;
     }
 }

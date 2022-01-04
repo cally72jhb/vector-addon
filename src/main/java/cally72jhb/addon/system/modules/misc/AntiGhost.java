@@ -77,8 +77,6 @@ public class AntiGhost extends Module {
         .build()
     );
 
-    // Interacting
-
     private final Setting<Boolean> closest = sgInteract.add(new BoolSetting.Builder()
         .name("closest")
         .description("Interacts at the closest possible side.")
@@ -108,7 +106,7 @@ public class AntiGhost extends Module {
 
     private final Setting<Double> range = sgInteract.add(new DoubleSetting.Builder()
         .name("range")
-        .description("What randomness to use for jitter.")
+        .description("How far to interact with blocks.")
         .defaultValue(1.5)
         .min(1)
         .sliderMin(1)
@@ -162,8 +160,6 @@ public class AntiGhost extends Module {
 
     @EventHandler
     private void onPreTick(TickEvent.Pre event) {
-        timer++;
-
         if (entities.get()) {
             for (Entity entity : mc.world.getEntities()) {
                 if (VectorUtils.getCollision(entity.getBlockPos()) == VoxelShapes.fullCube() && (entity instanceof EndCrystalEntity || entity instanceof ItemEntity)) {
@@ -176,13 +172,7 @@ public class AntiGhost extends Module {
             timer = 0;
 
             positions = VectorUtils.getPositionsAroundPlayer(range.get());
-            positions.removeIf(pos -> BlockUtils.isClickable(VectorUtils.getBlock(pos)));
-
-            if (!interacted.isEmpty() && onlyOnce.get()) {
-                for (BlockPos pos : interacted) {
-                    positions.remove(pos);
-                }
-            }
+            positions.removeIf(pos -> BlockUtils.isClickable(VectorUtils.getBlock(pos)) || !interacted.isEmpty() && onlyOnce.get() && interacted.contains(pos));
 
             if (!positions.isEmpty()) {
                 positions.sort(Comparator.comparingDouble(pos -> VectorUtils.distance(mc.player.getPos(), Vec3d.ofCenter(pos))));
@@ -198,6 +188,8 @@ public class AntiGhost extends Module {
                     positions.remove(0);
                 }
             }
+        } else {
+            timer++;
         }
     }
 
@@ -216,7 +208,7 @@ public class AntiGhost extends Module {
 
         for (Direction dir : Direction.values()) {
             if (closest.get()) {
-                if (visible.get() && VectorUtils.getBlockState(pos.offset(dir)).isOpaque()) sides.add(dir);
+                if (visible.get() && !VectorUtils.isSolid(pos.offset(dir))) sides.add(dir);
             } else {
                 sides.add(dir);
             }

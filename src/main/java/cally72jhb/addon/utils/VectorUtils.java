@@ -12,6 +12,7 @@ import meteordevelopment.meteorclient.utils.player.Rotations;
 import meteordevelopment.meteorclient.utils.world.BlockUtils;
 import net.minecraft.block.*;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.entity.Entity;
 import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
@@ -82,6 +83,12 @@ public class VectorUtils {
     }
 
     public static double distanceBetweenXZ(BlockPos pos1, BlockPos pos2) {
+        double d = pos1.getX() - pos2.getX();
+        double f = pos1.getZ() - pos2.getZ();
+        return MathHelper.sqrt((float) (d * d + f * f));
+    }
+
+    public static double distanceBetweenXZ(Vec3d pos1, Vec3d pos2) {
         double d = pos1.getX() - pos2.getX();
         double f = pos1.getZ() - pos2.getZ();
         return MathHelper.sqrt((float) (d * d + f * f));
@@ -240,9 +247,13 @@ public class VectorUtils {
     }
 
     public static ArrayList<BlockPos> getPositionsAroundPlayer(double range) {
-        double pX = mc.player.getX() - 0.5;
-        double pY = mc.player.getY();
-        double pZ = mc.player.getZ() - 0.5;
+        return getPositionsAroundEntity(mc.player, range);
+    }
+
+    public static ArrayList<BlockPos> getPositionsAroundEntity(Entity entity, double range) {
+        double pX = entity.getX() - 0.5;
+        double pY = entity.getY();
+        double pZ = entity.getZ() - 0.5;
 
         int minX = (int) Math.floor(pX - range);
         int minY = (int) Math.floor(pY - range);

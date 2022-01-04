@@ -56,7 +56,7 @@ public class ReverseStep extends Module {
     @EventHandler
     public void onPostTick(TickEvent.Post event) {
         if (onGround()) Modules.get().get(Timer.class).setOverride(Timer.OFF);
-        if (mc.world.isSpaceEmpty(mc.player.getBoundingBox().offset(0.0, (float) -(fallDistance.get() + 0.01), 0.0))) return;
+        if (mc.world.isSpaceEmpty(mc.player.getBoundingBox().offset(0, -(fallDistance.get() + 0.01), 0))) return;
 
         if (timer.get()) {
             if (!onGround()) {

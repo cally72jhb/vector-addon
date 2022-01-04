@@ -207,7 +207,7 @@ public class BlinkPlus extends Module {
     }
 
     @EventHandler
-    private void onTick(TickEvent.Post event) {
+    private void onPostTick(TickEvent.Post event) {
         timer++;
         ticks++;
         delay--;
