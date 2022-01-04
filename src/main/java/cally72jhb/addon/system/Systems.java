@@ -29,7 +29,6 @@ public class Systems {
         add(new BlinkPlus());
         add(new BowBomb());
         add(new CevBreaker());
-        add(new CrystalAuraRewrite());
         add(new ActionRenderer());
         add(new ChorusPredict());
         add(new ClipPhase());
@@ -51,8 +50,6 @@ public class Systems {
         add(new Tower());
         add(new Welcomer());
         add(new VectorPresence());
-
-        //add(new Pathing());
 
         // Commands
         add(new CenterCommand());
