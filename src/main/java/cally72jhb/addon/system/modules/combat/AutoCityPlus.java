@@ -17,6 +17,7 @@ import meteordevelopment.meteorclient.utils.player.PlayerUtils;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.meteorclient.utils.world.BlockUtils;
 import meteordevelopment.orbit.EventHandler;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.decoration.EndCrystalEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Items;
@@ -28,6 +29,7 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Vec3d;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -196,10 +198,16 @@ public class AutoCityPlus extends Module {
 
             if (breakingPos != null && !getSurround(pos).isEmpty()) {
                 for (BlockPos p : getSurround(pos)) {
-                    if (!getCrystals(pos.add(p)).isEmpty()) {
-                        for (BlockPos position : plus) {
+                    if (!getCrystalPositions(breakingPos.add(p)).isEmpty()) {
+                        interact(getCrystalPositions(breakingPos.add(p).down()).get(0), crystal, Direction.UP);
+                    }
+                }
+            }
 
-                        }
+            if (breakingPos != null && !getSurround(pos).isEmpty()) {
+                for (BlockPos p : getSurround(pos)) {
+                    if (!getCrystals(pos.add(p)).isEmpty()) {
+                        attack(getCrystals(pos.add(p)).get(0));
                     }
                 }
             }
@@ -239,7 +247,28 @@ public class AutoCityPlus extends Module {
         return surr;
     }
 
-    private ArrayList<BlockPos> getCrystals(BlockPos pos) {
+    private ArrayList<Entity> getCrystals(BlockPos pos) {
+        ArrayList<BlockPos> crystals = new ArrayList<>();
+        ArrayList<Entity> entities = new ArrayList<>();
+
+        if (canInteract(pos.down())) crystals.add(pos.down());
+
+        for (int i = 0; i <= 1; i++) {
+            for (BlockPos position : plus) {
+                if (canInteract(pos.add(position).down(i))) crystals.add(pos.add(position).down(i));
+            }
+        }
+
+        for (Entity entity : mc.world.getEntities()) {
+            if (entity instanceof EndCrystalEntity && crystals.contains(entity.getBlockPos())) entities.add(entity);
+        }
+
+        entities.sort(Comparator.comparingDouble(entity -> VectorUtils.distance(mc.player.getPos(), Vec3d.ofCenter(entity.getBlockPos()))));
+
+        return entities;
+    }
+
+    private ArrayList<BlockPos> getCrystalPositions(BlockPos pos) {
         ArrayList<BlockPos> crystals = new ArrayList<>();
 
         if (canInteract(pos.down())) crystals.add(pos.down());
@@ -250,7 +279,8 @@ public class AutoCityPlus extends Module {
             }
         }
 
-        crystals.sort(Comparator.comparingDouble(position -> VectorUtils.distance(mc.player.getPos(), Utils.vec3d(position))));
+        crystals.sort(Comparator.comparingDouble(position -> VectorUtils.distance(mc.player.getPos(), Vec3d.ofCenter(position))));
+
         return crystals;
     }
 
@@ -289,8 +319,10 @@ public class AutoCityPlus extends Module {
         }
     }
 
-    private void attack(EndCrystalEntity entity) {
+    private void attack(Entity entity) {
         mc.player.networkHandler.sendPacket(PlayerInteractEntityC2SPacket.attack(entity, mc.player.isSneaking()));
+
+        swingHand(Hand.MAIN_HAND);
     }
 
     private void interact(BlockPos pos, FindItemResult item, Direction direction) {

@@ -29,27 +29,32 @@ public class Systems {
         add(new BlinkPlus());
         add(new BowBomb());
         add(new CevBreaker());
+        //add(new CrystalAuraRewrite());
         add(new ActionRenderer());
         add(new ChorusPredict());
         add(new ClipPhase());
         add(new DebugTools());
         add(new EntityFly());
         add(new NoFallPlus());
-        add(new PortalGodMode());
+        add(new NoFluid());
+        add(new PacketConsume());
         add(new PacketFly());
         add(new PearlPredict());
         add(new PingSpoof());
+        add(new PortalGodMode());
         add(new ReverseStep());
         add(new SkeletonESP());
         add(new SpeedBypass());
         add(new SpeedMineBypass());
         add(new StepPlus());
-        add(new StorageInvESP());
+        add(new StorageViewer());
         add(new Strafe());
         add(new SurroundPlusPlus());
         add(new Tower());
         add(new Welcomer());
         add(new VectorPresence());
+
+        //add(new Pathing());
 
         // Commands
         add(new CenterCommand());

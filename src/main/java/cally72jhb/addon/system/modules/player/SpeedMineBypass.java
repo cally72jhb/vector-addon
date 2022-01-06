@@ -49,7 +49,7 @@ public class SpeedMineBypass extends Module {
     private final Setting<Boolean> vanilla = sgGeneral.add(new BoolSetting.Builder()
         .name("vanilla")
         .description("Spoofs the packets the default way.")
-        .defaultValue(true)
+        .defaultValue(false)
         .build()
     );
 
@@ -63,7 +63,7 @@ public class SpeedMineBypass extends Module {
     private final Setting<Boolean> packet = sgGeneral.add(new BoolSetting.Builder()
         .name("packet")
         .description("Packet-spoofs the blocks.")
-        .defaultValue(true)
+        .defaultValue(false)
         .build()
     );
 
@@ -79,14 +79,14 @@ public class SpeedMineBypass extends Module {
     private final Setting<Boolean> instant = sgGeneral.add(new BoolSetting.Builder()
         .name("instant")
         .description("Trys to break the block instantly.")
-        .defaultValue(false)
+        .defaultValue(true)
         .build()
     );
 
     private final Setting<Boolean> facing = sgGeneral.add(new BoolSetting.Builder()
         .name("facing")
         .description("Whether or not to face at the block.")
-        .defaultValue(false)
+        .defaultValue(true)
         .visible(instant::get)
         .build()
     );
@@ -94,7 +94,7 @@ public class SpeedMineBypass extends Module {
     private final Setting<InstantMode> instantMode = sgGeneral.add(new EnumSetting.Builder<InstantMode>()
         .name("mode")
         .description("What mode to use for mining.")
-        .defaultValue(InstantMode.AUTOMATIC)
+        .defaultValue(InstantMode.NONE)
         .visible(instant::get)
         .build()
     );
@@ -112,7 +112,7 @@ public class SpeedMineBypass extends Module {
     private final Setting<Boolean> strict = sgBypass.add(new BoolSetting.Builder()
         .name("strict")
         .description("How to handle certain packets.")
-        .defaultValue(false)
+        .defaultValue(true)
         .build()
     );
 
@@ -126,7 +126,7 @@ public class SpeedMineBypass extends Module {
     private final Setting<Boolean> silent = sgBypass.add(new BoolSetting.Builder()
         .name("silent")
         .description("Mines the block silently.")
-        .defaultValue(false)
+        .defaultValue(true)
         .visible(() -> !packet.get())
         .build()
     );
@@ -208,6 +208,8 @@ public class SpeedMineBypass extends Module {
     @Override
     public void onActivate() {
         positions = new ArrayList<>();
+        direction = null;
+        pos = null;
 
         timer = 0;
     }

@@ -40,7 +40,6 @@ public class VectorStarscript {
         StandardLib.init(ss);
 
         // General
-        ss.set("version", Value.string(Config.get().version != null ? (Config.get().devBuild.isEmpty() ? Config.get().version.toString() : Config.get().version + " " + Config.get().devBuild) : ""));
         ss.set("mc_version", Value.string(SharedConstants.getGameVersion().getName()));
         ss.set("fps", () -> Value.number(MinecraftClientAccessor.getFps()));
 

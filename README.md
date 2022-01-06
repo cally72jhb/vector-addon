@@ -25,8 +25,10 @@ https://github.com/cally72jhb/vector-addon/releases/
 - DebugTools
 - EntityFly
 - NoFallPlus
+- NoFluid
 - PortalGodMode
 - PacketFly
+- PacketConsume
 - PearlPredict
 - PingSpoof
 - ReverseStep

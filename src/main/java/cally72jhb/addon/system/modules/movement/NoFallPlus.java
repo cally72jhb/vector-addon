@@ -187,7 +187,7 @@ public class NoFallPlus extends Module {
 
         if (mode.get() == Mode.SLOW && !mc.world.isSpaceEmpty(mc.player.getBoundingBox().stretch(0, -overGroundDistance.get(), 0))
             && !mc.world.getBlockCollisions(mc.player, mc.player.getBoundingBox().offset(0, -0.05, 0)).iterator().hasNext()
-            && mc.player.fallDistance >= fallDistance.get() && mc.player.prevY > mc.player.getY()) {
+            && mc.player.fallDistance >= fallDistance.get()) {
             Modules.get().get(Timer.class).setOverride(speed.get() / 10);
         } else {
             Modules.get().get(Timer.class).setOverride(Timer.OFF);
