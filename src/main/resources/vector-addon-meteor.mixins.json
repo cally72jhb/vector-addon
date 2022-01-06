@@ -3,6 +3,7 @@
   "package": "cally72jhb.addon.mixin.meteor",
   "compatibilityLevel": "JAVA_16",
   "client": [
+    "FakePlayerCommandMixin",
     "PlayerUtilsMixin",
     "SettingCommandMixin",
     "SystemsMixin",
