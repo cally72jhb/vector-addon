@@ -19,7 +19,7 @@ import meteordevelopment.meteorclient.systems.modules.Modules;
 public class Systems {
     public static void init() {
         // Modules
-        add(new AutoCityPlus());
+        //add(new AutoCityPlus());
         add(new AntiDesync());
         add(new AntiGhost());
         add(new AntiPistonPush());
