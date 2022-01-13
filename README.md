@@ -11,7 +11,6 @@ Releases:
 https://github.com/cally72jhb/vector-addon/releases/
 
 **Modules:**
-- AutoCityPlus
 - AntiDesync
 - AntiGhost
 - AntiPistonPush
@@ -21,7 +20,6 @@ https://github.com/cally72jhb/vector-addon/releases/
 - BlinkPlus
 - BowBomb
 - CevBreaker
-- CrystalAuraRewrite
 - ActionRenderer
 - ChorusPredict
 - ClipPhase
