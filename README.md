@@ -8,7 +8,6 @@ Releases:
 https://github.com/cally72jhb/vector-addon/releases/
 
 **Modules:**
-- AutoCityPlus
 - AntiDesync
 - AntiGhost
 - AntiPistonPush
@@ -18,7 +17,6 @@ https://github.com/cally72jhb/vector-addon/releases/
 - BlinkPlus
 - BowBomb
 - CevBreaker
-- CrystalAuraRewrite
 - ActionRenderer
 - ChorusPredict
 - ClipPhase
@@ -38,13 +36,11 @@ https://github.com/cally72jhb/vector-addon/releases/
 - StepPlus
 - StorageInvESP
 - Strafe
-- SurroundPlusPlus
+- SurroundPlus
 - Tower
 - Welcomer
 - VectorPresence
 
 **Commands:**
-- Center
 - Mute
 - Target
-- Velocity
