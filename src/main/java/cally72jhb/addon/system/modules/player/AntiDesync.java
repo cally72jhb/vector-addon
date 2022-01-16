@@ -134,7 +134,7 @@ public class AntiDesync extends Module {
         if (modules.get().isEmpty()) return true;
 
         for (Module module : modules.get()) {
-            if (Modules.get().getList().contains(module) && module.isActive()) return false;
+            if (module.isActive() && Modules.get().getList().contains(module)) return false;
         }
 
         return true;

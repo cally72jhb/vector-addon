@@ -58,6 +58,7 @@ public class FakePlayerCommandMixin extends Command {
             error("The FakePlayer module must be enabled.");
             return false;
         }
+
         else return true;
     }
 

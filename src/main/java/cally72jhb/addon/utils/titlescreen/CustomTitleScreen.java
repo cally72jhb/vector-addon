@@ -102,7 +102,7 @@ public class CustomTitleScreen extends Screen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode == GLFW.GLFW_KEY_E || keyCode == GLFW.GLFW_KEY_ESCAPE) {
+        if (keyCode == GLFW.GLFW_KEY_E || keyCode == GLFW.GLFW_KEY_ESCAPE || KeyBinds.OPEN_COMMANDS.matchesKey(keyCode, scanCode)) {
             //mc.setScreen(new TitleScreenConfigScreen(GuiThemes.get()));
             editing = !editing;
             selectedElements.clear();
@@ -116,7 +116,7 @@ public class CustomTitleScreen extends Screen {
         if (keyCode == GLFW.GLFW_KEY_O) mc.setScreen(new OptionsScreen(this, mc.options));
         if (keyCode == GLFW.GLFW_KEY_Q) mc.scheduleStop();
 
-        if (KeyBinds.OPEN_CLICK_GUI.matchesKey(keyCode, scanCode)) Tabs.get().get(0).openScreen(GuiThemes.get());
+        if (KeyBinds.OPEN_GUI.matchesKey(keyCode, scanCode)) Tabs.get().get(0).openScreen(GuiThemes.get());
 
         return true;
     }

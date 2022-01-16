@@ -2,6 +2,7 @@ package cally72jhb.addon.system.modules.render;
 
 import cally72jhb.addon.VectorAddon;
 import cally72jhb.addon.utils.VectorUtils;
+import meteordevelopment.meteorclient.events.entity.player.InteractBlockEvent;
 import meteordevelopment.meteorclient.events.game.OpenScreenEvent;
 import meteordevelopment.meteorclient.events.packets.PacketEvent;
 import meteordevelopment.meteorclient.events.render.Render2DEvent;
@@ -21,13 +22,17 @@ import meteordevelopment.meteorclient.utils.render.RenderUtils;
 import meteordevelopment.meteorclient.utils.render.color.Color;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.orbit.EventHandler;
+import net.minecraft.block.ChestBlock;
+import net.minecraft.block.DoubleBlockProperties;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityType;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.CreativeInventoryScreen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.gui.screen.ingame.InventoryScreen;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.packet.c2s.play.CloseHandledScreenC2SPacket;
+import net.minecraft.network.packet.c2s.play.PlayerInteractBlockC2SPacket;
 import net.minecraft.network.packet.s2c.play.InventoryS2CPacket;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
@@ -36,6 +41,7 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.World;
 
 import java.util.*;
 
@@ -167,7 +173,9 @@ public class StorageViewer extends Module {
 
     private BlockPos pos;
     private boolean close;
+    private boolean chest;
     private int timer;
+    private int id;
 
     public StorageViewer() {
         super(VectorAddon.MISC, "storage-viewer", "Shows you the inventory of storage blocks.");
@@ -179,18 +187,27 @@ public class StorageViewer extends Module {
         chests = new HashMap<>();
 
         close = false;
+        chest = false;
         timer = 0;
+        id = -1;
     }
 
     @EventHandler
     private void onPreTick(TickEvent.Pre event) {
-        if (mc.currentScreen instanceof HandledScreen<?> screen && !(screen instanceof InventoryScreen) && !(screen instanceof CreativeInventoryScreen) && closeInventory.get() && close) {
+        if (id != -1) {
+            mc.getNetworkHandler().sendPacket(new CloseHandledScreenC2SPacket(id));
+            id = -1;
+        }
+
+        if (mc.currentScreen instanceof HandledScreen<?> screen && !(screen instanceof InventoryScreen)
+            && !(screen instanceof CreativeInventoryScreen) && closeInventory.get() && pos == null && close) {
             screen.onClose();
 
             mc.setScreen(null);
-            mc.getNetworkHandler().sendPacket(new CloseHandledScreenC2SPacket(screen.getScreenHandler().syncId));
+            id = screen.getScreenHandler().syncId;
 
             close = false;
+            chest = false;
         }
 
         if (timer >= delay.get() || delay.get() == 0) {
@@ -198,9 +215,7 @@ public class StorageViewer extends Module {
 
             ArrayList<BlockEntity> entities = new ArrayList<>();
 
-            for (BlockEntity entity : Utils.blockEntities()) {
-                if (storageBlocks.get().contains(entity.getType())) entities.add(entity);
-            }
+            for (BlockEntity entity : Utils.blockEntities()) if (storageBlocks.get().contains(entity.getType())) entities.add(entity);
 
             if (!entities.isEmpty()) {
                 if (closest.get()) entities.sort(Comparator.comparingDouble(entity -> VectorUtils.distance(mc.player.getPos(), Vec3d.ofCenter(entity.getPos()))));
@@ -211,7 +226,9 @@ public class StorageViewer extends Module {
                             BlockPos position = entity.getPos();
                             FindItemResult item = InvUtils.findInHotbar(stack -> stack.getUseAction() == UseAction.NONE);
 
-                            mc.interactionManager.interactBlock(mc.player, mc.world, (item.getHand() != null && item.found()) ? item.getHand() : Hand.OFF_HAND, new BlockHitResult(Utils.vec3d(position), getDir(position), position, false));
+                            mc.getNetworkHandler().sendPacket(new PlayerInteractBlockC2SPacket((item.getHand() != null && item.found()) ? item.getHand() : Hand.OFF_HAND, new BlockHitResult(Utils.vec3d(position), getDir(position), position, false)));
+
+                            chest = VectorUtils.getBlock(position) instanceof ChestBlock && ChestBlock.getDoubleBlockType(VectorUtils.getBlockState(position)) == DoubleBlockProperties.Type.SECOND;
 
                             close = true;
                             pos = position;
@@ -228,23 +245,18 @@ public class StorageViewer extends Module {
     }
 
     @EventHandler
-    private void onOpenScreen(OpenScreenEvent event) {
-        if (event.screen instanceof HandledScreen<?> screen && !(screen instanceof InventoryScreen) && !(screen instanceof CreativeInventoryScreen) && closeInventory.get() && close) {
-            event.screen.onClose();
-            event.cancel();
-
-            mc.setScreen(null);
-            mc.getNetworkHandler().sendPacket(new CloseHandledScreenC2SPacket(screen.getScreenHandler().syncId));
-
-            close = false;
-        }
+    private void onInteractBlock(InteractBlockEvent event) {
+        BlockPos pos = event.result.getBlockPos();
+        close = !chests.containsKey(pos) || chests.get(pos) == null;
     }
 
     @EventHandler
     private void onReceivePacket(PacketEvent.Receive event) {
         if (event.packet instanceof InventoryS2CPacket packet && pos != null) {
-            if (chests.containsKey(pos)) chests.replace(pos, packet.getContents());
-            else chests.putIfAbsent(pos, packet.getContents());
+            List<ItemStack> content = chest ? packet.getContents().subList(27, packet.getContents().size()) : packet.getContents();
+
+            if (chests.containsKey(pos)) chests.replace(pos, content);
+            else chests.putIfAbsent(pos, content);
 
             pos = null;
             close = true;
@@ -258,9 +270,9 @@ public class StorageViewer extends Module {
         for (BlockPos pos : new HashSet<>(chests.keySet())) {
             BlockEntity entity = mc.world.getBlockEntity(pos);
 
-            if (entity == null) {
+            if (entity == null || !World.isValid(pos) || VectorUtils.distanceBetweenXZ(mc.player.getPos(), Vec3d.ofCenter(pos)) >= mc.options.viewDistance * 17) {
                 chests.remove(pos);
-            } else if (pos != null && chests.containsKey(pos) && storageBlocks.get().contains(mc.world.getBlockEntity(pos).getType())) {
+            } else if (chests.containsKey(pos) && storageBlocks.get().contains(mc.world.getBlockEntity(pos).getType())) {
                 Vec3 vec = new Vec3();
 
                 vec = vec.set(Vec3d.ofCenter(pos.up()));
@@ -291,7 +303,7 @@ public class StorageViewer extends Module {
                     List<ItemStack> items = new ArrayList<>(chests.get(pos));
 
                     for (int i = 0; i < 27; i++) {
-                        inventory[i] = items.get(i);
+                        if (i < items.size()) inventory[i] = items.get(i);
                     }
 
                     for (int row = 0; row < 3; row++) {
@@ -323,9 +335,7 @@ public class StorageViewer extends Module {
         }
 
         if (sides.isEmpty()) return null;
-
         sides.sort(Comparator.comparingDouble(side -> VectorUtils.distance(mc.player.getPos(), Utils.vec3d(pos.offset(side)))));
-
         return sides.get(0);
     }
 

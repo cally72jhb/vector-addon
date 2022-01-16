@@ -87,7 +87,7 @@ public class StepPlus extends Module {
         // One Block
 
         if (shouldStep(dir, 1.0, 0.6) && height.get() >= 1.0){
-            for (double y : new double[] {0.42, 0.753}) {
+            for (double y : new double[] { 0.42, 0.753 }) {
                 mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), mc.player.getY() + y, mc.player.getZ(), mc.player.isOnGround()));
             }
 
@@ -99,7 +99,7 @@ public class StepPlus extends Module {
 
         // Tall One Block
         if (shouldStep(dir, 1.6, 1.4) && height.get() >= 1.5){
-            for (double y : new double[] {0.42, 0.75, 1.0, 1.16, 1.23, 1.2}) {
+            for (double y : new double[] { 0.42, 0.75, 1.0, 1.16, 1.23, 1.2 }) {
                 mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), mc.player.getY() + y, mc.player.getZ(), mc.player.isOnGround()));
             }
 
@@ -111,7 +111,7 @@ public class StepPlus extends Module {
 
         // Two Block
         if (shouldStep(dir, 2.1, 1.9) && height.get() >= 2.0){
-            for (double y : new double[] {0.42, 0.78, 0.63, 0.51, 0.9, 1.21, 1.45, 1.43}) {
+            for (double y : new double[] { 0.42, 0.78, 0.63, 0.51, 0.9, 1.21, 1.45, 1.43 }) {
                 mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), mc.player.getY() + y, mc.player.getZ(), mc.player.isOnGround()));
             }
 
@@ -123,7 +123,7 @@ public class StepPlus extends Module {
 
         // Tall Two Block
         if (shouldStep(dir, 2.6, 2.4) && height.get() >= 2.5){
-            for (double y : new double[] {0.425, 0.821, 0.699, 0.599, 1.022, 1.372, 1.652, 1.869, 2.019, 1.907}) {
+            for (double y : new double[] { 0.425, 0.821, 0.699, 0.599, 1.022, 1.372, 1.652, 1.869, 2.019, 1.907 }) {
                 mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), mc.player.getY() + y, mc.player.getZ(), mc.player.isOnGround()));
             }
 

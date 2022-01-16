@@ -73,7 +73,7 @@ public class SkeletonESP extends Module {
         mc.world.getEntities().forEach(entity -> {
             if (!(entity instanceof PlayerEntity)) return;
             if (mc.options.getPerspective() == Perspective.FIRST_PERSON && !freecam.isActive() && mc.player == entity) return;
-            int rotationHoldTicks = Config.get().rotationHoldTicks;
+            int rotationHoldTicks = Config.get().rotationHoldTicks.get();
 
             Color skeletonColor = PlayerUtils.getPlayerColor((PlayerEntity) entity, skeletonColorSetting.get());
             if (distance.get()) skeletonColor = getColorFromDistance(entity);
@@ -81,7 +81,7 @@ public class SkeletonESP extends Module {
 
             Vec3d footPos = getEntityRenderPosition(player, g);
             PlayerEntityRenderer livingEntityRenderer = (PlayerEntityRenderer) (LivingEntityRenderer<?, ?>) mc.getEntityRenderDispatcher().getRenderer(player);
-            PlayerEntityModel<PlayerEntity> playerEntityModel = (PlayerEntityModel) livingEntityRenderer.getModel();
+            PlayerEntityModel playerEntityModel = livingEntityRenderer.getModel();
 
             float h = MathHelper.lerpAngleDegrees(g, player.prevBodyYaw, player.bodyYaw);
             if (mc.player == entity && Rotations.rotationTimer < rotationHoldTicks) h = Rotations.serverYaw;

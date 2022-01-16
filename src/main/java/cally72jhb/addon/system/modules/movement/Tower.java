@@ -1,10 +1,8 @@
 package cally72jhb.addon.system.modules.movement;
 
 import cally72jhb.addon.VectorAddon;
-import cally72jhb.addon.system.modules.combat.SurroundPlusPlus;
 import cally72jhb.addon.utils.VectorUtils;
 import meteordevelopment.meteorclient.events.entity.player.PlayerMoveEvent;
-import meteordevelopment.meteorclient.events.meteor.KeyEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.mixininterface.IVec3d;
 import meteordevelopment.meteorclient.settings.*;
@@ -63,9 +61,9 @@ public class Tower extends Module {
         .name("vertical-speed")
         .description("How far to attempt to cause rubberband.")
         .defaultValue(1)
-        .sliderMin(0)
+        .sliderMin(1)
         .sliderMax(30)
-        .min(0)
+        .min(0.1)
         .visible(this::getBypass)
         .build()
     );

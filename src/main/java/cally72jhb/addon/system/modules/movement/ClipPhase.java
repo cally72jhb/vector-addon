@@ -55,16 +55,15 @@ public class ClipPhase extends Module {
         .build()
     );
 
-    private int teleportId = 0;
-
-    private ArrayList<PlayerMoveC2SPacket> packets = new ArrayList<>();
-    private Map<Integer, TimeVec> posLooks = new ConcurrentHashMap<>();
-
-    double speedX = 0;
-    double speedY = 0;
-    double speedZ = 0;
-
+    private int teleportId;
     private int ticksExisted;
+
+    private ArrayList<PlayerMoveC2SPacket> packets;
+    private Map<Integer, TimeVec> posLooks;
+
+    double speedX;
+    double speedY;
+    double speedZ;
 
     private static final Random random = new Random();
 
@@ -74,20 +73,24 @@ public class ClipPhase extends Module {
 
     @Override
     public void onActivate() {
-        mc.worldRenderer.reload();
-        packets.clear();
-        posLooks.clear();
+        if (mc.worldRenderer != null) mc.worldRenderer.reload();
+
+        packets  = new ArrayList<>();
+        posLooks = new ConcurrentHashMap<>();
+
         teleportId = -1;
         ticksExisted = 0;
+
+        speedX = 0;
+        speedY = 0;
+        speedZ = 0;
     }
 
     @EventHandler
     public void onPostTick(TickEvent.Post event) {
         if (ticksExisted % 20 == 0) {
-            posLooks.forEach((tp, timeVec3d) -> {
-                if (System.currentTimeMillis() - timeVec3d.getTime() > TimeUnit.SECONDS.toMillis(30L)) {
-                    posLooks.remove(tp);
-                }
+            posLooks.forEach((tp, vec) -> {
+                if (System.currentTimeMillis() - vec.getTime() > TimeUnit.SECONDS.toMillis(30)) posLooks.remove(tp);
             });
         }
 
@@ -96,9 +99,9 @@ public class ClipPhase extends Module {
         mc.player.setVelocity(0, 0, 0);
 
         if (teleportId <= 0) {
-            PlayerMoveC2SPacket startingOutOfBoundsPos = new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), mc.player.getY() + randomLimitedVertical(), mc.player.getZ(), mc.player.isOnGround());
-            packets.add(startingOutOfBoundsPos);
-            mc.getNetworkHandler().sendPacket(startingOutOfBoundsPos);
+            PlayerMoveC2SPacket outOfBoundsPos = new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), mc.player.getY() + randomLimitedVertical(), mc.player.getZ(), mc.player.isOnGround());
+            packets.add(outOfBoundsPos);
+            mc.getNetworkHandler().sendPacket(outOfBoundsPos);
         }
 
         double[] dir = VectorUtils.directionSpeed(hspeed.get().floatValue() / 10);
@@ -116,7 +119,7 @@ public class ClipPhase extends Module {
         Vec3i minI = new Vec3i(Math.floor(min.x), Math.floor(min.y), Math.floor(min.z));
         Vec3i maxI = new Vec3i(Math.floor(max.x), Math.floor(max.y), Math.floor(max.z));
 
-        if (!minI.equals(maxI) && newPos.distanceTo(blockCenter) > mc.player.getPos().distanceTo(blockCenter) && !extreme.get()) {
+        if (!minI.equals(maxI) && newPos.distanceTo(blockCenter) > mc.player.getPos().distanceTo(blockCenter) && extreme.get()) {
             dir = VectorUtils.directionSpeed(0.064f);
             speedX = dir[0];
             speedY = mc.options.keyJump.isPressed() ? (vspeed.get() / 10) : (mc.options.keySneak.isPressed() ? -(vspeed.get() / 10) : 0);
@@ -125,10 +128,12 @@ public class ClipPhase extends Module {
             PlayerMoveC2SPacket move = new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX() + speedX, mc.player.getY() + speedY, mc.player.getZ() + speedZ, mc.player.isOnGround());
             packets.add(move);
             mc.getNetworkHandler().sendPacket(move);
+
             PlayerMoveC2SPacket extremeMove = new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX() + speedX, mc.player.getY() + randomLimitedVertical(), mc.player.getZ() + speedZ, mc.player.isOnGround());
             packets.add(extremeMove);
             mc.getNetworkHandler().sendPacket(extremeMove);
             teleportId++;
+
             mc.getNetworkHandler().sendPacket(new TeleportConfirmC2SPacket(teleportId));
             posLooks.put(teleportId, new TimeVec(mc.player.getX(), mc.player.getY(), mc.player.getZ(), System.currentTimeMillis()));
         } else {
@@ -147,9 +152,7 @@ public class ClipPhase extends Module {
 
     @EventHandler
     public void isCube(CollisionShapeEvent event) {
-        if (VectorUtils.distance(mc.player.getX(), mc.player.getY(), mc.player.getZ(), event.pos.getX(), event.pos.getY(), event.pos.getZ()) > 3) return;
-
-        event.shape = VoxelShapes.empty();
+        if (VectorUtils.distance(mc.player.getPos(), Vec3d.ofCenter(event.pos)) <= 5) event.shape = VoxelShapes.empty();
     }
 
     @EventHandler
@@ -159,32 +162,33 @@ public class ClipPhase extends Module {
 
     @EventHandler
     public void onSendPacket(PacketEvent.Send event) {
-        if (event.packet instanceof PlayerMoveC2SPacket && !(event.packet instanceof PlayerMoveC2SPacket.PositionAndOnGround)) {
-            event.cancel();
-        }
+        if (event.packet instanceof PlayerMoveC2SPacket && !(event.packet instanceof PlayerMoveC2SPacket.PositionAndOnGround)) event.cancel();
+
         if (event.packet instanceof PlayerMoveC2SPacket packet) {
-            if (this.packets.contains(packet)) {
-                this.packets.remove(packet);
+            if (packets.contains(packet)) {
+                packets.remove(packet);
                 return;
             }
+
             event.cancel();
         }
     }
 
     @EventHandler
     public void onReceivePacket(PacketEvent.Receive event) {
-        if (event.packet instanceof PlayerPositionLookS2CPacket) {
-            PlayerPositionLookS2CPacket packet = (PlayerPositionLookS2CPacket) event.packet;
+        if (event.packet instanceof PlayerPositionLookS2CPacket packet) {
             if (mc.player.isAlive()) {
-                if (this.teleportId <= 0) {
-                    this.teleportId = packet.getTeleportId();
+                if (teleportId <= 0) {
+                    teleportId = packet.getTeleportId();
                 } else {
                     if (mc.world.isPosLoaded(mc.player.getBlockX(), mc.player.getBlockZ())) {
                         if (posLooks.containsKey(packet.getTeleportId())) {
                             TimeVec vec = posLooks.get(packet.getTeleportId());
+
                             if (vec.x == packet.getX() && vec.y == packet.getY() && vec.z == packet.getZ()) {
                                 posLooks.remove(packet.getTeleportId());
                                 event.setCancelled(true);
+
                                 return;
                             }
                         }
@@ -196,16 +200,14 @@ public class ClipPhase extends Module {
             ((PlayerPositionLookS2CPacketAccessor) event.packet).setPitch(mc.player.getPitch());
             packet.getFlags().remove(PlayerPositionLookS2CPacket.Flag.X_ROT);
             packet.getFlags().remove(PlayerPositionLookS2CPacket.Flag.Y_ROT);
+
             teleportId = packet.getTeleportId();
         }
     }
 
     private double randomLimitedVertical() {
-        int randomValue = random.nextInt(22);
-        randomValue += 70;
-        if (random.nextBoolean()) {
-            return randomValue;
-        }
-        return -randomValue;
+        int randomValue = random.nextInt(22) + 70;
+
+        return random.nextBoolean() ? randomValue : -randomValue;
     }
 }

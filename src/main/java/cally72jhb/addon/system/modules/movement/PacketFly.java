@@ -556,42 +556,38 @@ public class PacketFly extends Module {
         }
 
         switch (type.get()) {
-            case FAST:
+            case FAST -> {
                 if (!isMoving()) break;
                 mc.player.setVelocity(speedX, speedY, speedZ);
                 sendPackets(speedX, speedY, speedZ, packetMode.get(), true, false);
-                break;
-            case SLOW:
+            }
+            case SLOW -> {
                 if (!isMoving()) break;
                 sendPackets(speedX, speedY, speedZ, packetMode.get(), true, false);
-                break;
-            case SETBACK:
+            }
+            case SETBACK -> {
                 if (!isMoving()) break;
                 mc.player.setVelocity(speedX, speedY, speedZ);
                 sendPackets(speedX, speedY, speedZ, packetMode.get(), false, false);
-                break;
-            case VECTOR:
+            }
+            case VECTOR -> {
                 if (!isMoving()) break;
                 mc.player.setVelocity(speedX, speedY, speedZ);
                 sendPackets(speedX, speedY, speedZ, packetMode.get(), true, true);
-                break;
-            case FACTOR:
-            case DESYNC:
+            }
+            case FACTOR, DESYNC -> {
                 float rawFactor = factor.get().floatValue();
                 if (factorize.get().isPressed() && intervalTimer.hasPassed(3500)) {
                     intervalTimer.reset();
                     rawFactor = motion.get().floatValue();
                 }
-
                 int factorInt = (int) Math.floor(rawFactor);
                 int ignore = 0;
-
                 factorCounter++;
                 if (factorCounter > (int) (20D / ((rawFactor - (double) factorInt) * 20D))) {
                     factorInt += 1;
                     factorCounter = 0;
                 }
-
                 for (int i = 1; i <= factorInt; i++) {
                     if (ignore <= 0) {
                         i *= exponent.get();
@@ -602,36 +598,28 @@ public class PacketFly extends Module {
                         ignore--;
                     }
                 }
-
                 speedX = mc.player.getVelocity().x;
                 speedY = mc.player.getVelocity().y;
                 speedZ = mc.player.getVelocity().z;
-
-                break;
-            case OFFGROUND:
+            }
+            case OFFGROUND -> {
                 if (!isMoving()) break;
-
                 for (double i = 0.0625; i < speed.get(); i += 0.262) {
                     sendPackets(speedX, speedY, speedZ, packetMode.get(), false, false);
                     sendPackets(speedX, speedY, speedZ, packetMode.get(), true, true);
                 }
-
                 mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX() + speedX, mc.player.getY() + (strict.get() ? 1 : 5), mc.player.getZ() + speedZ, mc.player.isOnGround()));
-
-                break;
-            case ONGROUND:
+            }
+            case ONGROUND -> {
                 if (!isMoving()) break;
-
                 Vec3d vel = mc.player.getVelocity();
-
                 for (double i = 0.0625; i < speed.get(); i += 0.262) {
                     double[] dir = VectorUtils.directionSpeed((float) i);
                     mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX() + dir[0], mc.player.getY(), mc.player.getZ() + dir[1], mc.player.isOnGround()));
                 }
-
-                if (bypass.get() == Bypass.DEFAULT) mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX() + vel.x, mc.player.getY() <= 10 ? (strict.get() ? 10 : 255) : (strict.get() ? 0.5 : 1), mc.player.getZ() + vel.z, mc.player.isOnGround()));
-
-                break;
+                if (bypass.get() == Bypass.DEFAULT)
+                    mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX() + vel.x, mc.player.getY() <= 10 ? (strict.get() ? 10 : 255) : (strict.get() ? 0.5 : 1), mc.player.getZ() + vel.z, mc.player.isOnGround()));
+            }
         }
 
         vDelay--;

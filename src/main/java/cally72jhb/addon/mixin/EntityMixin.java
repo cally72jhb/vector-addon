@@ -21,10 +21,14 @@ public abstract class EntityMixin {
 
     private NoFluid noFluid;
 
+    // Anti Piston
+
     @Inject(method = "getPistonBehavior", at = @At(value = "HEAD"), cancellable = true)
     protected void onAdjustMovementForPiston(CallbackInfoReturnable<PistonBehavior> info) {
         if (Modules.get().isActive(AntiPistonPush.class)) info.setReturnValue(PistonBehavior.IGNORE);
     }
+
+    // No Fluid
 
     @Inject(method = "updateMovementInFluid", at = @At(value = "HEAD"), cancellable = true)
     protected void onUpdateMovementInFluid(Tag<Fluid> tag, double speed, CallbackInfoReturnable<Boolean> info) {

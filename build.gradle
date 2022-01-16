@@ -19,6 +19,7 @@ repositories {
         url = "https://maven.meteordev.org/snapshots"
     }
     jcenter()
+    mavenCentral()
 }
 
 dependencies {
@@ -29,6 +30,10 @@ dependencies {
 
     // Meteor
     modImplementation "meteordevelopment:meteor-client:${project.meteor_version}"
+}
+
+loom {
+    accessWidenerPath = file("src/main/resources/vector-addon.accesswidener")
 }
 
 processResources {

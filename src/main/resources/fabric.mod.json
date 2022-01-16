@@ -14,7 +14,7 @@
   },
 
   "license": "GPL-3.0",
-  "icon": "assets/vector/icon.png",
+  "icon": "assets/vector-addon/vector/icon.png",
 
   "environment": "client",
   "entrypoints": {
@@ -26,6 +26,7 @@
     "vector-addon.mixins.json",
     "vector-addon-meteor.mixins.json"
   ],
+  "accessWidener": "vector-addon.accesswidener",
   "custom": {
     "meteor-client:color": "140,245,165"
   },

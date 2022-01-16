@@ -18,6 +18,13 @@ import java.util.ArrayList;
 public class AntiPistonPush extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
 
+    private final Setting<Boolean> rubberband = sgGeneral.add(new BoolSetting.Builder()
+        .name("rubberband")
+        .description("Rubberbands you to ignore the piston pushing.")
+        .defaultValue(false)
+        .build()
+    );
+
     private final Setting<Boolean> spoof = sgGeneral.add(new BoolSetting.Builder()
         .name("spoof")
         .description("Spoofs your position after canceling the push event.")
@@ -123,6 +130,9 @@ public class AntiPistonPush extends Module {
 
             if (timer >= delay.get() || !positions.isEmpty()) {
                 spoof();
+
+                if (rubberband.get()) mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), mc.player.getY() + 100, mc.player.getZ(), false));
+
                 timer = 0;
             } else {
                 timer++;

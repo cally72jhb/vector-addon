@@ -5,6 +5,7 @@
   "client": [
     "EntityMixin",
     "MinecraftClientMixin",
+    "PlayerEntityMixin",
     "TitleScreenMixin"
   ],
   "injectors": {

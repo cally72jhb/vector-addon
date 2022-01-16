@@ -26,11 +26,19 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT;
 
 public class PacketConsume extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
+
+    private final Setting<List<Module>> modules = sgGeneral.add(new ModuleListSetting.Builder()
+        .name("modules")
+        .description("The modules that when they are active will stop this module from working.")
+        .defaultValue(List.of())
+        .build()
+    );
 
     private final Setting<Boolean> cancel = sgGeneral.add(new BoolSetting.Builder()
         .name("cancel")
@@ -242,7 +250,7 @@ public class PacketConsume extends Module {
     }
 
     private void startEating(Hand hand) {
-        if (!eating && mc.currentScreen == null && isConsumable(hand)) {
+        if (!eating && mc.currentScreen == null && isConsumable(hand) && shouldEat()) {
             if (message.get()) info("Started eating.");
 
             Packet<ServerPlayPacketListener> packet = new PlayerInteractItemC2SPacket(hand);
@@ -271,6 +279,18 @@ public class PacketConsume extends Module {
         timer = 0;
 
         if (autoSwitch.get() == AutoSwitchMode.Silent) swap = true;
+    }
+
+    private boolean shouldEat() {
+        if (!modules.get().isEmpty()) {
+            for (Module module : modules.get()) {
+                if (module.isActive()) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     // Enums

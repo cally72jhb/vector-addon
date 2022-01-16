@@ -175,7 +175,7 @@ public class BlinkPlus extends Module {
             fakePlayer.spawn();
         }
 
-        if (interfere.get()) {
+        if (interfere.get() && !blinkModules.get().isEmpty()) {
             for (Module module : blinkModules.get()) {
                 if (module.isActive()) {
                     module.toggle();

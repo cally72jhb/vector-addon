@@ -1,7 +1,6 @@
 package cally72jhb.addon.system.modules.combat;
 
 import cally72jhb.addon.VectorAddon;
-import cally72jhb.addon.system.modules.movement.NoFallPlus;
 import meteordevelopment.meteorclient.events.packets.PacketEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.*;

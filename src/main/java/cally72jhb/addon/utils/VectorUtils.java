@@ -4,15 +4,15 @@ import cally72jhb.addon.VectorAddon;
 import cally72jhb.addon.utils.config.VectorConfig;
 import cally72jhb.addon.utils.misc.Members;
 import meteordevelopment.meteorclient.MeteorClient;
+import meteordevelopment.meteorclient.mixin.MinecraftServerAccessor;
 import meteordevelopment.meteorclient.mixininterface.IVec3d;
-import meteordevelopment.meteorclient.utils.Utils;
 import meteordevelopment.meteorclient.utils.player.FindItemResult;
 import meteordevelopment.meteorclient.utils.player.InvUtils;
 import meteordevelopment.meteorclient.utils.player.Rotations;
-import meteordevelopment.meteorclient.utils.world.BlockUtils;
 import net.minecraft.block.*;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
+import net.minecraft.item.BlockItem;
 import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
@@ -23,13 +23,14 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.World;
+import org.apache.commons.lang3.SystemUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
+
+import static meteordevelopment.meteorclient.MeteorClient.mc;
 
 public class VectorUtils {
     public static int CPS = 0;
@@ -47,6 +48,30 @@ public class VectorUtils {
                 runnable.run();
             }
         };
+    }
+
+    public static String getServer() {
+        if (mc.isInSingleplayer()) {
+            File folder = ((MinecraftServerAccessor) mc.getServer()).getSession().getWorldDirectory(mc.world.getRegistryKey()).toFile();
+
+            if (folder.toPath().relativize(mc.runDirectory.toPath()).getNameCount() != 2) {
+                folder = folder.getParentFile();
+            }
+
+            return folder.getName();
+        }
+
+        if (mc.getCurrentServerEntry() != null) {
+            String name = mc.isConnectedToRealms() ? "realms" : mc.getCurrentServerEntry().address;
+
+            if (SystemUtils.IS_OS_WINDOWS) {
+                name = name.replace(":", "_");
+            }
+
+            return name;
+        }
+
+        return "unknown";
     }
 
     public static double squaredDistance(double x1, double y1, double z1, double x2, double y2, double z2) {
@@ -142,39 +167,33 @@ public class VectorUtils {
     }
 
     public static boolean place(BlockPos blockPos, FindItemResult findItemResult, boolean rotate, int rotationPriority, boolean swingHand, boolean checkEntities) {
-        return place(blockPos, findItemResult, rotate, rotationPriority, swingHand, checkEntities, true);
+        return place(blockPos, findItemResult, rotate, rotationPriority, swingHand, checkEntities, true, false);
     }
 
-    public static boolean place(BlockPos blockPos, FindItemResult findItemResult, boolean rotate, int rotationPriority, boolean swingHand, boolean checkEntities, boolean swapBack) {
+    public static boolean place(BlockPos blockPos, FindItemResult findItemResult, boolean rotate, int rotationPriority, boolean swingHand, boolean checkEntities, boolean swapBack, boolean random) {
         if (findItemResult.isOffhand()) {
-            return place(blockPos, Hand.OFF_HAND, mc.player.getInventory().selectedSlot, rotate, rotationPriority, swingHand, checkEntities, swapBack);
+            return place(blockPos, Hand.OFF_HAND, mc.player.getInventory().selectedSlot, rotate, rotationPriority, swingHand, checkEntities, swapBack, random);
         } else {
-            return findItemResult.isHotbar() ? place(blockPos, Hand.MAIN_HAND, findItemResult.getSlot(), rotate, rotationPriority, swingHand, checkEntities, swapBack) : false;
+            return findItemResult.isHotbar() && place(blockPos, Hand.MAIN_HAND, findItemResult.getSlot(), rotate, rotationPriority, swingHand, checkEntities, swapBack, random);
         }
     }
 
-    public static boolean place(BlockPos blockPos, Hand hand, int slot, boolean rotate, int rotationPriority, boolean swingHand, boolean checkEntities, boolean swapBack) {
-        if (slot >= 0 && slot <= 8) {
+    public static boolean place(BlockPos blockPos, Hand hand, int slot, boolean rotate, int rotationPriority, boolean swingHand, boolean checkEntities, boolean swapBack, boolean offsetRandom) {
+        if (slot >= 0 && slot <= 8 || slot == 45) {
             if (!canPlace(blockPos, checkEntities)) {
                 return false;
             } else {
-                ((IVec3d)hitPos).set((double)blockPos.getX() + 0.5D, (double)blockPos.getY() + 0.5D, (double)blockPos.getZ() + 0.5D);
-                Direction side = getPlaceSide(blockPos);
-                BlockPos neighbour;
-                if (side == null) {
-                    side = Direction.UP;
-                    neighbour = blockPos;
-                } else {
-                    neighbour = blockPos.offset(side.getOpposite());
-                    hitPos.add((double) side.getOffsetX() * 0.5D, (double) side.getOffsetY() * 0.5D, (double) side.getOffsetZ() * 0.5D);
-                }
+                Vec3d vec = getHitPos(blockPos, offsetRandom);
+
+                ((IVec3d) hitPos).set(vec.x, vec.y, vec.z);
+                BlockPos neighbour = getNeighbourPos(blockPos);
+                Direction side = getSide(blockPos);
 
                 if (rotate) {
-                    Direction finalSide = side;
                     Rotations.rotate(Rotations.getYaw(hitPos), Rotations.getPitch(hitPos), rotationPriority, () -> {
                         InvUtils.swap(slot, swapBack);
 
-                        place(new BlockHitResult(hitPos, finalSide, neighbour, false), hand, swingHand);
+                        place(new BlockHitResult(hitPos, side, neighbour, false), hand, swingHand);
 
                         if (swapBack) InvUtils.swapBack();
                     });
@@ -193,19 +212,60 @@ public class VectorUtils {
         }
     }
 
-    private static void place(BlockHitResult blockHitResult, Hand hand, boolean swing) {
-        boolean wasSneaking = mc.player.input.sneaking;
-        mc.player.input.sneaking = false;
-        ActionResult result = mc.interactionManager.interactBlock(mc.player, mc.world, hand, blockHitResult);
-        if (result.shouldSwingHand()) {
-            if (swing) {
-                mc.player.swingHand(hand);
-            } else {
-                mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(hand));
+    public static void place(BlockHitResult blockHitResult, Hand hand, boolean swing) {
+        if (hand != null && blockHitResult != null && mc.world.getWorldBorder().contains(blockHitResult.getBlockPos()) && mc.player.getStackInHand(hand).getItem() instanceof BlockItem) {
+            boolean wasSneaking = mc.player.input.sneaking;
+            mc.player.input.sneaking = false;
+
+            ActionResult result = mc.interactionManager.interactBlock(mc.player, mc.world, hand, blockHitResult);
+
+            if (result.shouldSwingHand()) {
+                if (swing) mc.player.swingHand(hand);
+                else mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(hand));
             }
+
+            mc.player.input.sneaking = wasSneaking;
+        }
+    }
+
+    public static Vec3d getHitPos(BlockPos blockPos, boolean offsetRandom) {
+        Random random = new Random();
+
+        double px = random.nextDouble(0.9) + 0.5;
+        double py = random.nextDouble(0.9) + 0.5;
+        double pz = random.nextDouble(0.9) + 0.5;
+
+        double x = offsetRandom ? px : 0.5;
+        double y = offsetRandom ? py : 0.5;
+        double z = offsetRandom ? pz : 0.5;
+
+        ((IVec3d) hitPos).set(blockPos.getX() + x, (double) blockPos.getY() + y, (double) blockPos.getZ() + z);
+        Direction side = getPlaceSide(blockPos);
+
+        if (side != null) {
+            hitPos.add((double) side.getOffsetX() * 0.5D, (double) side.getOffsetY() * 0.5D, (double) side.getOffsetZ() * 0.5D);
         }
 
-        mc.player.input.sneaking = wasSneaking;
+        return hitPos;
+    }
+
+    public static BlockPos getNeighbourPos(BlockPos blockPos) {
+        Direction side = getPlaceSide(blockPos);
+        BlockPos neighbour;
+
+        if (side == null) {
+            neighbour = blockPos;
+        } else {
+            neighbour = blockPos.offset(side.getOpposite());
+        }
+
+        return neighbour;
+    }
+
+    public static Direction getSide(BlockPos blockPos) {
+        Direction side = getPlaceSide(blockPos);
+
+        return side == null ? Direction.UP : side;
     }
 
     public static boolean canPlace(BlockPos pos, boolean checkEntities) {
@@ -312,8 +372,8 @@ public class VectorUtils {
     public static void changeIcon() {
         if (VectorConfig.get().windowIcon) {
             try {
-                InputStream stream16 = VectorAddon.class.getClassLoader().getResourceAsStream("assets/vector/icon16.png");
-                InputStream stream32 = VectorAddon.class.getClassLoader().getResourceAsStream("assets/vector/icon32.png");
+                InputStream stream16 = VectorAddon.class.getClassLoader().getResourceAsStream("assets/vector-addon/vector/icon16.png");
+                InputStream stream32 = VectorAddon.class.getClassLoader().getResourceAsStream("assets/vector-addon/vector/icon32.png");
 
                 if (stream16 != null && stream32 != null) mc.getWindow().setIcon(stream16, stream32);
             } catch (Exception ex) {
