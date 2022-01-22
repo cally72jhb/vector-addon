@@ -175,7 +175,7 @@ public class PacketConsume extends Module {
         } else if ((timer >= ticks - swapDelay.get() && autoSwitch.get() != AutoSwitchMode.None && autoSwitch.get() != AutoSwitchMode.Silent || autoSwitch.get() == AutoSwitchMode.Normal) && eating) {
             FindItemResult item = InvUtils.findInHotbar(stack -> stack.getItem() != null && (stack.getItem().isFood() || stack.getItem() instanceof PotionItem));
 
-            if (item.found() && !item.isOffhand() && !item.isMainHand()) InvUtils.swap(item.getSlot(), swapBack.get());
+            if (item.found() && !item.isOffhand() && !item.isMainHand()) InvUtils.swap(item.slot(), swapBack.get());
 
             timer++;
         } else {

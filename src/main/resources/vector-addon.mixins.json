@@ -5,7 +5,9 @@
   "client": [
     "EntityMixin",
     "MinecraftClientMixin",
+    "NamespaceResourceManagerMixin",
     "PlayerEntityMixin",
+    "ReloadableResourceManagerImplMixin",
     "TitleScreenMixin"
   ],
   "injectors": {

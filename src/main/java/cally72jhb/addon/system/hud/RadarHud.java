@@ -2,7 +2,6 @@ package cally72jhb.addon.system.hud;
 
 import com.google.gson.Gson;
 import meteordevelopment.meteorclient.MeteorClient;
-import meteordevelopment.meteorclient.gui.renderer.packer.TextureRegion;
 import meteordevelopment.meteorclient.renderer.Renderer2D;
 import meteordevelopment.meteorclient.renderer.Texture;
 import meteordevelopment.meteorclient.renderer.text.TextRenderer;
@@ -46,7 +45,7 @@ public class RadarHud extends HudElement {
         .defaultValue(2.5)
         .min(0.1)
         .max(10)
-        .sliderMin(0.1)
+        .sliderMin(1.5)
         .sliderMax(3)
         .build()
     );
@@ -102,7 +101,7 @@ public class RadarHud extends HudElement {
         .build()
     );
 
-    private HashMap<String, Texture> textures = new HashMap<>();
+    private final HashMap<String, Texture> textures = new HashMap<>();
 
     public RadarHud(HUD hud) {
         super(hud, "radar", "Displays a player radar.", false);
@@ -173,50 +172,52 @@ public class RadarHud extends HudElement {
     }
 
     private void putHead(String name, String url) {
-        textures.putIfAbsent(name, null);
+        if (name != null && url != null) {
+            textures.putIfAbsent(name, null);
 
-        Thread thread = new Thread(() -> {
-            try {
-                BufferedImage skin = ImageIO.read(Http.get(url).sendInputStream());
+            Thread thread = new Thread(() -> {
+                try {
+                    BufferedImage skin = ImageIO.read(Http.get(url).sendInputStream());
 
-                byte[] head = new byte[8 * 8 * 3];
-                int[] pixel = new int[4];
+                    byte[] head = new byte[8 * 8 * 3];
+                    int[] pixel = new int[4];
 
-                int i = 0;
-                for (int x = 8; x < 16; x++) {
-                    for (int y = 8; y < 16; y++) {
-                        skin.getData().getPixel(x, y, pixel);
+                    int i = 0;
+                    for (int x = 8; x < 16; x++) {
+                        for (int y = 8; y < 16; y++) {
+                            skin.getData().getPixel(x, y, pixel);
 
-                        for (int j = 0; j < 3; j++) {
-                            head[i] = (byte) pixel[j];
-                            i++;
-                        }
-                    }
-                }
-
-                i = 0;
-                for (int x = 40; x < 48; x++) {
-                    for (int y = 8; y < 16; y++) {
-                        skin.getData().getPixel(x, y, pixel);
-
-                        if (pixel[3] != 0) {
                             for (int j = 0; j < 3; j++) {
                                 head[i] = (byte) pixel[j];
                                 i++;
                             }
                         }
-                        else i += 3;
                     }
+
+                    i = 0;
+                    for (int x = 40; x < 48; x++) {
+                        for (int y = 8; y < 16; y++) {
+                            skin.getData().getPixel(x, y, pixel);
+
+                            if (pixel[3] != 0) {
+                                for (int j = 0; j < 3; j++) {
+                                    head[i] = (byte) pixel[j];
+                                    i++;
+                                }
+                            }
+                            else i += 3;
+                        }
+                    }
+
+                    textures.replace(name, new Texture(8, 8, head, Texture.Format.RGB, Texture.Filter.Nearest, Texture.Filter.Nearest));
+                } catch (IOException e) {
+                    MeteorClient.LOG.error("Failed to read skin url (" + url + ").");
+                    textures.putIfAbsent(name, null);
                 }
+            });
 
-                textures.replace(name, new Texture(8, 8, head, Texture.Format.RGB, Texture.Filter.Nearest, Texture.Filter.Nearest));
-            } catch (IOException e) {
-                MeteorClient.LOG.error("Failed to read skin url (" + url + ").");
-                textures.putIfAbsent(name, null);
-            }
-        });
-
-        thread.start();
+            thread.start();
+        }
     }
 
     private String getSkinUrl(String username) {
@@ -226,7 +227,7 @@ public class RadarHud extends HudElement {
         UuidToProfileResponse res2 = Http.get("https://sessionserver.mojang.com/session/minecraft/profile/" + res.id).sendJson(UuidToProfileResponse.class);
         if (res2 == null) return null;
 
-        String base64Textures = res2.getPropertyValue("textures");
+        String base64Textures = res2.getPropertyValue("assets/textures");
         if (base64Textures == null) return null;
 
         TexturesJson textures = new Gson().fromJson(new String(Base64.getDecoder().decode(base64Textures)), TexturesJson.class);

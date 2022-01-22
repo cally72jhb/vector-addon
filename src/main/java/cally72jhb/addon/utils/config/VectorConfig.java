@@ -13,14 +13,13 @@ import net.fabricmc.loader.api.metadata.ModMetadata;
 import net.minecraft.nbt.NbtCompound;
 
 public class VectorConfig extends System<VectorConfig> {
-    public Version version;
+    public static Version version;
 
     public String clientName = VectorConfigTab.clientName.get();
     public String clientPrefix = VectorConfigTab.clientPrefix.get();
     public String clientSuffix = VectorConfigTab.clientSuffix.get();
 
     public boolean windowIcon = VectorConfigTab.windowIcon.get();
-    public boolean customTitleScreen = VectorConfigTab.customTitleScreen.get();
     public boolean highlightMembers = VectorConfigTab.highlightMembers.get();
 
     public SettingColor memberColor = VectorConfigTab.memberColor.get();
@@ -56,7 +55,6 @@ public class VectorConfig extends System<VectorConfig> {
         tag.putString("suffix", clientPrefix);
         tag.putString("suffix", clientSuffix);
         tag.putBoolean("icon", windowIcon);
-        tag.putBoolean("title", customTitleScreen);
         tag.putBoolean("members", highlightMembers);
         tag.put("color", memberColor.toTag());
 
@@ -69,7 +67,6 @@ public class VectorConfig extends System<VectorConfig> {
         clientPrefix = getString(tag, "suffix", VectorConfigTab.clientPrefix);
         clientSuffix = getString(tag, "suffix", VectorConfigTab.clientSuffix);
         windowIcon = getBoolean(tag, "icon", VectorConfigTab.windowIcon);
-        customTitleScreen = getBoolean(tag, "title", VectorConfigTab.customTitleScreen);
         highlightMembers = getBoolean(tag, "members", VectorConfigTab.highlightMembers);
 
         if (tag.contains("color")) {

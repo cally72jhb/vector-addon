@@ -2,17 +2,21 @@ package cally72jhb.addon.utils;
 
 import cally72jhb.addon.VectorAddon;
 import cally72jhb.addon.utils.config.VectorConfig;
+import cally72jhb.addon.utils.misc.FindItemResult;
 import cally72jhb.addon.utils.misc.Members;
 import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.mixin.MinecraftServerAccessor;
+import meteordevelopment.meteorclient.mixininterface.IClientPlayerInteractionManager;
 import meteordevelopment.meteorclient.mixininterface.IVec3d;
-import meteordevelopment.meteorclient.utils.player.FindItemResult;
 import meteordevelopment.meteorclient.utils.player.InvUtils;
 import meteordevelopment.meteorclient.utils.player.Rotations;
+import meteordevelopment.meteorclient.utils.player.SlotUtils;
 import net.minecraft.block.*;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.BlockItem;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
@@ -29,12 +33,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
-
-import static meteordevelopment.meteorclient.MeteorClient.mc;
+import java.util.function.Predicate;
 
 public class VectorUtils {
     public static int CPS = 0;
     public static MinecraftClient mc;
+    public static int previousSlot = -1;
 
     public static void init() {
         mc = MinecraftClient.getInstance();
@@ -367,6 +371,63 @@ public class VectorUtils {
         final double posZ = forward * speed * sin - side * speed * cos;
 
         return new double[] {posX, posZ};
+    }
+
+    public static FindItemResult findInHotbar(Predicate<ItemStack> isGood) {
+        if (isGood.test(mc.player.getOffHandStack())) {
+            return new FindItemResult(SlotUtils.OFFHAND, mc.player.getOffHandStack().getCount());
+        }
+
+        if (isGood.test(mc.player.getMainHandStack())) {
+            return new FindItemResult(mc.player.getInventory().selectedSlot, mc.player.getMainHandStack().getCount());
+        }
+
+        return find(isGood, 0, 8);
+    }
+
+    public static FindItemResult find(Item... items) {
+        return find(itemStack -> {
+            for (Item item : items) {
+                if (itemStack.getItem() == item) return true;
+            }
+            return false;
+        });
+    }
+
+    public static FindItemResult find(Predicate<ItemStack> isGood) {
+        return find(isGood, 0, mc.player.getInventory().size());
+    }
+
+    public static FindItemResult find(Predicate<ItemStack> isGood, int start, int end) {
+        int slot = -1, count = 0;
+
+        for (int i = start; i <= end; i++) {
+            ItemStack stack = mc.player.getInventory().getStack(i);
+
+            if (isGood.test(stack)) {
+                if (slot == -1) slot = i;
+                count += stack.getCount();
+            }
+        }
+
+        return new FindItemResult(slot, count);
+    }
+
+    public static boolean swap(int slot, boolean swapBack) {
+        if (slot < 0 || slot > 8) return false;
+        if (swapBack && previousSlot == -1) previousSlot = mc.player.getInventory().selectedSlot;
+
+        mc.player.getInventory().selectedSlot = slot;
+        ((IClientPlayerInteractionManager) mc.interactionManager).syncSelected();
+        return true;
+    }
+
+    public static boolean swapBack() {
+        if (previousSlot == -1) return false;
+
+        boolean return_ = swap(previousSlot, false);
+        previousSlot = -1;
+        return return_;
     }
 
     public static void changeIcon() {

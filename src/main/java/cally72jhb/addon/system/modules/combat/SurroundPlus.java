@@ -4,6 +4,7 @@ import cally72jhb.addon.VectorAddon;
 import cally72jhb.addon.system.modules.movement.StepPlus;
 import cally72jhb.addon.system.modules.player.BlinkPlus;
 import cally72jhb.addon.utils.VectorUtils;
+import cally72jhb.addon.utils.misc.FindItemResult;
 import it.unimi.dsi.fastutil.ints.*;
 import meteordevelopment.meteorclient.events.entity.player.InteractBlockEvent;
 import meteordevelopment.meteorclient.events.entity.player.PlayerMoveEvent;
@@ -28,7 +29,10 @@ import meteordevelopment.meteorclient.utils.entity.EntityUtils;
 import meteordevelopment.meteorclient.utils.misc.Keybind;
 import meteordevelopment.meteorclient.utils.misc.Pool;
 import meteordevelopment.meteorclient.utils.misc.input.KeyAction;
-import meteordevelopment.meteorclient.utils.player.*;
+import meteordevelopment.meteorclient.utils.player.ChatUtils;
+import meteordevelopment.meteorclient.utils.player.DamageUtils;
+import meteordevelopment.meteorclient.utils.player.PlayerUtils;
+import meteordevelopment.meteorclient.utils.player.Rotations;
 import meteordevelopment.meteorclient.utils.render.color.Color;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.meteorclient.utils.world.BlockUtils;
@@ -1192,7 +1196,7 @@ public class SurroundPlus extends Module {
         // Anti bed
 
         if (antiBed.get() && (!onlyInHole.get() || onlyInHole.get() && checkForBed(mc.player.getBlockPos()))) {
-            FindItemResult item = InvUtils.findInHotbar(stack -> bedBlocks.get().contains(Block.getBlockFromItem(stack.getItem())));
+            FindItemResult item = VectorUtils.findInHotbar(stack -> bedBlocks.get().contains(Block.getBlockFromItem(stack.getItem())));
 
             if (string.get() && item.found() && item.getHand() != null) {
                 BlockPos pos = mc.player.getBlockPos();
@@ -1295,7 +1299,7 @@ public class SurroundPlus extends Module {
         // Placing the Anti Bed Blocks
 
         if (!bedPositions.isEmpty() && replaceBed.get()) {
-            FindItemResult item = InvUtils.findInHotbar(stack -> bedBlocks.get().contains(Block.getBlockFromItem(stack.getItem())));
+            FindItemResult item = VectorUtils.findInHotbar(stack -> bedBlocks.get().contains(Block.getBlockFromItem(stack.getItem())));
 
             if (item.found()) {
                 for (BlockPos pos : new ArrayList<>(bedPositions)) {
@@ -1585,7 +1589,7 @@ public class SurroundPlus extends Module {
     }
 
     private FindItemResult getBestBlock() {
-        return InvUtils.findInHotbar(stack -> blocks.get().contains(Block.getBlockFromItem(stack.getItem())));
+        return VectorUtils.findInHotbar(stack -> blocks.get().contains(Block.getBlockFromItem(stack.getItem())));
     }
 
     private boolean isInSurround(BlockPos position) {
@@ -1687,10 +1691,16 @@ public class SurroundPlus extends Module {
             placedMap.replace(pos, 0);
 
             if (packetPlace.get()) {
-                if (item.isOffhand()) {
-                    return place(pos, Hand.OFF_HAND, mc.player.getInventory().selectedSlot, rotate, swingHand, checkEntities, randomOffset);
+                if (item != null && item.found()) {
+                    if (item.isOffhand()) {
+                        return place(pos, Hand.OFF_HAND, mc.player.getInventory().selectedSlot, rotate, swingHand, checkEntities, randomOffset);
+                    } else if (item.isHotbar()) {
+                        return item.isHotbar() && place(pos, Hand.MAIN_HAND, item.getSlot(), rotate, swingHand, checkEntities, randomOffset);
+                    } else {
+                        return false;
+                    }
                 } else {
-                    return item.isHotbar() && place(pos, Hand.MAIN_HAND, item.getSlot(), rotate, swingHand, checkEntities, randomOffset);
+                    return false;
                 }
             } else {
                 return VectorUtils.place(pos, item, rotate, 100, swingHand, checkEntities, true, randomOffset);
@@ -1711,14 +1721,14 @@ public class SurroundPlus extends Module {
 
                 if (rotate) {
                     Rotations.rotate(Rotations.getYaw(hitPos), Rotations.getPitch(hitPos), 100, () -> {
-                        InvUtils.swap(slot, swapBack.get());
+                        VectorUtils.swap(slot, swapBack.get());
                         place(new BlockHitResult(hitPos, side, neighbour, false), hand, swingHand);
-                        if (swapBack.get()) InvUtils.swapBack();
+                        if (swapBack.get()) VectorUtils.swapBack();
                     });
                 } else {
-                    InvUtils.swap(slot, swapBack.get());
+                    VectorUtils.swap(slot, swapBack.get());
                     place(new BlockHitResult(hitPos, side, neighbour, false), hand, swingHand);
-                    if (swapBack.get()) InvUtils.swapBack();
+                    if (swapBack.get()) VectorUtils.swapBack();
                 }
 
                 return true;

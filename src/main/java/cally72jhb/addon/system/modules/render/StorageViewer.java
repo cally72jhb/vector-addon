@@ -3,7 +3,6 @@ package cally72jhb.addon.system.modules.render;
 import cally72jhb.addon.VectorAddon;
 import cally72jhb.addon.utils.VectorUtils;
 import meteordevelopment.meteorclient.events.entity.player.InteractBlockEvent;
-import meteordevelopment.meteorclient.events.game.OpenScreenEvent;
 import meteordevelopment.meteorclient.events.packets.PacketEvent;
 import meteordevelopment.meteorclient.events.render.Render2DEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
@@ -26,7 +25,6 @@ import net.minecraft.block.ChestBlock;
 import net.minecraft.block.DoubleBlockProperties;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.CreativeInventoryScreen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.gui.screen.ingame.InventoryScreen;
@@ -165,7 +163,7 @@ public class StorageViewer extends Module {
         .build()
     );
 
-    private static final Identifier TEXTURE = new Identifier("meteor-client", "textures/container.png");
+    private static final Identifier TEXTURE = new Identifier("meteor-client", "assets/textures/container.png");
     private final ItemStack[] inventory = new ItemStack[9 * 3];
 
     private HashMap<BlockPos, List<ItemStack>> chests;

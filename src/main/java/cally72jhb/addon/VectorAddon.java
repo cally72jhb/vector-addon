@@ -4,8 +4,7 @@ import cally72jhb.addon.system.Systems;
 import cally72jhb.addon.system.players.Player;
 import cally72jhb.addon.system.players.Players;
 import cally72jhb.addon.utils.VectorUtils;
-import cally72jhb.addon.utils.config.VectorConfig;
-import cally72jhb.addon.utils.titlescreen.CustomTitleScreen;
+import cally72jhb.addon.utils.misc.Stats;
 import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.addons.MeteorAddon;
 import meteordevelopment.meteorclient.events.game.GameJoinedEvent;
@@ -13,7 +12,9 @@ import meteordevelopment.meteorclient.events.game.ReceiveMessageEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.systems.modules.Category;
 import meteordevelopment.meteorclient.systems.modules.Modules;
+import meteordevelopment.meteorclient.utils.misc.MeteorStarscript;
 import meteordevelopment.orbit.EventHandler;
+import meteordevelopment.starscript.value.Value;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.item.Items;
@@ -30,12 +31,11 @@ public class VectorAddon extends MeteorAddon {
     private final MinecraftClient mc = MinecraftClient.getInstance();
 
     public static Screen screen;
+    public static Stats scores;
 
     @Override
     public void onInitialize() {
         LOG.info("Initializing Vector Addon");
-
-        MeteorClient.EVENT_BUS.registerLambdaFactory("cally72jhb.addon", (method, klass) -> (MethodHandles.Lookup) method.invoke(null, klass, MethodHandles.lookup()));
 
         VectorUtils.init();
         Systems.init();
@@ -45,9 +45,7 @@ public class VectorAddon extends MeteorAddon {
         VectorUtils.members();
         VectorUtils.changeIcon();
 
-        mc.options.skipMultiplayerWarning = true;
-
-        if (VectorConfig.get().customTitleScreen) mc.setScreen(new CustomTitleScreen());
+        scores = new Stats(true, true, true, false, 10);
     }
 
     @Override

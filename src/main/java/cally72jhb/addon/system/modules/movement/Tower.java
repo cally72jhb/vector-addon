@@ -2,13 +2,13 @@ package cally72jhb.addon.system.modules.movement;
 
 import cally72jhb.addon.VectorAddon;
 import cally72jhb.addon.utils.VectorUtils;
+import cally72jhb.addon.utils.misc.FindItemResult;
 import meteordevelopment.meteorclient.events.entity.player.PlayerMoveEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.mixininterface.IVec3d;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.Utils;
-import meteordevelopment.meteorclient.utils.player.FindItemResult;
 import meteordevelopment.meteorclient.utils.player.InvUtils;
 import meteordevelopment.meteorclient.utils.player.Rotations;
 import meteordevelopment.orbit.EventHandler;
@@ -155,7 +155,7 @@ public class Tower extends Module {
     private void onPreTick(TickEvent.Pre event) {
         mc.player.setJumping(false);
 
-        FindItemResult item = InvUtils.findInHotbar(itemStack -> validItem(itemStack, mc.player.getBlockPos()));
+        FindItemResult item = VectorUtils.findInHotbar(itemStack -> validItem(itemStack, mc.player.getBlockPos()));
 
         if (!item.found()) return;
 
@@ -245,7 +245,7 @@ public class Tower extends Module {
 
     private void tower() {
         BlockPos pos = mc.player.getBlockPos();
-        FindItemResult block = InvUtils.findInHotbar(itemStack -> validItem(itemStack, pos));
+        FindItemResult block = VectorUtils.findInHotbar(itemStack -> validItem(itemStack, pos));
 
         if (!block.found()) return;
         if (!checkHead(pos)) return;

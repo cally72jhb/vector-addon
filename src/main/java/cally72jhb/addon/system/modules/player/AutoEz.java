@@ -2,7 +2,6 @@ package cally72jhb.addon.system.modules.player;
 
 import cally72jhb.addon.VectorAddon;
 import cally72jhb.addon.utils.VectorUtils;
-import cally72jhb.addon.utils.misc.VectorStarscript;
 import it.unimi.dsi.fastutil.chars.Char2CharArrayMap;
 import it.unimi.dsi.fastutil.chars.Char2CharMap;
 import meteordevelopment.meteorclient.events.packets.PacketEvent;
@@ -11,17 +10,11 @@ import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.friends.Friends;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.systems.modules.Modules;
-import meteordevelopment.meteorclient.utils.Utils;
 import meteordevelopment.orbit.EventHandler;
-import meteordevelopment.starscript.Script;
-import meteordevelopment.starscript.compiler.Compiler;
-import meteordevelopment.starscript.compiler.Parser;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.network.packet.s2c.play.EntityEquipmentUpdateS2CPacket;
 import net.minecraft.network.packet.s2c.play.EntityStatusS2CPacket;
 
 import java.util.*;
@@ -30,7 +23,6 @@ public class AutoEz extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
     private final SettingGroup sgPops = settings.createGroup("Pops");
     private final SettingGroup sgKills = settings.createGroup("Kills");
-    private final SettingGroup sgArmor = settings.createGroup("Armor");
     private final SettingGroup sgTargeting = settings.createGroup("Targeting");
 
     private final Setting<Boolean> clearOnDeath = sgGeneral.add(new BoolSetting.Builder()
@@ -136,31 +128,6 @@ public class AutoEz extends Module {
         .build()
     );
 
-    // Armor
-
-    private final Setting<Boolean> armorMsg = sgArmor.add(new BoolSetting.Builder()
-        .name("armor")
-        .description("Sends a messages everytime you break a armor piece of a player.")
-        .defaultValue(false)
-        .build()
-    );
-
-    private final Setting<String> armorString = sgArmor.add(new StringSetting.Builder()
-        .name("armor-message")
-        .description("The message to send when you broke a armor piece of a player.")
-        .defaultValue("broke {player}'s {piece}")
-        .visible(() -> !randomMsg.get() && armorMsg.get())
-        .build()
-    );
-
-    private final Setting<List<String>> armorMessages = sgArmor.add(new StringListSetting.Builder()
-        .name("armor-messages")
-        .description("The random messages to send when you broke a armor piece of a player.")
-        .defaultValue(List.of("broke {player}'s armor", "broke {player}'s {piece}", "broke {player}'s armor with vector"))
-        .visible(() -> randomMsg.get() && armorMsg.get())
-        .build()
-    );
-
     // Targeting
 
     private final Setting<Boolean> ignoreFriends = sgTargeting.add(new BoolSetting.Builder()
@@ -188,7 +155,6 @@ public class AutoEz extends Module {
 
     private final Char2CharMap SMALL_CAPS = new Char2CharArrayMap();
 
-    private HashMap<UUID, ArrayList<Armor>> armor;
     private HashMap<UUID, Integer> kills;
     private HashMap<UUID, Integer> pops;
     private Random random;
@@ -206,7 +172,6 @@ public class AutoEz extends Module {
 
     @Override
     public void onActivate() {
-        armor = new HashMap<>();
         kills = new HashMap<>();
         pops = new HashMap<>();
         random = new Random();
@@ -248,43 +213,6 @@ public class AutoEz extends Module {
                     killTimer = 0;
                 }
             }
-        } else if (event.packet instanceof EntityEquipmentUpdateS2CPacket packet && armorMsg.get()) {
-            Entity entity = mc.world.getEntityById(packet.getId());
-
-            if (!check(entity) || packet.getEquipmentList() == null || packet.getEquipmentList().isEmpty()) return;
-
-            ArrayList<Armor> stacks = new ArrayList<>();
-
-            for (ItemStack stack : entity.getArmorItems()) {
-                Item item = stack.getItem();
-
-                Armor armor = isHelm(item) ? Armor.Helm : (isChest(item) ? Armor.Chest : (isLegs(item) ? Armor.Legs : (isBoots(item) ? Armor.Boots : Armor.None)));
-
-                if (armor != Armor.None) stacks.add(armor);
-            }
-
-            if (armor.containsKey(entity.getUuid()) && !stacks.isEmpty()) {
-                if (mc.options.keySneak.isPressed()) {
-                    info(stacks + " -- ");
-                    info(armor.get(entity.getUuid()) + " ++ ");
-                }
-
-                ArrayList<Armor> old = stacks;
-
-                stacks.retainAll(armor.get(entity.getUuid()));
-
-                if (stacks.size() < armor.get(entity.getUuid()).size() && !stacks.isEmpty()) {
-                    sendArmorMsg((PlayerEntity) entity, stacks.get(0));
-
-                    if (mc.options.keySneak.isPressed()) info(stacks + " == ");
-
-                    //armor.remove(entity.getUuid());
-                } else if (!old.isEmpty()) {
-                    armor.replace(entity.getUuid(), old);
-                }
-            } else {
-                armor.putIfAbsent(entity.getUuid(), stacks);
-            }
         }
     }
 
@@ -298,12 +226,6 @@ public class AutoEz extends Module {
 
     private void sendPopMsg(PlayerEntity player) {
         sendMsg(apply(player, randomMsg.get() ? popMessages.get().get(random.nextInt(popMessages.get().size())) : popString.get()));
-    }
-
-    private void sendArmorMsg(PlayerEntity player, Armor piece) {
-        if (piece == Armor.None) return;
-
-        sendMsg(apply(player, randomMsg.get() ? armorMessages.get().get(random.nextInt(armorMessages.get().size())) : armorString.get()).replace("{piece}", piece.name()));
     }
 
     private void sendKillMsg(PlayerEntity player) {
@@ -348,22 +270,6 @@ public class AutoEz extends Module {
         string = string.replace("{kills}", String.valueOf(allKills));
 
         return string;
-    }
-
-    private void recompile(List<String> messages, List<Script> scripts) {
-        scripts.clear();
-
-        for (int i = 0; i < messages.size(); i++) {
-            Parser.Result result = Parser.parse(messages.get(i));
-
-            if (result.hasErrors()) {
-                if (Utils.canUpdate()) VectorStarscript.printChatError(i, result.errors.get(0));
-
-                continue;
-            }
-
-            scripts.add(Compiler.compile(result));
-        }
     }
 
     private boolean check(Entity entity) {

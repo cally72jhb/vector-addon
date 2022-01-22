@@ -289,20 +289,26 @@ public class CevBreaker extends Module {
             // Interfering
 
             if (interfering.get()) {
-                if (!VectorUtils.getBlockState(target.getBlockPos().up()).isAir()) {
+                if (VectorUtils.getBlock(pos) != Blocks.OBSIDIAN) {
+                    mine(pos, pick);
+                    obbypos = pos;
+                    return;
+                }
+
+                if (VectorUtils.getBlock(target.getBlockPos().up()).getBlastResistance() < 1200.0F) {
                     mine(target.getBlockPos().up(), pick);
                     obbypos = target.getBlockPos().up();
                     return;
                 }
 
-                if (!VectorUtils.getBlockState(pos.up()).isAir()) {
+                if (VectorUtils.getBlock(pos.up()).getBlastResistance() < 1200.0F) {
                     mine(pos.up(), pick);
                     obbypos = pos.up();
                     return;
                 }
             }
 
-            if (burrow.get() && !VectorUtils.getBlockState(target.getBlockPos()).isAir()) {
+            if (burrow.get() && VectorUtils.getBlock(target.getBlockPos()).getBlastResistance() < 1200.0F) {
                 mine(target.getBlockPos(), pick);
                 obbypos = target.getBlockPos();
                 return;
@@ -374,7 +380,7 @@ public class CevBreaker extends Module {
         if (!packetMine.get()) {
             BlockUtils.breakBlock(pos, renderSwing.get());
         } else {
-            if (mc.player.getInventory().selectedSlot != pick.getSlot()) InvUtils.swap(pick.getSlot(), false);
+            if (mc.player.getInventory().selectedSlot != pick.slot()) InvUtils.swap(pick.slot(), false);
 
             mc.getNetworkHandler().sendPacket(new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.START_DESTROY_BLOCK, pos, Direction.UP));
 
@@ -394,7 +400,7 @@ public class CevBreaker extends Module {
 
     private void interact(BlockPos pos, FindItemResult item, Direction direction) {
         if (item == null) return;
-        if (item.getHand() == null || !silentSwitch.get()) InvUtils.swap(item.getSlot(), false);
+        if (item.getHand() == null || !silentSwitch.get()) InvUtils.swap(item.slot(), false);
 
         if (silentSwitch.get()) {
             mc.interactionManager.interactBlock(mc.player, mc.world, item.getHand() == null ? Hand.MAIN_HAND : item.getHand(), new BlockHitResult(mc.player.getPos(), direction, pos, true));

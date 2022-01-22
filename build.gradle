@@ -32,10 +32,6 @@ dependencies {
     modImplementation "meteordevelopment:meteor-client:${project.meteor_version}"
 }
 
-loom {
-    accessWidenerPath = file("src/main/resources/vector-addon.accesswidener")
-}
-
 processResources {
     inputs.property "version", project.version
 

@@ -10,6 +10,7 @@
   ],
   "contact": {
     "sources": "https://github.com/cally72jhb/vector-addon",
+    "website": "https://cally72jhb.github.io/website/",
     "discord": "https://discord.gg/A3nYgbKeXR"
   },
 
@@ -26,7 +27,6 @@
     "vector-addon.mixins.json",
     "vector-addon-meteor.mixins.json"
   ],
-  "accessWidener": "vector-addon.accesswidener",
   "custom": {
     "meteor-client:color": "140,245,165"
   },

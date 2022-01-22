@@ -135,7 +135,7 @@ public class PacketPlace extends Module {
             place(blockPos, Hand.OFF_HAND, mc.player.getInventory().selectedSlot, rotate, rotationPriority, swingHand, checkEntities, swapBack, random);
         } else {
             if (findItemResult.isHotbar()) {
-                place(blockPos, Hand.MAIN_HAND, findItemResult.getSlot(), rotate, rotationPriority, swingHand, checkEntities, swapBack, random);
+                place(blockPos, Hand.MAIN_HAND, findItemResult.slot(), rotate, rotationPriority, swingHand, checkEntities, swapBack, random);
             }
         }
     }
