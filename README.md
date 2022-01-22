@@ -45,4 +45,4 @@ https://github.com/cally72jhb/vector-addon/releases/
 
 **Custom Title Screen:**
 
-<img src="https://raw.githubusercontent.com/cally72jhb/cally72jhb/main/assets/background.png" width="960px" height="540px">
+<img src="https://raw.githubusercontent.com/cally72jhb/cally72jhb/main/assets/background.png" width="960px" height="500px">
