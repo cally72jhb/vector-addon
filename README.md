@@ -8,36 +8,41 @@ Releases:
 https://github.com/cally72jhb/vector-addon/releases/
 
 **Modules:**
+- ActionRenderer
 - AntiDesync
 - AntiGhost
 - AntiPistonPush
-- ArmorAlert
 - AutoEz
 - BedrockWalk
 - BlinkPlus
 - BowBomb
 - CevBreaker
-- ActionRenderer
 - ChorusPredict
 - ClipPhase
 - DebugTools
 - EntityFly
 - NoFluid
-- PortalGodMode
-- PacketFly
 - PacketConsume
+- PacketFly
+- PacketPlace
 - PearlPredict
 - PingSpoof
+- PortalGodMode
 - SkeletonESP
 - SpeedBypass
 - StepPlus
-- StorageInvESP
+- StorageViewer
 - Strafe
 - SurroundPlus
 - Tower
-- Welcomer
 - VectorPresence
+- Welcomer
 
 **Commands:**
-- Mute
-- Target
+- MuteCommand
+- TargetCommand
+- StatsCommand
+
+**Custom Title Screen:**
+
+<img src="https://raw.githubusercontent.com/cally72jhb/cally72jhb/main/assets/background.png" width="960px" height="540px">
