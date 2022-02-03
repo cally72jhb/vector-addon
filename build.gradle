@@ -1,6 +1,7 @@
 plugins {
     id 'fabric-loom' version '0.10-SNAPSHOT'
     id 'maven-publish'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
 }
 
 sourceCompatibility = targetCompatibility = JavaVersion.VERSION_17
@@ -23,6 +24,11 @@ repositories {
 }
 
 dependencies {
+    def library = { id ->
+        implementation id
+        shadow id
+    } as Object
+
     // Fabric
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
@@ -30,6 +36,9 @@ dependencies {
 
     // Meteor
     modImplementation "meteordevelopment:meteor-client:${project.meteor_version}"
+
+    // Libraries
+    library "meteordevelopment:discord-ipc:${project.discordipc_version}"
 }
 
 processResources {
@@ -43,5 +52,4 @@ processResources {
 
 tasks.withType(JavaCompile).configureEach {
     it.options.encoding = "UTF-8"
-    it.options.release = 17
 }
