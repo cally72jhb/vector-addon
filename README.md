@@ -1,5 +1,5 @@
 # Vector Addon
-A open-source addon for Meteor Client (latest 1.18 dev-build and fabric 0.12.12)
+A open-source addon for Meteor Client (Meteor Version 0.4.7 Release and fabric 0.12.12)
 
 Vector Discord:
 https://discord.gg/A3nYgbKeXR
@@ -13,6 +13,7 @@ https://github.com/cally72jhb/vector-addon/releases/
 - AntiGhost
 - AntiPistonPush
 - AutoEz
+- BedBomb
 - BedrockWalk
 - BlinkPlus
 - BowBomb
@@ -42,6 +43,7 @@ https://github.com/cally72jhb/vector-addon/releases/
 - MuteCommand
 - TargetCommand
 - StatsCommand
+- UUIDCommand
 
 **Custom Title Screen:**
 
