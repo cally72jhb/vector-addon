@@ -9,23 +9,21 @@ https://github.com/cally72jhb/vector-addon/releases/
 
 **Modules:**
 - ActionRenderer
-- AntiDesync
-- AntiGhost
 - AntiPistonPush
 - AutoEz
 - BedBomb
-- BedrockWalk
 - BlinkPlus
+- BorderBypass
 - BowBomb
 - CevBreaker
 - ChorusPredict
-- ClipPhase
 - DebugTools
 - EntityFly
 - NoFluid
 - PacketConsume
 - PacketFly
 - PacketPlace
+- ParticleRenderer
 - PearlPredict
 - PingSpoof
 - PortalGodMode
@@ -33,7 +31,6 @@ https://github.com/cally72jhb/vector-addon/releases/
 - SpeedBypass
 - StepPlus
 - StorageViewer
-- Strafe
 - SurroundPlus
 - Tower
 - VectorPresence
