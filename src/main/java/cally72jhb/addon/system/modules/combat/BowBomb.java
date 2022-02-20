@@ -92,7 +92,7 @@ public class BowBomb extends Module {
     );
 
     public BowBomb() {
-        super(VectorAddon.MISC, "bow-bomb", "Kills / Pops entities 1 shot with the bow.");
+        super(VectorAddon.Combat, "bow-bomb", "Kills / Pops entities 1 shot with the bow.");
     }
 
     private long lastShoot;
@@ -115,15 +115,15 @@ public class BowBomb extends Module {
     @EventHandler
     public void onPreTick(TickEvent.Pre event) {
         if (isSpoofable()) {
-            if (mc.player.getItemUseTime() > 0 && mc.options.keyUse.isPressed()) deactivate();
-            else if (pause.get()) activate();
+            if (mc.player.getItemUseTime() > 0 && mc.options.keyUse.isPressed()) activate();
+            else if (pause.get()) deactivate();
         }
     }
 
     @EventHandler
     public void onTick(TickEvent.Post event) {
-        if (spoofed && !mc.options.keyUse.isPressed() && pause.get()) deactivate();
-        else if (pause.get()) activate();
+        if (spoofed && !mc.options.keyUse.isPressed() && pause.get()) activate();
+        else if (pause.get()) deactivate();
     }
 
     @EventHandler
@@ -135,6 +135,7 @@ public class BowBomb extends Module {
 
             if (packet.getAction() == PlayerActionC2SPacket.Action.RELEASE_USE_ITEM) {
                 if (isSpoofable()) {
+                    deactivate();
                     spoofed = false;
 
                     if (System.currentTimeMillis() - lastShoot >= timeout.get()) {

@@ -13,7 +13,6 @@ import meteordevelopment.meteorclient.gui.tabs.WindowTabScreen;
 import meteordevelopment.meteorclient.gui.widgets.containers.WHorizontalList;
 import meteordevelopment.meteorclient.gui.widgets.pressable.WButton;
 import meteordevelopment.meteorclient.gui.widgets.pressable.WCheckbox;
-import meteordevelopment.meteorclient.systems.Systems;
 import meteordevelopment.meteorclient.utils.misc.NbtUtils;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.nbt.NbtCompound;
@@ -36,58 +35,58 @@ public class TitleScreenTab extends Tab {
     }
 
     public static class TabTitleScreen extends WindowTabScreen {
-        private final TitleScreenManager titleScreenManager;
+        private final TitleScreenManager manager;
 
         public TabTitleScreen(GuiTheme theme, Tab tab) {
             super(theme, tab);
 
             this.parent = new net.minecraft.client.gui.screen.TitleScreen();
 
-            titleScreenManager = Systems.get(TitleScreenManager.class);
-            titleScreenManager.settings.onActivated();
+            manager = TitleScreenManager.get();
+            manager.settings.onActivated();
         }
 
         @Override
         public void initWidgets() {
-            add(theme.settings(titleScreenManager.settings)).expandX();
+            add(theme.settings(manager.settings)).expandX();
             add(theme.horizontalSeparator()).expandX();
 
             WButton openEditor = add(theme.button("Edit")).expandX().widget();
             openEditor.action = () -> mc.setScreen(new TitleScreenEditor(theme, this));
 
             WButton resetTitleScreen = add(theme.button("Reset")).expandX().widget();
-            resetTitleScreen.action = titleScreenManager.reset;
+            resetTitleScreen.action = manager.reset;
 
             add(theme.horizontalSeparator()).expandX();
 
             WHorizontalList bottom = add(theme.horizontalList()).expandX().widget();
 
             bottom.add(theme.label("Active: "));
-            WCheckbox active = bottom.add(theme.checkbox(titleScreenManager.active)).expandCellX().widget();
-            active.action = () -> titleScreenManager.active = active.checked;
+            WCheckbox active = bottom.add(theme.checkbox(manager.active)).expandCellX().widget();
+            active.action = () -> manager.active = active.checked;
 
             WButton resetSettings = bottom.add(theme.button(GuiRenderer.RESET)).widget();
-            resetSettings.action = titleScreenManager.settings::reset;
+            resetSettings.action = manager.settings::reset;
         }
 
         @Override
         public void onClose() {
             super.onClose();
-            if (VectorUtils.mc != null && MeteorClient.mc.world == null) VectorUtils.mc.setScreen(new TitleScreen());
+            if (VectorUtils.mc != null && MeteorClient.mc.world == null && manager.active) VectorUtils.mc.setScreen(new TitleScreen());
             else VectorUtils.mc.setScreen(null);
         }
 
         @Override
         public boolean toClipboard() {
-            return NbtUtils.toClipboard("title-screen-settings", titleScreenManager.settings.toTag());
+            return NbtUtils.toClipboard("title-screen-settings", manager.settings.toTag());
         }
 
         @Override
         public boolean fromClipboard() {
-            NbtCompound clipboard = NbtUtils.fromClipboard(titleScreenManager.settings.toTag());
+            NbtCompound clipboard = NbtUtils.fromClipboard(manager.settings.toTag());
 
             if (clipboard != null) {
-                titleScreenManager.settings.fromTag(clipboard);
+                manager.settings.fromTag(clipboard);
                 return true;
             }
 

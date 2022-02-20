@@ -339,7 +339,7 @@ public class PacketFly extends Module {
     private static final Random random = new Random();
 
     public PacketFly() {
-        super(VectorAddon.MOVEMENT, "packet-fly", "Fly with packets.");
+        super(VectorAddon.Movement, "packet-fly", "Fly with packets.");
     }
 
     @Override

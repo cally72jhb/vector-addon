@@ -44,7 +44,7 @@ public class NoFluid extends Module {
     );
 
     public NoFluid() {
-        super(VectorAddon.MOVEMENT, "no-fluid", "Removes liquid collisions.");
+        super(VectorAddon.Movement, "no-fluid", "Removes liquid collisions.");
     }
 
     @Override

@@ -128,7 +128,7 @@ public class Welcomer extends Module {
     private int bTimer;
 
     public Welcomer() {
-        super(VectorAddon.MISC, "welcomer", "Sends a chat message when a player joins or leaves.");
+        super(VectorAddon.Misc, "welcomer", "Sends a chat message when a player joins or leaves.");
 
         String[] a = "abcdefghijklmnopqrstuvwxyz".split("");
         String[] b = "ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘqʀꜱᴛᴜᴠᴡxʏᴢ".split("");

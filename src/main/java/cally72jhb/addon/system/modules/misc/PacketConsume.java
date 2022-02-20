@@ -14,7 +14,10 @@ import meteordevelopment.meteorclient.utils.misc.input.KeyAction;
 import meteordevelopment.meteorclient.utils.player.FindItemResult;
 import meteordevelopment.meteorclient.utils.player.InvUtils;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.item.*;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.PotionItem;
+import net.minecraft.item.ThrowablePotionItem;
 import net.minecraft.network.Packet;
 import net.minecraft.network.listener.ServerPlayPacketListener;
 import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
@@ -141,7 +144,7 @@ public class PacketConsume extends Module {
     private int timer;
 
     public PacketConsume() {
-        super(VectorAddon.MISC, "packet-consume", "Consume stuff with packets.");
+        super(VectorAddon.Misc, "packet-consume", "Consume stuff with packets.");
     }
 
     @Override

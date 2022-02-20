@@ -65,16 +65,8 @@ public class PingSpoof extends Module {
         .build()
     );
 
-    private final Setting<Boolean> negative = sgGeneral.add(new BoolSetting.Builder()
-        .name("negative")
-        .description("Makes you ping go down.")
-        .defaultValue(false)
-        .visible(() -> !strict.get())
-        .build()
-    );
-
     public PingSpoof() {
-        super(VectorAddon.MISC, "ping-spoof", "Modify your ping.");
+        super(VectorAddon.Misc, "ping-spoof", "Modify your ping.");
     }
 
     private int tick;
@@ -144,7 +136,7 @@ public class PingSpoof extends Module {
         }
 
         if (tick >= ticks.get() || ticks.get() == 0) {
-            if (timer.hasPassed(negative.get() ? -ping.get() : ping.get()) && packet != null) {
+            if (timer.hasPassed(ping.get()) && packet != null) {
                 mc.getNetworkHandler().sendPacket(packet);
 
                 if (send.get() > 1) {

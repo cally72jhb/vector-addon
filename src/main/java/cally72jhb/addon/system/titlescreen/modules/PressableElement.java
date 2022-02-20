@@ -1,7 +1,6 @@
 package cally72jhb.addon.system.titlescreen.modules;
 
 import cally72jhb.addon.system.titlescreen.TitleScreenManager;
-import cally72jhb.addon.system.titlescreen.TitleScreenRenderer;
 import meteordevelopment.meteorclient.gui.GuiThemes;
 import meteordevelopment.meteorclient.gui.screens.AccountsScreen;
 import meteordevelopment.meteorclient.gui.screens.ProxiesScreen;
@@ -22,7 +21,7 @@ public abstract class PressableElement extends DefaultElement {
 
     public final String name;
 
-    public PressableElement(TitleScreenManager manager, String name, Action action, boolean defaultActive) {
+    public PressableElement(TitleScreenManager manager, String name, Action action, double defaultScale, boolean defaultActive) {
         super(manager, name, "A custom button.", defaultActive);
 
         this.name = name;
@@ -30,7 +29,7 @@ public abstract class PressableElement extends DefaultElement {
         this.scale = sgGeneral.add(new DoubleSetting.Builder()
             .name("scale")
             .description("The scale of the displayed text.")
-            .defaultValue(3)
+            .defaultValue(defaultScale)
             .min(0.5)
             .max(50)
             .sliderMin(0)

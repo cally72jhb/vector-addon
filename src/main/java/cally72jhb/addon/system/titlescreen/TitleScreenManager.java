@@ -1,15 +1,15 @@
 package cally72jhb.addon.system.titlescreen;
 
+import cally72jhb.addon.gui.screens.TitleScreen;
 import cally72jhb.addon.gui.screens.TitleScreenEditor;
 import cally72jhb.addon.gui.screens.TitleScreenElementScreen;
-import cally72jhb.addon.gui.screens.TitleScreen;
+import cally72jhb.addon.system.Systems;
 import cally72jhb.addon.system.titlescreen.modules.*;
 import meteordevelopment.meteorclient.events.render.Render2DEvent;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.System;
 import meteordevelopment.meteorclient.utils.render.AlignmentX;
 import meteordevelopment.meteorclient.utils.render.AlignmentY;
-import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
@@ -66,13 +66,6 @@ public class TitleScreenManager extends System<TitleScreenManager> {
         .build()
     );
 
-    public final Setting<SettingColor> primaryColor = sgGeneral.add(new ColorSetting.Builder()
-        .name("primary-color")
-        .description("Primary color of text.")
-        .defaultValue(new SettingColor(255, 255, 255))
-        .build()
-    );
-
     // Editor
 
     public final Setting<Integer> snappingRange = sgEditor.add(new IntSetting.Builder()
@@ -87,7 +80,7 @@ public class TitleScreenManager extends System<TitleScreenManager> {
     private final TitleScreenRenderer RENDERER = new TitleScreenRenderer();
 
     public final List<DefaultElement> elements = new ArrayList<>();
-    public final ElementLayer bottomLeft, topRight;
+    public final ElementLayer center, topRight, topLeft;
 
     public boolean active;
 
@@ -99,19 +92,26 @@ public class TitleScreenManager extends System<TitleScreenManager> {
         });
     };
 
+    public static TitleScreenManager get() {
+        return Systems.get(TitleScreenManager.class);
+    }
+
     public TitleScreenManager() {
         super("title-screen");
 
         // Bottom Left
-        bottomLeft = new ElementLayer(RENDERER, elements, AlignmentX.Center, AlignmentY.Center, 0, 0);
-        bottomLeft.add(new TextElement(this, "Singleplayer", PressableElement.Action.SINGLEPLAYER, true));
-        bottomLeft.add(new TextElement(this, "Multiplayer", PressableElement.Action.MULTIPLAYER, true));
-        bottomLeft.add(new TextElement(this, "Options", PressableElement.Action.OPTIONS, true));
-        bottomLeft.add(new TextElement(this, "Quit", PressableElement.Action.QUIT, true));
+        center = new ElementLayer(RENDERER, elements, AlignmentX.Center, AlignmentY.Center, 0, 0);
+        center.add(new TextElement(this, "Singleplayer", PressableElement.Action.SINGLEPLAYER, true));
+        center.add(new TextElement(this, "Multiplayer", PressableElement.Action.MULTIPLAYER, true));
+        center.add(new TextElement(this, "Options", PressableElement.Action.OPTIONS, true));
+        center.add(new TextElement(this, "Quit", PressableElement.Action.QUIT, true));
 
         // Top Right
         topRight = new ElementLayer(RENDERER, elements, AlignmentX.Right, AlignmentY.Top, 50, 50);
         topRight.add(new SkinElement(this, "Accounts", PressableElement.Action.LOGIN, true));
+
+        topLeft = new ElementLayer(RENDERER, elements, AlignmentX.Left, AlignmentY.Top, 25, 25);
+        topLeft.add(new CreditsElement(this, "Credits", PressableElement.Action.NONE, true));
 
         align();
     }
@@ -119,8 +119,9 @@ public class TitleScreenManager extends System<TitleScreenManager> {
     private void align() {
         RENDERER.begin(1, 0, true);
 
-        bottomLeft.align();
+        center.align();
         topRight.align();
+        topLeft.align();
 
         RENDERER.end();
     }

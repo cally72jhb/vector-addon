@@ -32,23 +32,23 @@ public class SkeletonESP extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
 
     private final Setting<SettingColor> skeletonColorSetting = sgGeneral.add(new ColorSetting.Builder()
-            .name("players-color")
-            .description("The other player's color.")
-            .defaultValue(new SettingColor(140, 245, 165))
-            .build()
+        .name("players-color")
+        .description("The other player's color.")
+        .defaultValue(new SettingColor(140, 245, 165))
+        .build()
     );
 
     public final Setting<Boolean> distance = sgGeneral.add(new BoolSetting.Builder()
-            .name("distance-colors")
-            .description("Changes the color of skeletons depending on distance.")
-            .defaultValue(true)
-            .build()
+        .name("distance-colors")
+        .description("Changes the color of skeletons depending on distance.")
+        .defaultValue(true)
+        .build()
     );
 
     private Freecam freecam;
 
     public SkeletonESP() {
-        super(VectorAddon.MISC, "skeleton-esp", "Renders the skeleton of players.");
+        super(VectorAddon.Misc, "skeleton-esp", "Renders the skeleton of players.");
     }
 
     @Override

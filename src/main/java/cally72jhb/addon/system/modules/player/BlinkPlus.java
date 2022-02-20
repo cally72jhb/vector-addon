@@ -152,7 +152,7 @@ public class BlinkPlus extends Module {
     private Section section;
 
     public BlinkPlus() {
-        super(VectorAddon.MISC, "blink-plus", "Allows you to essentially teleport while suspending motion updates.");
+        super(VectorAddon.Movement, "blink-plus", "Allows you to essentially teleport while suspending motion updates.");
     }
 
     @Override

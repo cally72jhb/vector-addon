@@ -156,7 +156,7 @@ public class AutoCityPlus extends Module {
     private BlockPos breakingPos;
 
     public AutoCityPlus() {
-        super(VectorAddon.MISC, "auto-city-plus", "Breaks the targets surround.");
+        super(VectorAddon.Combat, "auto-city-plus", "Breaks the targets surround.");
     }
 
     @Override

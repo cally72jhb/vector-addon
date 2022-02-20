@@ -13,11 +13,12 @@ import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.Items;
 import net.minecraft.network.packet.s2c.play.EntityStatusS2CPacket;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Random;
+import java.util.UUID;
 
 public class AutoEz extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
@@ -163,7 +164,7 @@ public class AutoEz extends Module {
     private int popTimer;
 
     public AutoEz() {
-        super(VectorAddon.MISC, "auto-ez", "Send a chat message after killing or poping a player.");
+        super(VectorAddon.Misc, "auto-ez", "Send a chat message after killing or poping a player.");
 
         String[] a = "abcdefghijklmnopqrstuvwxyz".split("");
         String[] b = "ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘqʀꜱᴛᴜᴠᴡxʏᴢ".split("");
@@ -281,7 +282,7 @@ public class AutoEz extends Module {
             boolean target = true;
 
             for (Module module : Modules.get().getAll()) {
-                if (module.getInfoString() != null && module.getInfoString().contains(entity.getEntityName())) {
+                if (module.getInfoString() != null && module.getInfoString().contains(((PlayerEntity) entity).getGameProfile().getName())) {
                     target = false;
                     break;
                 }
@@ -291,50 +292,5 @@ public class AutoEz extends Module {
         }
 
         return true;
-    }
-
-    private enum Armor {
-        Helm,
-        Chest,
-        Legs,
-        Boots,
-        None
-    }
-
-    public static boolean isHelm(Item item) {
-        if (item == null) return false;
-        if (item == Items.NETHERITE_HELMET) return true;
-        if (item == Items.DIAMOND_HELMET) return true;
-        if (item == Items.GOLDEN_HELMET) return true;
-        if (item == Items.IRON_HELMET) return true;
-        if (item == Items.CHAINMAIL_HELMET) return true;
-        return item == Items.LEATHER_HELMET;
-    }
-
-    public static boolean isChest(Item item) {
-        if (item == Items.NETHERITE_CHESTPLATE) return true;
-        if (item == Items.DIAMOND_CHESTPLATE) return true;
-        if (item == Items.GOLDEN_CHESTPLATE) return true;
-        if (item == Items.IRON_CHESTPLATE) return true;
-        if (item == Items.CHAINMAIL_CHESTPLATE) return true;
-        return item == Items.LEATHER_CHESTPLATE;
-    }
-
-    public static boolean isLegs(Item item) {
-        if (item == Items.NETHERITE_LEGGINGS) return true;
-        if (item == Items.DIAMOND_LEGGINGS) return true;
-        if (item == Items.GOLDEN_LEGGINGS) return true;
-        if (item == Items.IRON_LEGGINGS) return true;
-        if (item == Items.CHAINMAIL_LEGGINGS) return true;
-        return item == Items.LEATHER_LEGGINGS;
-    }
-
-    public static boolean isBoots(Item item) {
-        if (item == Items.NETHERITE_BOOTS) return true;
-        if (item == Items.DIAMOND_BOOTS) return true;
-        if (item == Items.GOLDEN_BOOTS) return true;
-        if (item == Items.IRON_BOOTS) return true;
-        if (item == Items.CHAINMAIL_BOOTS) return true;
-        return item == Items.LEATHER_BOOTS;
     }
 }

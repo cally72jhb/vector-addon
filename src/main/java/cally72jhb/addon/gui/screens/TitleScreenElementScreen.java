@@ -10,7 +10,6 @@ import meteordevelopment.meteorclient.gui.widgets.containers.WContainer;
 import meteordevelopment.meteorclient.gui.widgets.containers.WHorizontalList;
 import meteordevelopment.meteorclient.gui.widgets.pressable.WButton;
 import meteordevelopment.meteorclient.gui.widgets.pressable.WCheckbox;
-import meteordevelopment.meteorclient.systems.Systems;
 import meteordevelopment.meteorclient.utils.Utils;
 import meteordevelopment.meteorclient.utils.misc.NbtUtils;
 import net.minecraft.nbt.NbtCompound;
@@ -67,7 +66,7 @@ public class TitleScreenElementScreen extends WindowScreen {
 
     @Override
     protected void onRenderBefore(float delta) {
-        if (!Utils.canUpdate()) Systems.get(TitleScreenManager.class).onRender(Render2DEvent.get(0, 0, delta));
+        if (!Utils.canUpdate()) TitleScreenManager.get().onRender(Render2DEvent.get(0, 0, delta));
     }
 
     @Override

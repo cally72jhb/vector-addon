@@ -143,7 +143,7 @@ public class Tower extends Module {
     private int timer;
 
     public Tower() {
-        super(VectorAddon.MOVEMENT, "tower", "Automatically towers up fast.");
+        super(VectorAddon.Movement, "tower", "Automatically towers up fast.");
     }
 
     @Override

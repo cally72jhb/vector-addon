@@ -52,7 +52,7 @@ public class AntiPistonPush extends Module {
     }};
 
     public AntiPistonPush() {
-        super(VectorAddon.MOVEMENT, "anti-piston-push", "Prevents you from being pushed by a piston.");
+        super(VectorAddon.Movement, "anti-piston-push", "Prevents you from being pushed by a piston.");
     }
 
     @EventHandler

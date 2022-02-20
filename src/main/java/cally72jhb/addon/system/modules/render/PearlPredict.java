@@ -21,7 +21,10 @@ import net.minecraft.fluid.Fluids;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.*;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
+import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
 
 import java.util.ArrayList;
@@ -80,7 +83,7 @@ public class PearlPredict extends Module {
     private final List<Path> paths = new ArrayList<>();
 
     public PearlPredict() {
-        super(VectorAddon.MISC, "pearl-predict", "Predicts where pearls will land and shows the path they will take.");
+        super(VectorAddon.Misc, "pearl-predict", "Predicts where pearls will land and shows the path they will take.");
     }
 
     private Path getEmptyPath() {

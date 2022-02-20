@@ -1,10 +1,10 @@
 package cally72jhb.addon.utils.config;
 
 import cally72jhb.addon.gui.tabs.VectorConfigTab;
+import cally72jhb.addon.system.Systems;
 import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.systems.System;
-import meteordevelopment.meteorclient.systems.Systems;
 import meteordevelopment.meteorclient.utils.misc.Version;
 import meteordevelopment.meteorclient.utils.render.color.RainbowColors;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;

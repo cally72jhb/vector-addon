@@ -2,12 +2,12 @@ package cally72jhb.addon.gui.screens;
 
 import cally72jhb.addon.system.titlescreen.TitleScreenManager;
 import cally72jhb.addon.system.titlescreen.modules.DefaultElement;
+import cally72jhb.addon.utils.VectorUtils;
 import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.events.render.Render2DEvent;
 import meteordevelopment.meteorclient.gui.GuiTheme;
 import meteordevelopment.meteorclient.gui.WidgetScreen;
 import meteordevelopment.meteorclient.renderer.Renderer2D;
-import meteordevelopment.meteorclient.systems.Systems;
 import meteordevelopment.meteorclient.utils.Utils;
 import meteordevelopment.meteorclient.utils.misc.NbtUtils;
 import meteordevelopment.meteorclient.utils.render.color.Color;
@@ -28,7 +28,7 @@ public class TitleScreenEditor extends WidgetScreen {
     private final Color INACTIVE_BG_COLOR = new Color(200, 25, 25, 50);
     private final Color INACTIVE_OL_COLOR = new Color(200, 25, 25, 200);
 
-    private final TitleScreenManager titleScreenManager;
+    private final TitleScreenManager manager;
     private final Screen parent;
 
     private boolean selecting;
@@ -42,7 +42,7 @@ public class TitleScreenEditor extends WidgetScreen {
     public TitleScreenEditor(GuiTheme theme, Screen parent) {
         super(theme, "Title Screen Editor");
 
-        this.titleScreenManager = Systems.get(TitleScreenManager.class);
+        this.manager = TitleScreenManager.get();
         this.parent = parent;
     }
 
@@ -56,15 +56,15 @@ public class TitleScreenEditor extends WidgetScreen {
 
     @Override
     public boolean toClipboard() {
-        return NbtUtils.toClipboard(titleScreenManager.getName(), titleScreenManager.toTag());
+        return NbtUtils.toClipboard(manager.getName(), manager.toTag());
     }
 
     @Override
     public boolean fromClipboard() {
-        NbtCompound clipboard = NbtUtils.fromClipboard(titleScreenManager.toTag());
+        NbtCompound clipboard = NbtUtils.fromClipboard(manager.toTag());
 
         if (clipboard != null) {
-            titleScreenManager.fromTag(clipboard);
+            manager.fromTag(clipboard);
             return true;
         }
 
@@ -74,8 +74,8 @@ public class TitleScreenEditor extends WidgetScreen {
     @Override
     public void onClose() {
         super.onClose();
-        if (mc != null && MeteorClient.mc.world == null) mc.setScreen(new TitleScreen());
-        else mc.setScreen(null);
+        if (VectorUtils.mc != null && MeteorClient.mc.world == null && manager.active) VectorUtils.mc.setScreen(new TitleScreen());
+        else VectorUtils.mc.setScreen(null);
 
         selectedElements.clear();
         hoveredModule = null;
@@ -150,7 +150,7 @@ public class TitleScreenEditor extends WidgetScreen {
         if (selecting) {
             selectedElements.clear();
 
-            for (DefaultElement module : titleScreenManager.elements) {
+            for (DefaultElement module : manager.elements) {
                 double mX = module.box.getX();
                 double mY = module.box.getY();
                 double mW = module.box.width;
@@ -165,7 +165,7 @@ public class TitleScreenEditor extends WidgetScreen {
                 element.box.addPos(mouseX - lastMouseX, mouseY - lastMouseY);
             }
 
-            double range = titleScreenManager.snappingRange.get();
+            double range = manager.snappingRange.get();
 
             if (range > 0) {
                 double x = Double.MAX_VALUE;
@@ -186,7 +186,7 @@ public class TitleScreenEditor extends WidgetScreen {
                 boolean movedX = false;
                 boolean movedY = false;
 
-                for (DefaultElement element : titleScreenManager.elements) {
+                for (DefaultElement element : manager.elements) {
                     if (selectedElements.contains(element)) continue;
 
                     double eX = element.box.getX();
@@ -273,15 +273,15 @@ public class TitleScreenEditor extends WidgetScreen {
         if (!Utils.canUpdate()) {
             renderBackground(matrices);
             Utils.unscaledProjection();
-            titleScreenManager.onRender(Render2DEvent.get(0, 0, delta));
+            manager.onRender(Render2DEvent.get(0, 0, delta));
         } else {
             Utils.unscaledProjection();
-            if (!titleScreenManager.active) titleScreenManager.onRender(Render2DEvent.get(0, 0, delta));
+            if (!manager.active) manager.onRender(Render2DEvent.get(0, 0, delta));
         }
 
         Renderer2D.COLOR.begin();
 
-        for (DefaultElement element : titleScreenManager.elements) {
+        for (DefaultElement element : manager.elements) {
             if (element.active) continue;
             renderElement(element, INACTIVE_BG_COLOR, INACTIVE_OL_COLOR);
         }
@@ -291,7 +291,7 @@ public class TitleScreenEditor extends WidgetScreen {
         if (!dragging) {
             hoveredModule = null;
 
-            for (DefaultElement module : titleScreenManager.elements) {
+            for (DefaultElement module : manager.elements) {
                 if (module.box.isOver(mouseX, mouseY)) {
                     if (!selectedElements.contains(module)) renderElement(module, HOVER_BG_COLOR, HOVER_OL_COLOR);
                     hoveredModule = module;

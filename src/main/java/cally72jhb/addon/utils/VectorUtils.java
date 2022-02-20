@@ -5,7 +5,6 @@ import cally72jhb.addon.utils.config.VectorConfig;
 import cally72jhb.addon.utils.misc.FindItemResult;
 import cally72jhb.addon.utils.misc.Members;
 import meteordevelopment.meteorclient.MeteorClient;
-import meteordevelopment.meteorclient.mixin.MinecraftServerAccessor;
 import meteordevelopment.meteorclient.mixininterface.IClientPlayerInteractionManager;
 import meteordevelopment.meteorclient.mixininterface.IVec3d;
 import meteordevelopment.meteorclient.utils.player.InvUtils;
@@ -27,55 +26,20 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.World;
-import org.apache.commons.lang3.SystemUtils;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import java.util.function.Predicate;
 
 public class VectorUtils {
-    public static int CPS = 0;
     public static MinecraftClient mc;
     public static int previousSlot = -1;
 
     public static void init() {
         mc = MinecraftClient.getInstance();
-        new Timer().scheduleAtFixedRate(newTimerTaskFromLambda(() -> CPS = 0), 0, 1000);
-    }
-
-    public static TimerTask newTimerTaskFromLambda(Runnable runnable) {
-        return new TimerTask() {
-            @Override
-            public void run() {
-                runnable.run();
-            }
-        };
-    }
-
-    public static String getServer() {
-        if (mc.isInSingleplayer()) {
-            File folder = ((MinecraftServerAccessor) mc.getServer()).getSession().getWorldDirectory(mc.world.getRegistryKey()).toFile();
-
-            if (folder.toPath().relativize(mc.runDirectory.toPath()).getNameCount() != 2) {
-                folder = folder.getParentFile();
-            }
-
-            return folder.getName();
-        }
-
-        if (mc.getCurrentServerEntry() != null) {
-            String name = mc.isConnectedToRealms() ? "realms" : mc.getCurrentServerEntry().address;
-
-            if (SystemUtils.IS_OS_WINDOWS) {
-                name = name.replace(":", "_");
-            }
-
-            return name;
-        }
-
-        return "unknown";
     }
 
     public static double squaredDistance(double x1, double y1, double z1, double x2, double y2, double z2) {
@@ -141,15 +105,6 @@ public class VectorUtils {
 
     public static boolean isSolid(BlockPos pos) {
         return getBlockState(pos).isSolidBlock(mc.world, pos);
-    }
-
-    public static boolean isSurroundBlock(BlockPos blockPos) {
-        Block block = mc.world.getBlockState(blockPos).getBlock();
-        return block == Blocks.OBSIDIAN || block == Blocks.CRYING_OBSIDIAN || block == Blocks.ENDER_CHEST || block == Blocks.RESPAWN_ANCHOR || block == Blocks.ANVIL;
-    }
-
-    public static boolean isSurroundBlock(Block block) {
-        return block == Blocks.OBSIDIAN || block == Blocks.CRYING_OBSIDIAN || block == Blocks.ENDER_CHEST || block == Blocks.RESPAWN_ANCHOR || block == Blocks.ANVIL;
     }
 
     private static final Vec3d hitPos = new Vec3d(0.0D, 0.0D, 0.0D);
@@ -272,17 +227,20 @@ public class VectorUtils {
         return side == null ? Direction.UP : side;
     }
 
+    public static boolean canPlace(BlockPos pos) {
+        return canPlace(pos, true);
+    }
+
     public static boolean canPlace(BlockPos pos, boolean checkEntities) {
+        return canPlace(pos, Blocks.OBSIDIAN.getDefaultState(), checkEntities);
+    }
+
+    public static boolean canPlace(BlockPos pos, BlockState state, boolean checkEntities) {
         if (pos == null || mc.world == null) return false;
-
-        // Check y level
         if (!World.isValid(pos)) return false;
-
-        // Check if current block is replaceable
         if (!getBlockState(pos).getMaterial().isReplaceable()) return false;
 
-        // Check for entities or if the block is air
-        return checkEntities ? mc.world.canPlace(Blocks.OBSIDIAN.getDefaultState(), pos, ShapeContext.absent()) : getBlockState(pos).getMaterial().isReplaceable();
+        return checkEntities ? mc.world.canPlace(state, pos, ShapeContext.absent()) : getBlockState(pos).getMaterial().isReplaceable();
     }
 
     public static Direction getPlaceSide(BlockPos blockPos) {
@@ -304,10 +262,6 @@ public class VectorUtils {
 
     public static boolean isClickable(Block block) {
         return block instanceof CraftingTableBlock || block instanceof AnvilBlock || block instanceof AbstractButtonBlock || block instanceof AbstractPressurePlateBlock || block instanceof BlockWithEntity || block instanceof BedBlock || block instanceof FenceGateBlock || block instanceof DoorBlock || block instanceof NoteBlock || block instanceof TrapdoorBlock;
-    }
-
-    public static boolean canPlace(BlockPos pos) {
-        return canPlace(pos, true);
     }
 
     public static ArrayList<BlockPos> getPositionsAroundPlayer(double range) {

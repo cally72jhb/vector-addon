@@ -1,8 +1,8 @@
 package cally72jhb.addon.mixin;
 
 import cally72jhb.addon.gui.screens.TitleScreen;
+import cally72jhb.addon.system.Systems;
 import cally72jhb.addon.system.titlescreen.TitleScreenManager;
-import meteordevelopment.meteorclient.systems.Systems;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;

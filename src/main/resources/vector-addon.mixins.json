@@ -3,12 +3,13 @@
   "package": "cally72jhb.addon.mixin",
   "compatibilityLevel": "JAVA_16",
   "client": [
+    "EmitterParticleMixin",
     "EntityMixin",
-    "MinecraftClientMixin",
     "NamespaceResourceManagerMixin",
-    "PlayerEntityMixin",
+    "ParticleMixin",
     "ReloadableResourceManagerImplMixin",
-    "TitleScreenMixin"
+    "TitleScreenMixin",
+    "TotemParticleMixin"
   ],
   "injectors": {
     "defaultRequire": 1

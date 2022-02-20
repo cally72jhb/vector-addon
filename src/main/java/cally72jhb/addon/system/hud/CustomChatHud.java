@@ -22,7 +22,8 @@ import net.minecraft.text.Text;
 import java.util.ArrayList;
 import java.util.List;
 
-import static net.minecraft.util.Formatting.*;
+import static net.minecraft.util.Formatting.GOLD;
+import static net.minecraft.util.Formatting.GRAY;
 
 public class CustomChatHud extends HudElement {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();

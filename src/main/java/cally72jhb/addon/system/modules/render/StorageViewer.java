@@ -2,6 +2,8 @@ package cally72jhb.addon.system.modules.render;
 
 import cally72jhb.addon.VectorAddon;
 import cally72jhb.addon.utils.VectorUtils;
+import cally72jhb.addon.utils.misc.BlockEntityIterator;
+import cally72jhb.addon.utils.misc.FindItemResult;
 import meteordevelopment.meteorclient.events.entity.player.InteractBlockEvent;
 import meteordevelopment.meteorclient.events.packets.PacketEvent;
 import meteordevelopment.meteorclient.events.render.Render2DEvent;
@@ -14,8 +16,6 @@ import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.meteorclient.systems.modules.render.Freecam;
 import meteordevelopment.meteorclient.utils.Utils;
 import meteordevelopment.meteorclient.utils.misc.Vec3;
-import meteordevelopment.meteorclient.utils.player.FindItemResult;
-import meteordevelopment.meteorclient.utils.player.InvUtils;
 import meteordevelopment.meteorclient.utils.render.NametagUtils;
 import meteordevelopment.meteorclient.utils.render.RenderUtils;
 import meteordevelopment.meteorclient.utils.render.color.Color;
@@ -163,7 +163,7 @@ public class StorageViewer extends Module {
         .build()
     );
 
-    private static final Identifier TEXTURE = new Identifier("meteor-client", "assets/textures/container.png");
+    private static final Identifier TEXTURE = new Identifier("meteor-client", "textures/container.png");
     private final ItemStack[] inventory = new ItemStack[9 * 3];
 
     private HashMap<BlockPos, List<ItemStack>> chests;
@@ -176,7 +176,7 @@ public class StorageViewer extends Module {
     private int id;
 
     public StorageViewer() {
-        super(VectorAddon.MISC, "storage-viewer", "Shows you the inventory of storage blocks.");
+        super(VectorAddon.Misc, "storage-viewer", "Shows you the inventory of storage blocks.");
     }
 
     @Override
@@ -213,7 +213,7 @@ public class StorageViewer extends Module {
 
             ArrayList<BlockEntity> entities = new ArrayList<>();
 
-            for (BlockEntity entity : Utils.blockEntities()) if (storageBlocks.get().contains(entity.getType())) entities.add(entity);
+            for (BlockEntity entity : getBlockEntities()) if (storageBlocks.get().contains(entity.getType())) entities.add(entity);
 
             if (!entities.isEmpty()) {
                 if (closest.get()) entities.sort(Comparator.comparingDouble(entity -> VectorUtils.distance(mc.player.getPos(), Vec3d.ofCenter(entity.getPos()))));
@@ -222,7 +222,7 @@ public class StorageViewer extends Module {
                     if ((!onlyOnce.get() || onlyOnce.get() && !chests.containsKey(entity.getPos())) && (!ignore.get() || ignore.get() && !positions.contains(entity.getPos()))) {
                         if (storageBlocks.get().contains(entity.getType()) && VectorUtils.distance(mc.player.getPos(), Vec3d.ofCenter(entity.getPos())) <= range.get()) {
                             BlockPos position = entity.getPos();
-                            FindItemResult item = InvUtils.findInHotbar(stack -> stack.getUseAction() == UseAction.NONE);
+                            FindItemResult item = VectorUtils.findInHotbar(stack -> stack.getUseAction() == UseAction.NONE);
 
                             mc.getNetworkHandler().sendPacket(new PlayerInteractBlockC2SPacket((item.getHand() != null && item.found()) ? item.getHand() : Hand.OFF_HAND, new BlockHitResult(Utils.vec3d(position), getDir(position), position, false)));
 
@@ -320,6 +320,10 @@ public class StorageViewer extends Module {
     }
 
     // Utils
+
+    public static Iterable<BlockEntity> getBlockEntities() {
+        return BlockEntityIterator::new;
+    }
 
     private Direction getClosestSide(BlockPos pos) {
         ArrayList<Direction> sides = new ArrayList<>();

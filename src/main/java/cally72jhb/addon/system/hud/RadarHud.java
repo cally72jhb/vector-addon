@@ -1,7 +1,7 @@
 package cally72jhb.addon.system.hud;
 
+import cally72jhb.addon.VectorAddon;
 import com.google.gson.Gson;
-import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.renderer.Renderer2D;
 import meteordevelopment.meteorclient.renderer.Texture;
 import meteordevelopment.meteorclient.renderer.text.TextRenderer;
@@ -22,6 +22,7 @@ import net.minecraft.util.math.Vec3d;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 
@@ -102,6 +103,7 @@ public class RadarHud extends HudElement {
     );
 
     private final HashMap<String, Texture> textures = new HashMap<>();
+    private ArrayList<Thread> threads = new ArrayList<>(5);
 
     public RadarHud(HUD hud) {
         super(hud, "radar", "Displays a player radar.", false);
@@ -167,15 +169,22 @@ public class RadarHud extends HudElement {
             Renderer2D.TEXTURE.texQuad(x, y, scale, scale, 90, 0, 0, 1, 1, new Color(255, 255, 255));
             Renderer2D.TEXTURE.render(null);
         } else if (!textures.containsKey(name)) {
-            putHead(name, getSkinUrl(name));
+            fetchHead(name, getSkinUrl(name));
+
+            for (Thread thread : threads) {
+                if (thread != null) {
+                    if (thread.getState() == Thread.State.TERMINATED) threads.remove(thread);
+                    else if (!thread.isAlive() && !thread.isInterrupted()) thread.start();
+                }
+            }
         }
     }
 
-    private void putHead(String name, String url) {
+    private void fetchHead(String name, String url) {
         if (name != null && url != null) {
             textures.putIfAbsent(name, null);
 
-            Thread thread = new Thread(() -> {
+            threads.add(new Thread(() -> {
                 try {
                     BufferedImage skin = ImageIO.read(Http.get(url).sendInputStream());
 
@@ -211,12 +220,10 @@ public class RadarHud extends HudElement {
 
                     textures.replace(name, new Texture(8, 8, head, Texture.Format.RGB, Texture.Filter.Nearest, Texture.Filter.Nearest));
                 } catch (IOException e) {
-                    MeteorClient.LOG.error("Failed to read skin url (" + url + ").");
+                    VectorAddon.LOG.error("Failed to read skin url (" + url + ").");
                     textures.putIfAbsent(name, null);
                 }
-            });
-
-            thread.start();
+            }));
         }
     }
 

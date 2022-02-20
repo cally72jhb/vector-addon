@@ -71,7 +71,7 @@ public class SkinElement extends PressableElement {
     );
 
     public SkinElement(TitleScreenManager manager, String name, Action action, boolean defaultActive) {
-        super(manager, name, action, defaultActive);
+        super(manager, name, action, 3, defaultActive);
     }
 
     @Override

@@ -1,7 +1,7 @@
 package cally72jhb.addon.system.players;
 
+import cally72jhb.addon.system.Systems;
 import meteordevelopment.meteorclient.systems.System;
-import meteordevelopment.meteorclient.systems.Systems;
 import meteordevelopment.meteorclient.utils.misc.NbtUtils;
 import meteordevelopment.meteorclient.utils.render.color.RainbowColors;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
@@ -113,10 +113,6 @@ public class Players extends System<Players> implements Iterable<Player> {
         if (!isListed(new Player(player))) add(new Player(player));
 
         Players.get().get(player).target();
-    }
-
-    public int count() {
-        return players.size();
     }
 
     @Override

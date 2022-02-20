@@ -8,7 +8,6 @@ import meteordevelopment.meteorclient.renderer.ShapeMode;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.misc.Keybind;
-import meteordevelopment.meteorclient.utils.player.PlayerUtils;
 import meteordevelopment.meteorclient.utils.render.RenderUtils;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.orbit.EventHandler;
@@ -76,7 +75,7 @@ public class ChorusPredict extends Module {
     private Vec3d pos;
 
     public ChorusPredict() {
-        super(VectorAddon.MISC, "chorus-predict", "Predicts the spot where the chorus-fruit will teleport you.");
+        super(VectorAddon.Misc, "chorus-predict", "Predicts the spot where the chorus-fruit will teleport you.");
     }
 
     @Override

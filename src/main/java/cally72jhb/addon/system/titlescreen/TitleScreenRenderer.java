@@ -1,7 +1,6 @@
 package cally72jhb.addon.system.titlescreen;
 
 import meteordevelopment.meteorclient.renderer.text.TextRenderer;
-import meteordevelopment.meteorclient.systems.Systems;
 import meteordevelopment.meteorclient.utils.render.color.Color;
 import net.minecraft.client.util.math.MatrixStack;
 
@@ -19,7 +18,7 @@ public class TitleScreenRenderer {
     public void begin(double scale, double frameDelta, boolean scaleOnly) {
         TextRenderer.get().begin(scale, scaleOnly, false);
 
-        if (titleScreenManager == null) titleScreenManager = Systems.get(TitleScreenManager.class);
+        if (titleScreenManager == null) titleScreenManager = TitleScreenManager.get();
 
         this.scaleOnly = scaleOnly;
         this.delta = frameDelta;

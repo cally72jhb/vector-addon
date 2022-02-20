@@ -8,7 +8,7 @@ import net.minecraft.network.packet.c2s.play.TeleportConfirmC2SPacket;
 
 public class PortalGodMode extends Module {
     public PortalGodMode() {
-        super(VectorAddon.MISC, "portal-god-mode", "Exploits some bugs to make you invincible after you left a portal.");
+        super(VectorAddon.Misc, "portal-god-mode", "Exploits some bugs to make you invincible after you left a portal.");
     }
 
     private TeleportConfirmC2SPacket packet = null;

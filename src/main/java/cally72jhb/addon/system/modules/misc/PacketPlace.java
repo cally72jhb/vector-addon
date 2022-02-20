@@ -75,7 +75,7 @@ public class PacketPlace extends Module {
     private final Random random = new Random();
 
     public PacketPlace() {
-        super(VectorAddon.MISC, "packet-place", "Place blocks with packets.");
+        super(VectorAddon.Misc, "packet-place", "Place blocks with packets.");
     }
 
     @EventHandler

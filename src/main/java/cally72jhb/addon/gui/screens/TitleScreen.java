@@ -9,7 +9,6 @@ import meteordevelopment.meteorclient.gui.screens.AccountsScreen;
 import meteordevelopment.meteorclient.gui.tabs.Tabs;
 import meteordevelopment.meteorclient.renderer.GL;
 import meteordevelopment.meteorclient.renderer.Renderer2D;
-import meteordevelopment.meteorclient.systems.Systems;
 import meteordevelopment.meteorclient.utils.Utils;
 import meteordevelopment.meteorclient.utils.misc.input.KeyBinds;
 import meteordevelopment.meteorclient.utils.render.color.Color;
@@ -33,7 +32,7 @@ public class TitleScreen extends Screen {
     public TitleScreen() {
         super(Text.of("Title Screen"));
 
-        titleScreenManager = Systems.get(TitleScreenManager.class);
+        titleScreenManager = TitleScreenManager.get();
     }
 
     @Override
@@ -110,9 +109,9 @@ public class TitleScreen extends Screen {
         Renderer2D.TEXTURE.render(null);
 
         if (titleScreenManager != null) {
-            Systems.get(TitleScreenManager.class).onRender(Render2DEvent.get(0, 0, delta));
+            TitleScreenManager.get().onRender(Render2DEvent.get(0, 0, delta));
         } else {
-            titleScreenManager = Systems.get(TitleScreenManager.class);
+            titleScreenManager = TitleScreenManager.get();
         }
 
         Utils.scaledProjection();

@@ -120,7 +120,7 @@ public class VectorPresence extends Module {
     private int line2Ticks, line2I;
 
     public VectorPresence() {
-        super(VectorAddon.MISC, "vector-presence", "Displays Vector as your presence on Discord.");
+        super(VectorAddon.Misc, "vector-presence", "Displays Vector as your presence on Discord.");
 
         runInMainMenu = true;
     }
@@ -249,10 +249,10 @@ public class VectorPresence extends Module {
                 else if (mc.currentScreen instanceof CreditsScreen) rpc.setState("Reading Credits");
                 else if (mc.currentScreen instanceof RealmsScreen) rpc.setState("Browsing Realms");
                 else {
-                    String className = mc.currentScreen.getClass().getName();
+                    String name = mc.currentScreen.getClass().getName();
 
-                    if (className.startsWith("com.terraformersmc.modmenu.gui")) rpc.setState("Browsing Mods");
-                    else if (className.startsWith("me.jellysquid.mods.sodium.client")) rpc.setState("Changing Options");
+                    if (name.startsWith("com.terraformersmc.modmenu.gui")) rpc.setState("Browsing Mods");
+                    else if (name.startsWith("me.jellysquid.mods.sodium.client")) rpc.setState("Changing Options");
                     else rpc.setState("Looking at the Main Menu");
                 }
 
@@ -268,7 +268,7 @@ public class VectorPresence extends Module {
 
     @EventHandler
     private void onOpenScreen(OpenScreenEvent event) {
-        if (!Utils.canUpdate()) lastWasInMainMenu = false;
+        if (mc == null && mc.world == null && mc.player == null) lastWasInMainMenu = false;
     }
 
     private String getLargeKey() {

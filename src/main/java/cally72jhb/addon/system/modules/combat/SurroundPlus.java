@@ -5,7 +5,9 @@ import cally72jhb.addon.system.modules.movement.StepPlus;
 import cally72jhb.addon.system.modules.player.BlinkPlus;
 import cally72jhb.addon.utils.VectorUtils;
 import cally72jhb.addon.utils.misc.FindItemResult;
-import it.unimi.dsi.fastutil.ints.*;
+import it.unimi.dsi.fastutil.ints.IntIterator;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import meteordevelopment.meteorclient.events.entity.player.InteractBlockEvent;
 import meteordevelopment.meteorclient.events.entity.player.PlayerMoveEvent;
 import meteordevelopment.meteorclient.events.entity.player.StartBreakingBlockEvent;
@@ -48,10 +50,7 @@ import net.minecraft.entity.TntEntity;
 import net.minecraft.entity.decoration.EndCrystalEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.BlockItem;
-import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
-import net.minecraft.network.packet.c2s.play.PlayerInteractBlockC2SPacket;
-import net.minecraft.network.packet.c2s.play.PlayerInteractEntityC2SPacket;
-import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
+import net.minecraft.network.packet.c2s.play.*;
 import net.minecraft.sound.BlockSoundGroup;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.text.Text;
@@ -201,13 +200,6 @@ public class SurroundPlus extends Module {
     private final Setting<Boolean> toggleOnComplete = sgGeneral.add(new BoolSetting.Builder()
         .name("toggle-on-complete")
         .description("Toggles off when all blocks are placed.")
-        .defaultValue(false)
-        .build()
-    );
-
-    private final Setting<Boolean> jump = sgGeneral.add(new BoolSetting.Builder()
-        .name("cancel-jump")
-        .description("Stops you from jumping when you are surrounded.")
         .defaultValue(false)
         .build()
     );
@@ -378,6 +370,50 @@ public class SurroundPlus extends Module {
         .name("on-entity")
         .description("Attempts to place blocks even if entities are in its way.")
         .defaultValue(false)
+        .build()
+    );
+
+    private final Setting<Double> breakRange = sgGeneral.add(new DoubleSetting.Builder()
+        .name("break-range")
+        .description("How far blocks are mined.")
+        .defaultValue(3.5)
+        .min(1)
+        .sliderMin(1)
+        .sliderMax(5)
+        .build()
+    );
+
+    private final Setting<Boolean> mineTwice = sgBypass.add(new BoolSetting.Builder()
+        .name("mine-twice")
+        .description("Tyes to mine a block twice a tick.")
+        .defaultValue(false)
+        .build()
+    );
+
+    private final Setting<Boolean> instaMine = sgBypass.add(new BoolSetting.Builder()
+        .name("insta-mine")
+        .description("Tryes to mine blocks instant.")
+        .defaultValue(false)
+        .build()
+    );
+
+    private final Setting<Double> hardness = sgBypass.add(new DoubleSetting.Builder()
+        .name("hardness")
+        .description("The maximum hardness a block can have for it to be instant mined.")
+        .defaultValue(0.3)
+        .min(0)
+        .sliderMax(1)
+        .visible(instaMine::get)
+        .build()
+    );
+
+    private final Setting<Integer> mineTickDelay = sgBypass.add(new IntSetting.Builder()
+        .name("mine-tick-delay")
+        .description("The delay between the attempted breaks.")
+        .defaultValue(0)
+        .min(0)
+        .sliderMax(20)
+        .visible(instaMine::get)
         .build()
     );
 
@@ -930,6 +966,7 @@ public class SurroundPlus extends Module {
 
     private int timer;
     private int placeTimer;
+    private int breakTimer;
     private int crystalTimer;
 
     private boolean high;
@@ -942,7 +979,7 @@ public class SurroundPlus extends Module {
     private final Random random = new Random();
 
     public SurroundPlus() {
-        super(VectorAddon.MISC, "vector-surround", "Surrounds you in blocks to prevent you from taking crystal damage.");
+        super(VectorAddon.Combat, "vector-surround", "Surrounds you in blocks to prevent you from taking crystal damage.");
     }
 
     // Initialising
@@ -970,7 +1007,10 @@ public class SurroundPlus extends Module {
 
         timer = generalDelay.get();
         placeTimer = placeDelay.get();
+        breakTimer = mineTickDelay.get();
         crystalTimer = crystalDelay.get();
+
+        breakingPos = null;
 
         for (RenderBlock block : renderBlocks) renderBlockPool.free(block);
         renderBlocks.clear();
@@ -1079,7 +1119,8 @@ public class SurroundPlus extends Module {
 
     @EventHandler
     public void isCube(CollisionShapeEvent event) {
-        if (((burrowHelp.get() && mc.player.getBlockPos().equals(event.pos))
+        if (mc.player.isOnGround() && event.shape != null && event.shape != VoxelShapes.fullCube()
+            && ((burrowHelp.get() && mc.player.getBlockPos().equals(event.pos))
             || (burrowHelp.get() && mc.player.getBlockPos().up(1).equals(event.pos))
             && !mc.player.isInSwimmingPose()) && mc.player.getY() == mc.player.getBlockY()) {
             event.shape = VoxelShapes.empty();
@@ -1125,6 +1166,9 @@ public class SurroundPlus extends Module {
         renderBlocks.forEach(RenderBlock::tick);
         renderBlocks.removeIf(block -> block.ticks <= 0);
 
+        crystalTimer++;
+        breakTimer++;
+
         if (blink.get() && (Modules.get().get(Blink.class).isActive() || Modules.get().get(BlinkPlus.class).isActive())) {
             activate();
             return;
@@ -1148,50 +1192,6 @@ public class SurroundPlus extends Module {
         }
 
         blocksInTick = 0;
-        crystalTimer++;
-
-        // Extra Layer on Entity
-
-        if (onInterfere.get()) {
-            for (Entity entity : mc.world.getEntities()) {
-                if (VectorUtils.distanceBetweenXZ(mc.player.getPos(), entity.getPos())<= 3.15) {
-                    BlockPos entityPos = entity.getBlockPos();
-
-                    if (entity instanceof PlayerEntity && entity != mc.player) {
-                        if (isInSurround(entityPos)) {
-                            for (BlockPos pos : surround) {
-                                BlockPos position = entityPos.add(pos);
-                                if (canPlace(position, true) && !placePositions.contains(position)) {
-                                    placePositions.add(position);
-                                }
-                            }
-                        } else if (isInSurround(entityPos.up())) {
-                            for (BlockPos pos : surround) {
-                                BlockPos position = entityPos.add(pos).up();
-                                if (canPlace(position, true) && !placePositions.contains(position)) {
-                                    placePositions.add(position);
-                                }
-                            }
-                        }
-                    }
-
-                    if (checkCollision.get() && entity != mc.player) {
-                        for (BlockPos position : surround) {
-                            if (doesIntersect(VectorUtils.getCollision(mc.player.getBlockPos().add(position)).getBoundingBox())) {
-                                for (BlockPos pos : extra) {
-                                    BlockPos placePos = entityPos.add(pos);
-
-                                    if (isInRelativeArray(placePos, extra) && !placePositions.contains(placePos)) {
-                                        placePositions.add(placePos);
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
 
         // Anti bed
 
@@ -1325,6 +1325,21 @@ public class SurroundPlus extends Module {
             }
         }
 
+        if (placeTimer >= placeDelay.get() && placeDelay.get() != 0) {
+            placeTimer = 0;
+            return;
+        } else {
+            placeTimer++;
+        }
+
+        // Default Surround
+
+        for (BlockPos pos : getSurround()) {
+            if (place(pos, 0) && placeDelay.get() != 0) break;
+        }
+
+        // Important Modes
+
         // Anti Button
 
         if (antiButton.get()) {
@@ -1349,17 +1364,47 @@ public class SurroundPlus extends Module {
             }
         }
 
-        if (placeTimer >= placeDelay.get() && placeDelay.get() != 0) {
-            placeTimer = 0;
-            return;
-        } else {
-            placeTimer++;
-        }
+        // Interfering
 
-        // Default Surround
+        if (onInterfere.get()) {
+            for (Entity entity : mc.world.getEntities()) {
+                if (VectorUtils.distanceBetweenXZ(mc.player.getPos(), entity.getPos())<= 3.15) {
+                    BlockPos entityPos = entity.getBlockPos();
 
-        for (BlockPos pos : getSurround()) {
-            if (place(pos, 0) && placeDelay.get() != 0) break;
+                    if (entity instanceof PlayerEntity && entity != mc.player) {
+                        if (isInSurround(entityPos)) {
+                            for (BlockPos pos : surround) {
+                                BlockPos position = entityPos.add(pos);
+                                if (canPlace(position, true) && !placePositions.contains(position)) {
+                                    placePositions.add(position);
+                                }
+                            }
+                        } else if (isInSurround(entityPos.up())) {
+                            for (BlockPos pos : surround) {
+                                BlockPos position = entityPos.add(pos).up();
+                                if (canPlace(position, true) && !placePositions.contains(position)) {
+                                    placePositions.add(position);
+                                }
+                            }
+                        }
+                    }
+
+                    if (checkCollision.get() && entity != mc.player) {
+                        for (BlockPos position : surround) {
+                            if (doesIntersect(VectorUtils.getCollision(mc.player.getBlockPos().add(position)).getBoundingBox())) {
+                                for (BlockPos pos : extra) {
+                                    BlockPos placePos = entityPos.add(pos);
+
+                                    if (isInRelativeArray(placePos, extra) && !placePositions.contains(placePos)) {
+                                        placePositions.add(placePos);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // Double Surround
@@ -1402,25 +1447,33 @@ public class SurroundPlus extends Module {
 
         // Breaking the Blocks
 
-        if (!breakPositions.isEmpty()) {
-            breakPositions.removeIf(this::canBreak);
+        breakPositions.removeIf(pos -> !canBreak(pos));
 
-            if (breakingPos == null) {
-                for (BlockPos pos : new ArrayList<>(breakPositions)) {
-                    if (BlockUtils.breakBlock(pos, renderSwing.get())) {
-                        breakPositions.remove(pos);
-                        breakingPos = pos;
+        if (breakingPos == null && !breakPositions.isEmpty()) {
+            BlockPos pos = breakPositions.get(0);
+            if (mineTwice.get()) BlockUtils.breakBlock(pos, renderSwing.get());
 
-                        break;
-                    }
+            breakPositions.remove(pos);
+            breakingPos = pos;
+        }
+
+        if (canBreak(breakingPos)) {
+            if (instaMine.get() && (breakTimer >= mineTickDelay.get() || mineTickDelay.get() == 0) && VectorUtils.getBlock(breakingPos).getHardness() <= hardness.get()) {
+                breakTimer = 0;
+
+                if (rotate.get()) {
+                    Rotations.rotate(Rotations.getYaw(breakingPos), Rotations.getPitch(breakingPos), () -> mc.getNetworkHandler().sendPacket(new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.STOP_DESTROY_BLOCK, breakingPos, getClosestDirection(breakingPos).get(0))));
+                } else {
+                    mc.getNetworkHandler().sendPacket(new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.STOP_DESTROY_BLOCK, breakingPos, getClosestDirection(breakingPos).get(0)));
                 }
-            }
 
-            if (breakingPos != null && canBreak(breakingPos)) {
-                BlockUtils.breakBlock(breakingPos, renderSwing.get());
+                if (renderSwing.get()) mc.player.swingHand(Hand.MAIN_HAND);
+                else mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
             } else {
-                breakingPos = null;
+                BlockUtils.breakBlock(breakingPos, renderSwing.get());
             }
+        } else {
+            breakingPos = null;
         }
     }
 
@@ -1600,6 +1653,21 @@ public class SurroundPlus extends Module {
         return false;
     }
 
+    private List<Direction> getClosestDirection(BlockPos pos) {
+        List<Direction> directions = new ArrayList<>();
+
+        for (Direction dir : Direction.values()) {
+            if (dir != null && VectorUtils.getBlockState(pos.offset(dir)).getMaterial().isReplaceable()) {
+                directions.add(dir);
+            }
+        }
+
+        if (directions.isEmpty()) directions.addAll(List.of(Direction.values()));
+
+        directions.sort(Comparator.comparingDouble(dir -> dir != null ? VectorUtils.distance(mc.player.getPos(), Vec3d.of(pos.offset(dir))) : VectorUtils.distance(mc.player.getPos(), Vec3d.of(pos))));
+        return directions;
+    }
+
     private boolean isInRelativeArray(BlockPos position, ArrayList<BlockPos> positions) {
         for (BlockPos pos : positions) {
             if (position.equals(mc.player.getBlockPos().add(pos))) return true;
@@ -1624,7 +1692,7 @@ public class SurroundPlus extends Module {
 
         for (BlockPos pos : getSurround()) {
             Block block = VectorUtils.getBlock(position.add(pos));
-            if (block != null && block.getBlastResistance() >= 1200.0F) i++;
+            if (block != null && block.getBlastResistance() >= 600.0F) i++;
         }
 
         return i;
@@ -1650,7 +1718,7 @@ public class SurroundPlus extends Module {
     }
 
     private boolean isSurroundBlock(Block block) {
-        return (blocks.get().contains(block) || block.getBlastResistance() >= 1200.0F);
+        return (blocks.get().contains(block) || block.getBlastResistance() >= 600.0F);
     }
 
     private boolean shouldAttackCrystal(BlockPos pos) {
@@ -1798,11 +1866,11 @@ public class SurroundPlus extends Module {
     }
 
     private boolean canBreak(BlockPos pos) {
-        if (breakingPos == null) return false;
+        if (pos == null) return false;
         return !blocks.get().contains(VectorUtils.getBlock(pos))
-            && VectorUtils.distance(mc.player.getPos(), Vec3d.ofCenter(pos)) <= 4.5
-            && VectorUtils.getBlockState(breakingPos).getHardness(mc.world, breakingPos) > 0
-            && !VectorUtils.getBlockState(breakingPos).getOutlineShape(mc.world, breakingPos).isEmpty();
+            && VectorUtils.distance(mc.player.getPos(), Vec3d.ofCenter(pos)) <= breakRange.get()
+            && VectorUtils.getBlockState(pos).getHardness(mc.world, pos) > 0
+            && !VectorUtils.getBlockState(pos).getOutlineShape(mc.world, pos).isEmpty();
     }
 
     private Direction getPlaceSide(BlockPos blockPos) {
@@ -1817,10 +1885,6 @@ public class SurroundPlus extends Module {
         }
 
         return null;
-    }
-
-    public boolean shouldCancelJumping() {
-        return jump.get() && isSurrounded(mc.player.getBlockPos());
     }
 
     // Constants

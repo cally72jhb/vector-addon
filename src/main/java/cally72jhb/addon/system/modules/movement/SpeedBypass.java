@@ -63,7 +63,7 @@ public class SpeedBypass extends Module {
     );
 
     public SpeedBypass() {
-        super(VectorAddon.MOVEMENT, "speed-bypass", "Modifies your movement speed when moving on the ground.");
+        super(VectorAddon.Movement, "speed-bypass", "Modifies your movement speed when moving on the ground.");
     }
 
     @EventHandler

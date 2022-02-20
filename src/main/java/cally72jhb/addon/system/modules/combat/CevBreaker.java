@@ -219,7 +219,7 @@ public class CevBreaker extends Module {
     private int timer;
 
     public CevBreaker() {
-        super(VectorAddon.MISC,"vector-cev", "Places and explodes crystals on top of the target.");
+        super(VectorAddon.Combat,"vector-cev", "Places and explodes crystals on top of the target.");
     }
 
     @Override

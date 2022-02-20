@@ -35,7 +35,7 @@ public class Stats {
     private boolean checkTargets;
     private double range;
 
-    public Stats(boolean ignoreFriends, boolean clearPopsOnDeath, boolean clearKillsOnDeath, boolean checkTargets, double range) {
+    public Stats(double range) {
         MeteorClient.EVENT_BUS.subscribe(this);
         mc = VectorUtils.mc;
 
@@ -47,10 +47,10 @@ public class Stats {
         allPops = 0;
         deaths = 0;
 
-        this.ignoreFriends = ignoreFriends;
-        this.clearPopsOnDeath = clearPopsOnDeath;
-        this.clearKillsOnDeath = clearKillsOnDeath;
-        this.checkTargets = checkTargets;
+        this.ignoreFriends = true;
+        this.clearPopsOnDeath = true;
+        this.clearKillsOnDeath = true;
+        this.checkTargets = false;
         this.range = range;
     }
 

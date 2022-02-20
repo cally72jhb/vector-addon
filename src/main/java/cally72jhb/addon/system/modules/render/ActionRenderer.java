@@ -105,7 +105,7 @@ public class ActionRenderer extends Module {
     private final List<RenderBlock> renderBlocks = new ArrayList<>();
 
     public ActionRenderer() {
-        super(VectorAddon.MISC, "action-render", "Outlines interacted, placed and broken blocks.");
+        super(VectorAddon.Misc, "action-render", "Outlines interacted, placed and broken blocks.");
     }
 
     @Override
