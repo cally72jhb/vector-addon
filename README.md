@@ -1,11 +1,7 @@
 # Vector Addon
 A open-source addon for Meteor Client (Meteor Version 0.4.7 Release and fabric 0.12.12)
 
-Vector Discord:
-https://discord.gg/A3nYgbKeXR
-
-Releases:
-https://github.com/cally72jhb/vector-addon/releases/
+[![Discord embed](https://discord.com/api/guilds/863813920892518461/embed.png)](https://discord.gg/CDrcxzH)
 
 **Modules:**
 - ActionRenderer
