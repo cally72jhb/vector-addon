@@ -1,5 +1,5 @@
 # Vector Addon
-![](https://img.shields.io/badge/Based-Very-9080c2)
+![](https://img.shields.io/badge/Based-Very-9080c2) [![Discord embed](https://img.shields.io/discord/863813920892518461.svg?logo=discord&logoColor=FFFFFF&style=flat-square&label=Discord&colorA=606060&colorB=7289DA)](https://discord.gg/A3nYgbKeXR)
 
 ![](https://forthebadge.com/images/badges/built-by-codebabes.svg)
 ![](https://forthebadge.com/images/badges/0-percent-optimized.svg)
@@ -16,7 +16,7 @@
 ![](https://forthebadge.com/images/badges/built-by-neckbeards.svg)
 A open-source addon for Meteor Client (Meteor Version 0.4.7 Release and fabric 0.12.12)
 
-[![Discord embed](https://img.shields.io/discord/863813920892518461.svg?logo=discord&logoColor=FFFFFF&style=flat-square&label=Discord&colorA=606060&colorB=7289DA)](https://discord.gg/A3nYgbKeXR)
+
 
 **Modules:**
 - ActionRenderer
