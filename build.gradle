@@ -1,7 +1,7 @@
 plugins {
-    id 'fabric-loom' version '0.10-SNAPSHOT'
-    id 'maven-publish'
-    id 'com.github.johnrengelman.shadow' version '7.1.2'
+    id "fabric-loom" version "0.10-SNAPSHOT"
+    id "maven-publish"
+    id "com.github.johnrengelman.shadow" version "7.1.2"
 }
 
 sourceCompatibility = targetCompatibility = JavaVersion.VERSION_17
@@ -19,7 +19,7 @@ repositories {
         name = "meteor-maven-snapshots"
         url = "https://maven.meteordev.org/snapshots"
     }
-    jcenter()
+
     mavenCentral()
 }
 
