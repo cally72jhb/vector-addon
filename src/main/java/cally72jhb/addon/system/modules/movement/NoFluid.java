@@ -1,6 +1,6 @@
 package cally72jhb.addon.system.modules.movement;
 
-import cally72jhb.addon.VectorAddon;
+import cally72jhb.addon.system.categories.Categories;
 import cally72jhb.addon.utils.VectorUtils;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.BoolSetting;
@@ -44,7 +44,7 @@ public class NoFluid extends Module {
     );
 
     public NoFluid() {
-        super(VectorAddon.Movement, "no-fluid", "Removes liquid collisions.");
+        super(Categories.Movement, "no-fluid", "Removes liquid collisions.");
     }
 
     @Override

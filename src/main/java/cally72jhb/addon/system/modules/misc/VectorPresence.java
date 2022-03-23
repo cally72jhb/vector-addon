@@ -1,9 +1,9 @@
 package cally72jhb.addon.system.modules.misc;
 
-import cally72jhb.addon.VectorAddon;
+import cally72jhb.addon.system.categories.Categories;
 import cally72jhb.addon.utils.config.VectorConfig;
-import meteordevelopment.DiscordIPC;
-import meteordevelopment.RichPresence;
+import meteordevelopment.discordipc.DiscordIPC;
+import meteordevelopment.discordipc.RichPresence;
 import meteordevelopment.meteorclient.events.game.OpenScreenEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.gui.WidgetScreen;
@@ -120,7 +120,7 @@ public class VectorPresence extends Module {
     private int line2Ticks, line2I;
 
     public VectorPresence() {
-        super(VectorAddon.Misc, "vector-presence", "Displays Vector as your presence on Discord.");
+        super(Categories.Misc, "vector-presence", "Displays Vector as your presence on Discord.");
 
         runInMainMenu = true;
     }

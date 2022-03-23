@@ -4,20 +4,28 @@ import cally72jhb.addon.VectorAddon;
 import cally72jhb.addon.utils.config.VectorConfig;
 import cally72jhb.addon.utils.misc.FindItemResult;
 import cally72jhb.addon.utils.misc.Members;
+import cally72jhb.addon.utils.misc.Stats;
 import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.mixininterface.IClientPlayerInteractionManager;
 import meteordevelopment.meteorclient.mixininterface.IVec3d;
+import meteordevelopment.meteorclient.utils.player.ChatUtils;
 import meteordevelopment.meteorclient.utils.player.InvUtils;
 import meteordevelopment.meteorclient.utils.player.Rotations;
 import meteordevelopment.meteorclient.utils.player.SlotUtils;
 import net.minecraft.block.*;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
+import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
+import net.minecraft.text.LiteralText;
+import net.minecraft.text.Style;
+import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
@@ -36,17 +44,31 @@ import java.util.function.Predicate;
 
 public class VectorUtils {
     public static MinecraftClient mc;
+    public static Stats scores;
+    public static Screen screen;
     public static int previousSlot = -1;
 
     public static void init() {
         mc = MinecraftClient.getInstance();
+
+        screen = null;
     }
 
-    public static double squaredDistance(double x1, double y1, double z1, double x2, double y2, double z2) {
-        double dX = x2 - x1;
-        double dY = y2 - y1;
-        double dZ = z2 - z1;
-        return dX * dX + dY * dY + dZ * dZ;
+    public static void postInit() {
+        scores = new Stats( 10);
+
+        ChatUtils.registerCustomPrefix("cally72jhb.addon", VectorUtils::getPrefix);
+    }
+
+    public static Text getPrefix() {
+        LiteralText text = new LiteralText("");
+
+        text.append(new LiteralText(VectorConfig.get().prefix).setStyle(Style.EMPTY.withColor(VectorConfig.get().otherColor.getPacked())));
+        text.append(new LiteralText(VectorConfig.get().name).setStyle(Style.EMPTY.withColor(VectorConfig.get().nameColor.getPacked())));
+        text.append(new LiteralText(VectorConfig.get().suffix).setStyle(Style.EMPTY.withColor(VectorConfig.get().otherColor.getPacked())));
+        text.append(new LiteralText(" ").setStyle(Style.EMPTY.withColor(Formatting.RESET)));
+
+        return text;
     }
 
     public static double distance(double x1, double y1, double z1, double x2, double y2, double z2) {
@@ -54,11 +76,6 @@ public class VectorUtils {
         double dY = y2 - y1;
         double dZ = z2 - z1;
         return Math.sqrt(dX * dX + dY * dY + dZ * dZ);
-    }
-
-    public static double distance(double y1, double y2) {
-        double dY = y2 - y1;
-        return Math.sqrt(dY * dY);
     }
 
     public static double distance(Vec3d vec1, Vec3d vec2) {
@@ -127,6 +144,10 @@ public class VectorUtils {
 
     public static boolean place(BlockPos blockPos, FindItemResult findItemResult, boolean rotate, int rotationPriority, boolean swingHand, boolean checkEntities) {
         return place(blockPos, findItemResult, rotate, rotationPriority, swingHand, checkEntities, true, false);
+    }
+
+    public static boolean place(BlockPos blockPos, FindItemResult findItemResult, boolean rotate, int rotationPriority, boolean swingHand, boolean checkEntities, boolean swapBack) {
+        return place(blockPos, findItemResult, rotate, rotationPriority, swingHand, checkEntities, swapBack, false);
     }
 
     public static boolean place(BlockPos blockPos, FindItemResult findItemResult, boolean rotate, int rotationPriority, boolean swingHand, boolean checkEntities, boolean swapBack, boolean random) {
@@ -327,6 +348,29 @@ public class VectorUtils {
         return new double[] {posX, posZ};
     }
 
+    // Movement
+
+    private void packetJump(boolean onGround) {
+        double x = mc.player.getX();
+        double y = mc.player.getY();
+        double z = mc.player.getZ();
+
+        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y, z, onGround));
+        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 0.41999998688698, z, onGround));
+        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 0.75319998052120, z, onGround));
+        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 1.00133597911214, z, onGround));
+        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 1.16610926093821, z, onGround));
+        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 1.24918707874468, z, onGround));
+        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 1.17675927506424, z, onGround));
+        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 1.02442408821369, z, onGround));
+        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 0.79673560066871, z, onGround));
+        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 0.49520087700593, z, onGround));
+        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 0.1212968405392, z, onGround));
+        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y, z, onGround));
+    }
+
+    // Finding Items
+
     public static FindItemResult findInHotbar(Predicate<ItemStack> isGood) {
         if (isGood.test(mc.player.getOffHandStack())) {
             return new FindItemResult(SlotUtils.OFFHAND, mc.player.getOffHandStack().getCount());
@@ -383,6 +427,8 @@ public class VectorUtils {
         previousSlot = -1;
         return return_;
     }
+
+    // Other
 
     public static void changeIcon() {
         if (VectorConfig.get().windowIcon) {

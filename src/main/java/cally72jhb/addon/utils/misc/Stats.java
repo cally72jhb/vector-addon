@@ -16,6 +16,7 @@ import net.minecraft.network.packet.s2c.play.EntityStatusS2CPacket;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.UUID;
 
 public class Stats {
@@ -86,6 +87,8 @@ public class Stats {
                 kills.putIfAbsent(entity.getUuid(), 0);
                 kills.replace(entity.getUuid(), kills.get(entity.getUuid()) + 1);
 
+                pops.replace(entity.getUuid(), 0);
+
                 allKills++;
             }
         }
@@ -106,8 +109,13 @@ public class Stats {
     private void onPostTick(TickEvent.Post event) {
         if (checkTargets) {
             strings.clear();
+
             for (Module module : Modules.get().getAll()) {
                 if (module != null && module.getInfoString() != null) strings.add(module.getInfoString());
+            }
+
+            if (mc != null && mc.world != null) {
+                for (UUID uuid : new HashSet<>(pops.keySet())) if (mc.world.getPlayerByUuid(uuid) == null) pops.replace(uuid, 0);
             }
         }
     }

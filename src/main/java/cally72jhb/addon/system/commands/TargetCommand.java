@@ -10,7 +10,7 @@ import static com.mojang.brigadier.Command.SINGLE_SUCCESS;
 
 public class TargetCommand extends Command {
     public TargetCommand() {
-        super("target", "Target certain players.");
+        super("target", "Target players to prioritise them in combat modules.");
     }
 
     @Override

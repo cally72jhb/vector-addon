@@ -1,10 +1,8 @@
 package cally72jhb.addon.mixin;
 
-import cally72jhb.addon.system.modules.render.ParticleRenderer;
+import cally72jhb.addon.system.modules.render.PopRenderer;
 import meteordevelopment.meteorclient.systems.modules.Modules;
-import meteordevelopment.meteorclient.utils.render.color.Color;
 import net.minecraft.client.particle.Particle;
-import net.minecraft.client.world.ClientWorld;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Mutable;
 import org.spongepowered.asm.mixin.Shadow;
@@ -32,7 +30,7 @@ public abstract class ParticleMixin {
 
     @Inject(method = "tick", at = @At(value = "HEAD"), cancellable = true)
     private void onSetVelocity(CallbackInfo info) {
-        ParticleRenderer renderer = Modules.get().get(ParticleRenderer.class);
+        PopRenderer renderer = Modules.get().get(PopRenderer.class);
 
         if (renderer != null && renderer.isActive() && renderer.shouldModifyVelocity()) {
             if (age++ >= maxAge) {

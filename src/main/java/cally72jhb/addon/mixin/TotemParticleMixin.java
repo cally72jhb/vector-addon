@@ -1,6 +1,6 @@
 package cally72jhb.addon.mixin;
 
-import cally72jhb.addon.system.modules.render.ParticleRenderer;
+import cally72jhb.addon.system.modules.render.PopRenderer;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.meteorclient.utils.render.color.Color;
 import net.minecraft.client.particle.AnimatedParticle;
@@ -20,7 +20,7 @@ public abstract class TotemParticleMixin extends AnimatedParticle {
 
     @Inject(method = "<init>", at = @At("TAIL"))
     private void onInit(ClientWorld world, double x, double y, double z, double velocityX, double velocityY, double velocityZ, SpriteProvider provider, CallbackInfo info) {
-        ParticleRenderer renderer = Modules.get().get(ParticleRenderer.class);
+        PopRenderer renderer = Modules.get().get(PopRenderer.class);
         TotemParticle particle = ((TotemParticle) (Object) this);
 
         if (renderer != null && renderer.isActive()) {

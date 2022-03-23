@@ -1,6 +1,6 @@
 package cally72jhb.addon.mixin;
 
-import cally72jhb.addon.system.modules.render.ParticleRenderer;
+import cally72jhb.addon.system.modules.render.PopRenderer;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import net.minecraft.client.particle.EmitterParticle;
 import net.minecraft.client.particle.NoRenderParticle;
@@ -29,7 +29,7 @@ public class EmitterParticleMixin extends NoRenderParticle {
 
     @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
     public void onTick(CallbackInfo info) {
-        ParticleRenderer renderer = Modules.get().get(ParticleRenderer.class);
+        PopRenderer renderer = Modules.get().get(PopRenderer.class);
 
         if (renderer.isActive() && parameters.getType() == ParticleTypes.TOTEM_OF_UNDYING) {
             for (int i = 0; i < renderer.getAmount() * 16; i++) {

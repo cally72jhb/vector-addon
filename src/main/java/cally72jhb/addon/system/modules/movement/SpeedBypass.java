@@ -1,6 +1,6 @@
 package cally72jhb.addon.system.modules.movement;
 
-import cally72jhb.addon.VectorAddon;
+import cally72jhb.addon.system.categories.Categories;
 import cally72jhb.addon.utils.VectorUtils;
 import meteordevelopment.meteorclient.events.packets.PacketEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
@@ -63,13 +63,13 @@ public class SpeedBypass extends Module {
     );
 
     public SpeedBypass() {
-        super(VectorAddon.Movement, "speed-bypass", "Modifies your movement speed when moving on the ground.");
+        super(Categories.Movement, "speed-bypass", "Modifies your movement speed when moving on the ground.");
     }
 
     @EventHandler
     private void onPreTick(TickEvent.Pre event) {
         if ((!onlyOnGround.get() || onGround()) && isPlayerMoving()) {
-            if (mc.options.keyJump.isPressed() && onlyOnGround.get()) return;
+            if (mc.options.jumpKey.isPressed() && onlyOnGround.get()) return;
 
             Vec3d vel = mc.player.getVelocity();
 
@@ -102,10 +102,10 @@ public class SpeedBypass extends Module {
     }
 
     private boolean isPlayerMoving() {
-        if (mc.options.keyForward.isPressed()) return true;
-        if (mc.options.keyBack.isPressed()) return true;
-        if (mc.options.keyLeft.isPressed()) return true;
-        if (mc.options.keyRight.isPressed()) return true;
+        if (mc.options.forwardKey.isPressed()) return true;
+        if (mc.options.backKey.isPressed()) return true;
+        if (mc.options.leftKey.isPressed()) return true;
+        if (mc.options.rightKey.isPressed()) return true;
 
         return false;
     }

@@ -1,24 +1,22 @@
 package cally72jhb.addon;
 
 import cally72jhb.addon.system.Systems;
+import cally72jhb.addon.system.categories.Categories;
 import cally72jhb.addon.system.players.Player;
 import cally72jhb.addon.system.players.Players;
 import cally72jhb.addon.utils.VectorUtils;
 import cally72jhb.addon.utils.config.VectorConfig;
-import cally72jhb.addon.utils.misc.Stats;
 import meteordevelopment.meteorclient.MeteorClient;
+import meteordevelopment.meteorclient.addons.GithubRepo;
 import meteordevelopment.meteorclient.addons.MeteorAddon;
 import meteordevelopment.meteorclient.events.game.GameJoinedEvent;
 import meteordevelopment.meteorclient.events.game.ReceiveMessageEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
-import meteordevelopment.meteorclient.systems.modules.Category;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.meteorclient.utils.misc.text.ColoredText;
 import meteordevelopment.meteorclient.utils.misc.text.TextUtils;
+import meteordevelopment.meteorclient.utils.player.ChatUtils;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.item.Items;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
@@ -29,16 +27,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.ArrayList;
 
 public class VectorAddon extends MeteorAddon {
-    public static final Category Misc = new Category("Vector Misc", Items.AMETHYST_SHARD.getDefaultStack());
-    public static final Category Movement = new Category("Vector Motion", Items.AMETHYST_SHARD.getDefaultStack());
-    public static final Category Combat = new Category("Vector Combat", Items.AMETHYST_SHARD.getDefaultStack());
-
     public static final Logger LOG = LogManager.getLogger();
-
-    private final MinecraftClient mc = MinecraftClient.getInstance();
-
-    public static Screen screen;
-    public static Stats scores;
 
     @Override
     public void onInitialize() {
@@ -52,30 +41,44 @@ public class VectorAddon extends MeteorAddon {
         VectorUtils.members();
         VectorUtils.changeIcon();
 
-        scores = new Stats( 10);
+        VectorUtils.postInit();
 
         Systems.load();
         Runtime.getRuntime().addShutdownHook(new Thread(Systems::save));
+
+        Systems.postInit();
     }
 
     @Override
     public void onRegisterCategories() {
-        Modules.registerCategory(Misc);
-        Modules.registerCategory(Movement);
-        Modules.registerCategory(Combat);
+        Modules.registerCategory(Categories.Misc);
+        Modules.registerCategory(Categories.Movement);
+        Modules.registerCategory(Categories.Combat);
+    }
+
+    @Override
+    public GithubRepo getRepo() {
+        return new GithubRepo("cally72jhb", "vector-addon");
+    }
+
+    @Override
+    public String getWebsite() {
+        return "https://cally72jhb.github.io/website";
+    }
+
+    @EventHandler
+    private void onPreTick(TickEvent.Pre event) {
+        if (VectorUtils.screen != null) {
+            VectorUtils.mc.setScreen(VectorUtils.screen);
+            VectorUtils.screen = null;
+        }
     }
 
     @EventHandler
     private void onGameJoin(GameJoinedEvent event) {
         VectorUtils.members();
-    }
 
-    @EventHandler
-    private void onPostTick(TickEvent.Post event) {
-        if (screen != null && mc.currentScreen == null) {
-            mc.setScreen(screen);
-            screen = null;
-        }
+        ChatUtils.registerCustomPrefix("cally72jhb.addon", VectorUtils::getPrefix);
     }
 
     @EventHandler
@@ -87,9 +90,6 @@ public class VectorAddon extends MeteorAddon {
 
         ArrayList<String> strings = new ArrayList<>();
         if (VectorConfig.get() != null && VectorConfig.get().highlightMembers && VectorUtils.members != null && !VectorUtils.members.isEmpty()) strings.addAll(VectorUtils.members);
-        strings.add("VECTOR");
-        strings.add("Vector");
-        strings.add("vector");
 
         for (String string : strings) {
             for (ColoredText text : TextUtils.toColoredTextList(message)) {

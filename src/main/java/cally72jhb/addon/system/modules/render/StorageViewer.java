@@ -1,6 +1,6 @@
 package cally72jhb.addon.system.modules.render;
 
-import cally72jhb.addon.VectorAddon;
+import cally72jhb.addon.system.categories.Categories;
 import cally72jhb.addon.utils.VectorUtils;
 import cally72jhb.addon.utils.misc.BlockEntityIterator;
 import cally72jhb.addon.utils.misc.FindItemResult;
@@ -176,7 +176,7 @@ public class StorageViewer extends Module {
     private int id;
 
     public StorageViewer() {
-        super(VectorAddon.Misc, "storage-viewer", "Shows you the inventory of storage blocks.");
+        super(Categories.Misc, "storage-viewer", "Shows you the inventory of storage blocks.");
     }
 
     @Override
@@ -199,7 +199,7 @@ public class StorageViewer extends Module {
 
         if (mc.currentScreen instanceof HandledScreen<?> screen && !(screen instanceof InventoryScreen)
             && !(screen instanceof CreativeInventoryScreen) && closeInventory.get() && pos == null && close) {
-            screen.onClose();
+            mc.getNetworkHandler().sendPacket(new CloseHandledScreenC2SPacket(id));
 
             mc.setScreen(null);
             id = screen.getScreenHandler().syncId;

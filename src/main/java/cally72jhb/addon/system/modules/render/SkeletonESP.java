@@ -1,6 +1,6 @@
 package cally72jhb.addon.system.modules.render;
 
-import cally72jhb.addon.VectorAddon;
+import cally72jhb.addon.system.categories.Categories;
 import com.mojang.blaze3d.systems.RenderSystem;
 import meteordevelopment.meteorclient.events.render.Render3DEvent;
 import meteordevelopment.meteorclient.settings.BoolSetting;
@@ -48,7 +48,7 @@ public class SkeletonESP extends Module {
     private Freecam freecam;
 
     public SkeletonESP() {
-        super(VectorAddon.Misc, "skeleton-esp", "Renders the skeleton of players.");
+        super(Categories.Misc, "skeleton-esp", "Renders the skeleton of players.");
     }
 
     @Override
@@ -60,7 +60,7 @@ public class SkeletonESP extends Module {
     private void onRender(Render3DEvent event) {
         MatrixStack matrixStack = event.matrices;
 
-        float g = event.tickDelta;
+        float delta = event.tickDelta;
 
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
         RenderSystem.disableTexture();
@@ -71,31 +71,30 @@ public class SkeletonESP extends Module {
         RenderSystem.enableCull();
 
         mc.world.getEntities().forEach(entity -> {
-            if (!(entity instanceof PlayerEntity)) return;
+            if (!(entity instanceof PlayerEntity player)) return;
             if (mc.options.getPerspective() == Perspective.FIRST_PERSON && !freecam.isActive() && mc.player == entity) return;
             int rotationHoldTicks = Config.get().rotationHoldTicks.get();
 
             Color skeletonColor = PlayerUtils.getPlayerColor((PlayerEntity) entity, skeletonColorSetting.get());
             if (distance.get()) skeletonColor = getColorFromDistance(entity);
-            PlayerEntity player = (PlayerEntity) entity;
 
-            Vec3d footPos = getEntityRenderPosition(player, g);
+            Vec3d footPos = getEntityRenderPosition(player, delta);
             PlayerEntityRenderer livingEntityRenderer = (PlayerEntityRenderer) (LivingEntityRenderer<?, ?>) mc.getEntityRenderDispatcher().getRenderer(player);
             PlayerEntityModel playerEntityModel = livingEntityRenderer.getModel();
 
-            float h = MathHelper.lerpAngleDegrees(g, player.prevBodyYaw, player.bodyYaw);
+            float h = MathHelper.lerpAngleDegrees(delta, player.prevBodyYaw, player.bodyYaw);
             if (mc.player == entity && Rotations.rotationTimer < rotationHoldTicks) h = Rotations.serverYaw;
-            float j = MathHelper.lerpAngleDegrees(g, player.prevHeadYaw, player.headYaw);
+            float j = MathHelper.lerpAngleDegrees(delta, player.prevHeadYaw, player.headYaw);
             if (mc.player == entity && Rotations.rotationTimer < rotationHoldTicks) j = Rotations.serverYaw;
 
-            float q = player.limbAngle - player.limbDistance * (1.0F - g);
-            float p = MathHelper.lerp(g, player.lastLimbDistance, player.limbDistance);
-            float o = (float) player.age + g;
+            float q = player.limbAngle - player.limbDistance * (1.0F - delta);
+            float p = MathHelper.lerp(delta, player.lastLimbDistance, player.limbDistance);
+            float o = (float) player.age + delta;
             float k = j - h;
-            float m = player.getPitch(g);
+            float m = player.getPitch(delta);
             if (mc.player == entity && Rotations.rotationTimer < rotationHoldTicks) m = Rotations.serverPitch;
 
-            playerEntityModel.animateModel(player, q, p, g);
+            playerEntityModel.animateModel(player, q, p, delta);
             playerEntityModel.setAngles(player, q, p, o, k, m);
 
             boolean swimming = player.isInSwimmingPose();

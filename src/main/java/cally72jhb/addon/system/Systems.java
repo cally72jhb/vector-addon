@@ -3,16 +3,14 @@ package cally72jhb.addon.system;
 import cally72jhb.addon.gui.tabs.PlayersTab;
 import cally72jhb.addon.gui.tabs.TitleScreenTab;
 import cally72jhb.addon.gui.tabs.VectorConfigTab;
-import cally72jhb.addon.system.commands.MuteCommand;
-import cally72jhb.addon.system.commands.StatsCommand;
-import cally72jhb.addon.system.commands.TargetCommand;
-import cally72jhb.addon.system.commands.UUIDCommand;
+import cally72jhb.addon.system.commands.*;
 import cally72jhb.addon.system.hud.CustomChatHud;
+import cally72jhb.addon.system.hud.MemoryHud;
+import cally72jhb.addon.system.hud.PacketHud;
 import cally72jhb.addon.system.hud.StatsHud;
 import cally72jhb.addon.system.modules.combat.BedBomb;
 import cally72jhb.addon.system.modules.combat.BowBomb;
-import cally72jhb.addon.system.modules.combat.CevBreaker;
-import cally72jhb.addon.system.modules.combat.SurroundPlus;
+import cally72jhb.addon.system.modules.combat.VectorSurround;
 import cally72jhb.addon.system.modules.misc.*;
 import cally72jhb.addon.system.modules.movement.*;
 import cally72jhb.addon.system.modules.player.*;
@@ -52,41 +50,48 @@ public class Systems {
         config.init();
         config.load();
 
-        HUD hud = meteordevelopment.meteorclient.systems.Systems.get(HUD.class);
-
         // Modules
         add(new ActionRenderer());
         add(new AntiPistonPush());
+        add(new AntiProne());
+        add(new AutoCope());
+        add(new AutoCraft());
         add(new AutoEz());
         add(new BedBomb());
         add(new BlinkPlus());
+        add(new BorderBypass());
         add(new BowBomb());
-        add(new CevBreaker());
+        //add(new CevBreaker());
         add(new ChorusPredict());
-        add(new DebugTools());
+        add(new DeathAnimations());
         add(new EntityFly());
+        add(new InstaMinePlus());
+        add(new InventoryScroll());
+        add(new ItemRelease());
         add(new NoFluid());
         add(new PacketConsume());
         add(new PacketFly());
+        add(new PacketLogger());
         add(new PacketPlace());
-        add(new PearlPredict());
         add(new PingSpoof());
-        add(new ParticleRenderer());
+        add(new Placeholders());
+        add(new PopRenderer());
         add(new PortalGodMode());
         add(new SkeletonESP());
         add(new SpeedBypass());
         add(new StepPlus());
         add(new StorageViewer());
-        add(new SurroundPlus());
         add(new Tower());
         add(new VectorPresence());
+        add(new VectorSurround());
         add(new Welcomer());
-        add(new BorderBypass());
 
         // Commands
+        add(new ItemCommand());
         add(new MuteCommand());
-        add(new TargetCommand());
         add(new StatsCommand());
+        add(new TargetCommand());
+        add(new TrashCommand());
         add(new UUIDCommand());
 
         add(new TitleScreenManager());
@@ -107,12 +112,17 @@ public class Systems {
 
         MeteorClient.EVENT_BUS.subscribe(Systems.class);
 
-        // Hud
+        mc.options.skipMultiplayerWarning = true;
+    }
+
+    public static void postInit() {
+        HUD hud = meteordevelopment.meteorclient.systems.Systems.get(HUD.class);
+
         hud.topCenter.add(new CustomChatHud(hud));
         hud.topLeft.add(new StatsHud(hud));
-        //hud.topLeft.add(new RadarHud(hud));
-
-        mc.options.skipMultiplayerWarning = true;
+        hud.topLeft.add(new MemoryHud(hud));
+        hud.topLeft.add(new PacketHud(hud));
+        // hud.topLeft.add(new RadarHud(hud));
     }
 
     // Utils

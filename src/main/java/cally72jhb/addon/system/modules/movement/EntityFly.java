@@ -1,6 +1,6 @@
 package cally72jhb.addon.system.modules.movement;
 
-import cally72jhb.addon.VectorAddon;
+import cally72jhb.addon.system.categories.Categories;
 import meteordevelopment.meteorclient.events.entity.LivingEntityMoveEvent;
 import meteordevelopment.meteorclient.mixininterface.IVec3d;
 import meteordevelopment.meteorclient.settings.DoubleSetting;
@@ -41,7 +41,7 @@ public class EntityFly extends Module {
     );
 
     public EntityFly() {
-        super(VectorAddon.Movement, "entity-fly", "Fly with any rideable entity.");
+        super(Categories.Movement, "entity-fly", "Fly with any rideable entity.");
     }
 
     @EventHandler
@@ -57,8 +57,8 @@ public class EntityFly extends Module {
         double velZ = vel.getZ();
 
         // Vertical movement
-        if (mc.options.keyJump.isPressed()) velY += verticalSpeed.get() / 20;
-        if (mc.options.keySprint.isPressed()) velY -= verticalSpeed.get() / 20;
+        if (mc.options.jumpKey.isPressed()) velY += verticalSpeed.get() / 20;
+        if (mc.options.sprintKey.isPressed()) velY -= verticalSpeed.get() / 20;
         else velY -= fallSpeed.get() / 20;
 
         // Apply velocity

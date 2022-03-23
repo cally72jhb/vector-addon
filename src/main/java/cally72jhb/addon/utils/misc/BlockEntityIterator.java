@@ -14,7 +14,7 @@ public class BlockEntityIterator implements Iterator<BlockEntity> {
     private Iterator<BlockEntity> blockEntities;
 
     public BlockEntityIterator() {
-        chunks = new ChunkIterator();
+        chunks = new ChunkIterator(false);
 
         nextChunk();
     }

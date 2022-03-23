@@ -10,7 +10,7 @@ import static com.mojang.brigadier.Command.SINGLE_SUCCESS;
 
 public class MuteCommand extends Command {
     public MuteCommand() {
-        super("mute", "Mute certain players.");
+        super("mute", "Mute certain players client-side.");
     }
 
     @Override

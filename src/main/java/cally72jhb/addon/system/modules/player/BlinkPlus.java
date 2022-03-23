@@ -1,6 +1,6 @@
 package cally72jhb.addon.system.modules.player;
 
-import cally72jhb.addon.VectorAddon;
+import cally72jhb.addon.system.categories.Categories;
 import meteordevelopment.meteorclient.events.packets.PacketEvent;
 import meteordevelopment.meteorclient.events.render.Render3DEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
@@ -152,7 +152,7 @@ public class BlinkPlus extends Module {
     private Section section;
 
     public BlinkPlus() {
-        super(VectorAddon.Movement, "blink-plus", "Allows you to essentially teleport while suspending motion updates.");
+        super(Categories.Movement, "blink-plus", "Allows you to essentially teleport while suspending motion updates.");
     }
 
     @Override

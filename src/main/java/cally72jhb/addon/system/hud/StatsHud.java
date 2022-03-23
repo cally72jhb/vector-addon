@@ -1,6 +1,6 @@
 package cally72jhb.addon.system.hud;
 
-import cally72jhb.addon.VectorAddon;
+import cally72jhb.addon.utils.VectorUtils;
 import cally72jhb.addon.utils.misc.Stats;
 import meteordevelopment.meteorclient.settings.BoolSetting;
 import meteordevelopment.meteorclient.settings.DoubleSetting;
@@ -100,7 +100,7 @@ public class StatsHud extends HudElement {
 
     @Override
     public void update(HudRenderer renderer) {
-        if (scores == null) scores = VectorAddon.scores;
+        if (scores == null) scores = VectorUtils.scores;
 
         double width = 0;
         double height = 0;

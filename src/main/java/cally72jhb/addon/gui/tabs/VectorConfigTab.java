@@ -10,6 +10,7 @@ import meteordevelopment.meteorclient.gui.widgets.containers.WTable;
 import meteordevelopment.meteorclient.gui.widgets.pressable.WButton;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.utils.misc.NbtUtils;
+import meteordevelopment.meteorclient.utils.player.ChatUtils;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import net.minecraft.client.gui.screen.Screen;
 
@@ -21,31 +22,64 @@ public class VectorConfigTab extends Tab {
 
     // Chat
 
-    public static final Setting<String> clientName = sgChat.add(new StringSetting.Builder()
-            .name("client-name")
-            .description("The Client-Name.")
+    public static final Setting<String> name = sgChat.add(new StringSetting.Builder()
+            .name("name")
+            .description("The name of the addon.")
             .defaultValue("Vector")
-            .onChanged(string -> VectorConfig.get().clientName = string)
-            .onModuleActivated(string -> string.set(VectorConfig.get().clientName))
+            .onChanged(string -> {
+                VectorConfig.get().name = string;
+                ChatUtils.registerCustomPrefix("cally72jhb.addon", VectorUtils::getPrefix);
+            })
+            .onModuleActivated(string -> string.set(VectorConfig.get().name))
             .build()
     );
 
-    public static final Setting<String> clientPrefix = sgChat.add(new StringSetting.Builder()
-            .name("client-prefix")
-            .description("The Client-Prefix.")
-            .defaultValue("[")
-            .onChanged(string -> VectorConfig.get().clientPrefix = string)
-            .onModuleActivated(string -> string.set(VectorConfig.get().clientPrefix))
-            .build()
+    public static final Setting<String> prefix = sgChat.add(new StringSetting.Builder()
+        .name("prefix")
+        .description("The prefix of the addon.")
+        .defaultValue("[")
+        .onChanged(string -> {
+            VectorConfig.get().prefix = string;
+            ChatUtils.registerCustomPrefix("cally72jhb.addon", VectorUtils::getPrefix);
+        })
+        .onModuleActivated(string -> string.set(VectorConfig.get().prefix))
+        .build()
     );
 
-    public static final Setting<String> clientSuffix = sgChat.add(new StringSetting.Builder()
-            .name("client-suffix")
-            .description("The Client-Suffix.")
-            .defaultValue("]")
-            .onChanged(string -> VectorConfig.get().clientSuffix = string)
-            .onModuleActivated(string -> string.set(VectorConfig.get().clientSuffix))
-            .build()
+    public static final Setting<String> suffix = sgChat.add(new StringSetting.Builder()
+        .name("suffix")
+        .description("The suffix of the addon.")
+        .defaultValue("]")
+        .onChanged(string -> {
+            VectorConfig.get().suffix = string;
+            ChatUtils.registerCustomPrefix("cally72jhb.addon", VectorUtils::getPrefix);
+        })
+        .onModuleActivated(string -> string.set(VectorConfig.get().suffix))
+        .build()
+    );
+
+    public static final Setting<SettingColor> nameColor = sgMisc.add(new ColorSetting.Builder()
+        .name("name-color")
+        .description("The default color for the vector name.")
+        .defaultValue(new SettingColor(140, 245, 165))
+        .onChanged(color -> {
+            VectorConfig.get().nameColor = color;
+            ChatUtils.registerCustomPrefix("cally72jhb.addon", VectorUtils::getPrefix);
+        })
+        .onModuleActivated(color -> color.set(VectorConfig.get().nameColor))
+        .build()
+    );
+
+    public static final Setting<SettingColor> otherColor = sgMisc.add(new ColorSetting.Builder()
+        .name("other-color")
+        .description("The default color for the prefix and suffix.")
+        .defaultValue(new SettingColor(100, 100, 100))
+        .onChanged(color -> {
+            VectorConfig.get().otherColor = color;
+            ChatUtils.registerCustomPrefix("cally72jhb.addon", VectorUtils::getPrefix);
+        })
+        .onModuleActivated(color -> color.set(VectorConfig.get().otherColor))
+        .build()
     );
 
     public static final Setting<Boolean> windowIcon = sgMisc.add(new BoolSetting.Builder()

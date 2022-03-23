@@ -70,8 +70,8 @@ public class TitleScreenTab extends Tab {
         }
 
         @Override
-        public void onClose() {
-            super.onClose();
+        public void close() {
+            super.close();
             if (VectorUtils.mc != null && MeteorClient.mc.world == null && manager.active) VectorUtils.mc.setScreen(new TitleScreen());
             else VectorUtils.mc.setScreen(null);
         }

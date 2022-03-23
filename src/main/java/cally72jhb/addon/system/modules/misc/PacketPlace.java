@@ -1,6 +1,6 @@
 package cally72jhb.addon.system.modules.misc;
 
-import cally72jhb.addon.VectorAddon;
+import cally72jhb.addon.system.categories.Categories;
 import cally72jhb.addon.utils.VectorUtils;
 import meteordevelopment.meteorclient.events.entity.player.InteractBlockEvent;
 import meteordevelopment.meteorclient.settings.BoolSetting;
@@ -75,7 +75,7 @@ public class PacketPlace extends Module {
     private final Random random = new Random();
 
     public PacketPlace() {
-        super(VectorAddon.Misc, "packet-place", "Place blocks with packets.");
+        super(Categories.Misc, "packet-place", "Place blocks with packets.");
     }
 
     @EventHandler

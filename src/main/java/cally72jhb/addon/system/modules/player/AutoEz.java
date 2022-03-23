@@ -1,30 +1,35 @@
 package cally72jhb.addon.system.modules.player;
 
-import cally72jhb.addon.VectorAddon;
+import cally72jhb.addon.system.categories.Categories;
 import cally72jhb.addon.utils.VectorUtils;
 import it.unimi.dsi.fastutil.chars.Char2CharArrayMap;
 import it.unimi.dsi.fastutil.chars.Char2CharMap;
+import meteordevelopment.meteorclient.events.entity.EntityRemovedEvent;
 import meteordevelopment.meteorclient.events.packets.PacketEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.friends.Friends;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.systems.modules.Modules;
+import meteordevelopment.meteorclient.utils.entity.fakeplayer.FakePlayerEntity;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.network.packet.c2s.play.ChatMessageC2SPacket;
 import net.minecraft.network.packet.s2c.play.EntityStatusS2CPacket;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
 public class AutoEz extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
     private final SettingGroup sgPops = settings.createGroup("Pops");
     private final SettingGroup sgKills = settings.createGroup("Kills");
+    private final SettingGroup sgLogs = settings.createGroup("Logs");
     private final SettingGroup sgTargeting = settings.createGroup("Targeting");
+
+
+    // General
+
 
     private final Setting<Boolean> clearOnDeath = sgGeneral.add(new BoolSetting.Builder()
         .name("clear-on-death")
@@ -61,7 +66,9 @@ public class AutoEz extends Module {
         .build()
     );
 
+
     // Pops
+
 
     private final Setting<Boolean> popMsg = sgPops.add(new BoolSetting.Builder()
         .name("pop")
@@ -74,7 +81,7 @@ public class AutoEz extends Module {
         .name("pop-message")
         .description("The message to send when you poped a player.")
         .defaultValue("ez pop {player}")
-        .visible(() -> !randomMsg.get() && popMsg.get())
+        .visible(() -> popMsg.get() && !randomMsg.get())
         .build()
     );
 
@@ -82,7 +89,7 @@ public class AutoEz extends Module {
         .name("pop-messages")
         .description("The random messages to send when you poped a player.")
         .defaultValue(List.of("vector on top", "ez {player}", "poped {player} with vector", "{pops} pops on {player} already"))
-        .visible(() -> randomMsg.get() && popMsg.get())
+        .visible(() -> popMsg.get() && randomMsg.get())
         .build()
     );
 
@@ -95,7 +102,9 @@ public class AutoEz extends Module {
         .build()
     );
 
+
     // Kills
+
 
     private final Setting<Boolean> killMsg = sgKills.add(new BoolSetting.Builder()
         .name("kill")
@@ -108,15 +117,15 @@ public class AutoEz extends Module {
         .name("kill-message")
         .description("The message to send when you killed someone.")
         .defaultValue("killed {player}")
-        .visible(() -> !randomMsg.get() && killMsg.get())
+        .visible(() -> killMsg.get() && !randomMsg.get())
         .build()
     );
 
     private final Setting<List<String>> killMessages = sgKills.add(new StringListSetting.Builder()
         .name("kill-messages")
         .description("The random messages to send when you kill someone.")
-        .defaultValue(List.of("ez {player}", "killed {player} with vector", "currently at {kills} kill streak", "{playerkills} kills on {player} already", "join vector for free: https://discord.gg/A3nYgbKeXR", "{online} people saw {player} die to the power of vector"))
-        .visible(() -> randomMsg.get() && killMsg.get())
+        .defaultValue(List.of("ez {player}", "killed {player} with vector", "currently at {kills} kill streak", "{playerkills} kills on {player} already", "join vector for free: https://discord.gg/A3nYgbKeXR", "{online} people saw {player} die to the power of vector", "☠☠", "☠"))
+        .visible(() -> killMsg.get() && randomMsg.get())
         .build()
     );
 
@@ -129,7 +138,62 @@ public class AutoEz extends Module {
         .build()
     );
 
+
+    // Combat Log
+
+
+    private final Setting<Boolean> logMsg = sgLogs.add(new BoolSetting.Builder()
+        .name("combat-log")
+        .description("Sends a messages everytime you make a player combat log.")
+        .defaultValue(true)
+        .build()
+    );
+
+    private final Setting<String> logString = sgLogs.add(new StringSetting.Builder()
+        .name("log-message")
+        .description("The message to send when you made someone log.")
+        .defaultValue("ez log {player}")
+        .visible(() -> logMsg.get() && !randomMsg.get())
+        .build()
+    );
+
+    private final Setting<List<String>> logMessages = sgLogs.add(new StringListSetting.Builder()
+        .name("log-messages")
+        .description("The random messages to send when you made someone log.")
+        .defaultValue(List.of("ez log {player}", "ez {player} just logged", "made {player} log with vector"))
+        .visible(() -> logMsg.get() && randomMsg.get())
+        .build()
+    );
+
+    private final Setting<Integer> logDelay = sgLogs.add(new IntSetting.Builder()
+        .name("log-delay")
+        .description("How long to wait in ticks before sending a log message.")
+        .defaultValue(5)
+        .min(0)
+        .visible(logMsg::get)
+        .build()
+    );
+
+    private final Setting<Double> logRange = sgLogs.add(new DoubleSetting.Builder()
+        .name("log-detection-range")
+        .description("How far players have to be away from you to send a log message.")
+        .defaultValue(15)
+        .min(0)
+        .visible(logMsg::get)
+        .build()
+    );
+
+    private final Setting<Boolean> checkTargetsOnLog = sgTargeting.add(new BoolSetting.Builder()
+        .name("check-targets-on-log")
+        .description("Checks the current target form each module when players log off.")
+        .defaultValue(false)
+        .visible(logMsg::get)
+        .build()
+    );
+
+
     // Targeting
+
 
     private final Setting<Boolean> ignoreFriends = sgTargeting.add(new BoolSetting.Builder()
         .name("ignore-friends")
@@ -140,7 +204,7 @@ public class AutoEz extends Module {
 
     private final Setting<Boolean> checkTargets = sgTargeting.add(new BoolSetting.Builder()
         .name("check-targets")
-        .description("Checks the current target form every module.")
+        .description("Checks the current target form each module.")
         .defaultValue(true)
         .build()
     );
@@ -155,16 +219,17 @@ public class AutoEz extends Module {
     );
 
     private final Char2CharMap SMALL_CAPS = new Char2CharArrayMap();
+    private final Random random = new Random();
 
     private HashMap<UUID, Integer> kills;
     private HashMap<UUID, Integer> pops;
-    private Random random;
     private int allKills;
     private int killTimer;
     private int popTimer;
+    private int logTimer;
 
     public AutoEz() {
-        super(VectorAddon.Misc, "auto-ez", "Send a chat message after killing or poping a player.");
+        super(Categories.Misc, "auto-ez", "Send a chat message after killing or poping a player.");
 
         String[] a = "abcdefghijklmnopqrstuvwxyz".split("");
         String[] b = "ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘqʀꜱᴛᴜᴠᴡxʏᴢ".split("");
@@ -175,12 +240,14 @@ public class AutoEz extends Module {
     public void onActivate() {
         kills = new HashMap<>();
         pops = new HashMap<>();
-        random = new Random();
 
         allKills = 0;
         killTimer = 0;
         popTimer = 0;
+        logTimer = 0;
     }
+
+    // Pops & Kills
 
     @EventHandler
     private void onReceivePacket(PacketEvent.Receive event) {
@@ -190,7 +257,7 @@ public class AutoEz extends Module {
 
             Entity entity = packet.getEntity(mc.world);
 
-            if (!check(entity)) return;
+            if (!check(entity, range.get(), true)) return;
 
             if (packet.getStatus() == 35) {
                 pops.putIfAbsent(entity.getUuid(), 0);
@@ -211,59 +278,79 @@ public class AutoEz extends Module {
 
                 if (killMsg.get() && (killTimer >= killDelay.get() || killDelay.get() == 0)) {
                     sendKillMsg((PlayerEntity) entity);
+                    pops.replace(entity.getUuid(), 0);
                     killTimer = 0;
                 }
             }
         }
     }
 
+    // Combat Logging
+
+    @EventHandler
+    private void onEntityRemoved(EntityRemovedEvent event) {
+        if (logMsg.get() && event.entity instanceof  PlayerEntity player && !(player instanceof FakePlayerEntity)
+            && check(player, logRange.get(), checkTargetsOnLog.get()) && (logTimer >= logDelay.get() || logDelay.get() == 0)) {
+
+            sendLogMsg(player);
+            logTimer = 0;
+        }
+    }
+
+    // Ticking Timers & updating Pops
+
     @EventHandler
     private void onPostTick(TickEvent.Post event) {
         killTimer++;
         popTimer++;
+        logTimer++;
+
+        if (mc != null && mc.world != null) for (UUID uuid : new HashSet<>(pops.keySet())) if (mc.world.getPlayerByUuid(uuid) == null) pops.replace(uuid, 0);
     }
 
     // Messaging
 
+    private void sendLogMsg(PlayerEntity player) {
+        sendMsg(apply(player, randomMsg.get() && !logMessages.get().isEmpty() ? (logMessages.get().size() > 1 ? logMessages.get().get(random.nextInt(logMessages.get().size())) : logMessages.get().get(0)) : logString.get()));
+    }
+
     private void sendPopMsg(PlayerEntity player) {
-        sendMsg(apply(player, randomMsg.get() ? popMessages.get().get(random.nextInt(popMessages.get().size())) : popString.get()));
+        sendMsg(apply(player, randomMsg.get() && !popMessages.get().isEmpty() ? (popMessages.get().size() > 1 ? popMessages.get().get(random.nextInt(popMessages.get().size())) : popMessages.get().get(0)) : popString.get()));
     }
 
     private void sendKillMsg(PlayerEntity player) {
         if (message.get()) {
-            sendMsg(apply(player, randomMsg.get() ? killMessages.get().get(random.nextInt(killMessages.get().size())) : killString.get()));
+            sendMsg(apply(player, randomMsg.get() && !killMessages.get().isEmpty() ? (killMessages.get().size() > 1 ? killMessages.get().get(random.nextInt(killMessages.get().size())) : killMessages.get().get(0)) : killString.get()));
         }
 
         int pop = pops.get(player.getUuid()) == null ? 0 : pops.get(player.getUuid());
         int kill = kills.get(player.getUuid()) == null ? 0 : kills.get(player.getUuid());
-        if (notify.get()) info("poped " + player.getEntityName()
-                + " " + pop + (pop == 1 ? " time" : " times") + " and killed him "
-                + kill + (kill == 1 ? " time." : " times."));
+        if (notify.get()) info("Poped " + player.getGameProfile().getName() + " " + pop + (pop == 1 ? " time" : " times") + " and killed him " + kill + (kill == 1 ? " time." : " times."));
     }
 
     private void sendMsg(String string) {
-        StringBuilder sb = new StringBuilder();
+        if (string != null) {
+            StringBuilder builder = new StringBuilder();
 
-        if (smallCaps.get()) {
-            for (char ch : string.toCharArray()) {
-                if (SMALL_CAPS.containsKey(ch)) sb.append(SMALL_CAPS.get(ch));
-                else sb.append(ch);
+            if (smallCaps.get()) {
+                for (char ch : string.toCharArray()) {
+                    if (SMALL_CAPS.containsKey(ch)) builder.append(SMALL_CAPS.get(ch));
+                    else builder.append(ch);
+                }
             }
-        } else {
-            sb.append(string);
-        }
 
-        if (message.get()) {
-            mc.player.sendChatMessage(sb.toString());
-        } else {
-            info(sb.toString());
+            if (message.get()) {
+                mc.getNetworkHandler().sendPacket(new ChatMessageC2SPacket(smallCaps.get() ? builder.toString() : string));
+            } else {
+                info(smallCaps.get() ? builder.toString() : string);
+            }
         }
     }
 
     // Utils
 
     private String apply(PlayerEntity player, String message) {
-        String string = message.replace("{player}", player.getEntityName());
+        String string = message.replace("{player}", player.getGameProfile().getName());
 
         string = string.replace("{online}", String.valueOf(mc.getNetworkHandler() != null ? mc.getNetworkHandler().getPlayerList().size() : 0));
         string = string.replace("{pops}", String.valueOf(pops.get(player.getUuid())));
@@ -273,12 +360,12 @@ public class AutoEz extends Module {
         return string;
     }
 
-    private boolean check(Entity entity) {
+    private boolean check(Entity entity, double range, boolean shouldCheckTargets) {
         if (!(entity instanceof PlayerEntity) || entity == mc.player
             || (Friends.get().isFriend((PlayerEntity) entity) && ignoreFriends.get())
-            || VectorUtils.distance(mc.player.getPos(), entity.getPos()) > range.get()) return false;
+            || VectorUtils.distance(mc.player.getPos(), entity.getPos()) > range) return false;
 
-        if (checkTargets.get()) {
+        if (checkTargets.get() && shouldCheckTargets) {
             boolean target = true;
 
             for (Module module : Modules.get().getAll()) {

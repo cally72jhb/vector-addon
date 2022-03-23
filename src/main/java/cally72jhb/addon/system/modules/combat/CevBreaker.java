@@ -1,6 +1,6 @@
 package cally72jhb.addon.system.modules.combat;
 
-import cally72jhb.addon.VectorAddon;
+import cally72jhb.addon.system.categories.Categories;
 import cally72jhb.addon.utils.VectorUtils;
 import meteordevelopment.meteorclient.events.render.Render3DEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
@@ -219,7 +219,7 @@ public class CevBreaker extends Module {
     private int timer;
 
     public CevBreaker() {
-        super(VectorAddon.Combat,"vector-cev", "Places and explodes crystals on top of the target.");
+        super(Categories.Combat,"vector-cev", "Places and explodes crystals on top of the target.");
     }
 
     @Override

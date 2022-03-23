@@ -1,6 +1,6 @@
 package cally72jhb.addon.system.modules.misc;
 
-import cally72jhb.addon.VectorAddon;
+import cally72jhb.addon.system.categories.Categories;
 import meteordevelopment.meteorclient.events.entity.player.InteractItemEvent;
 import meteordevelopment.meteorclient.events.meteor.KeyEvent;
 import meteordevelopment.meteorclient.events.meteor.MouseButtonEvent;
@@ -26,7 +26,6 @@ import net.minecraft.network.packet.c2s.play.PlayerInteractItemC2SPacket;
 import net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -144,7 +143,7 @@ public class PacketConsume extends Module {
     private int timer;
 
     public PacketConsume() {
-        super(VectorAddon.Misc, "packet-consume", "Consume stuff with packets.");
+        super(Categories.Misc, "packet-consume", "Consume stuff with packets.");
     }
 
     @Override
@@ -270,7 +269,7 @@ public class PacketConsume extends Module {
         if (message.get()) info("Stopped eating.");
 
         Packet<ServerPlayPacketListener> interact = new PlayerInteractItemC2SPacket(Hand.MAIN_HAND);
-        Packet<ServerPlayPacketListener> release = new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.RELEASE_USE_ITEM, new BlockPos(0, 0, 0), Direction.DOWN);
+        Packet<ServerPlayPacketListener> release = new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.RELEASE_USE_ITEM, BlockPos.ORIGIN, mc.player.getHorizontalFacing());
 
         packets.add(interact);
         packets.add(release);

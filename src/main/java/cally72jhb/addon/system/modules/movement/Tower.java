@@ -1,6 +1,6 @@
 package cally72jhb.addon.system.modules.movement;
 
-import cally72jhb.addon.VectorAddon;
+import cally72jhb.addon.system.categories.Categories;
 import cally72jhb.addon.utils.VectorUtils;
 import cally72jhb.addon.utils.misc.FindItemResult;
 import meteordevelopment.meteorclient.events.entity.player.PlayerMoveEvent;
@@ -16,8 +16,6 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.FallingBlock;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.decoration.EndCrystalEntity;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
@@ -27,6 +25,7 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.shape.VoxelShape;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,14 +56,34 @@ public class Tower extends Module {
         .build()
     );
 
+    private final Setting<Double> up = sgGeneral.add(new DoubleSetting.Builder()
+        .name("speed-up")
+        .description("How fast to go upwards.")
+        .defaultValue(1)
+        .sliderMin(1)
+        .min(0)
+        .visible(() -> mode.get() == Mode.Normal)
+        .build()
+    );
+
+    private final Setting<Double> down = sgGeneral.add(new DoubleSetting.Builder()
+        .name("speed-down")
+        .description("How fast to go downwards.")
+        .defaultValue(5)
+        .sliderMin(1)
+        .min(0)
+        .visible(() -> mode.get() == Mode.Normal)
+        .build()
+    );
+
     private final Setting<Double> speed = sgGeneral.add(new DoubleSetting.Builder()
         .name("vertical-speed")
         .description("How far to attempt to cause rubberband.")
         .defaultValue(1)
         .sliderMin(1)
         .sliderMax(30)
-        .min(0.1)
-        .visible(this::getBypass)
+        .min(0.05)
+        .visible(() -> getBypass() && mode.get() == Mode.Bypass)
         .build()
     );
 
@@ -76,6 +95,20 @@ public class Tower extends Module {
         .sliderMax(10)
         .min(0)
         .visible(() -> getBypass() && mode.get() == Mode.Bypass)
+        .build()
+    );
+
+    private final Setting<Boolean> packet = sgGeneral.add(new BoolSetting.Builder()
+        .name("packet")
+        .description("Towers with faking jump packets.")
+        .defaultValue(true)
+        .build()
+    );
+
+    private final Setting<Boolean> downPacket = sgGeneral.add(new BoolSetting.Builder()
+        .name("down-packet")
+        .description("Sends a extra packet after going down.")
+        .defaultValue(true)
         .build()
     );
 
@@ -128,14 +161,14 @@ public class Tower extends Module {
 
     private final Setting<Boolean> antikick = sgSafe.add(new BoolSetting.Builder()
         .name("anti-kick")
-        .description("Stops you from being kicked while towering.")
+        .description("Stops you from getting kicked for fly while towering.")
         .defaultValue(true)
         .build()
     );
 
     private final Setting<Boolean> stopmove = sgSafe.add(new BoolSetting.Builder()
         .name("stop-move")
-        .description("Stops your movement that you tower right.")
+        .description("Stops your movement.")
         .defaultValue(true)
         .build()
     );
@@ -143,7 +176,7 @@ public class Tower extends Module {
     private int timer;
 
     public Tower() {
-        super(VectorAddon.Movement, "tower", "Automatically towers up fast.");
+        super(Categories.Movement, "tower", "Automatically towers up fast.");
     }
 
     @Override
@@ -160,9 +193,9 @@ public class Tower extends Module {
         if (!item.found()) return;
 
         if (mode.get() == Mode.Bypass) {
-            if (validBlock(mc.player.getBlockPos()) || validBlock(mc.player.getBlockPos().down()) || isDangerousCrystal()) return;
+            if (validBlock(mc.player.getBlockPos()) || validBlock(mc.player.getBlockPos().down())) return;
 
-            if ((mc.options.keyJump.isPressed() && jump.get()) || !jump.get()) {
+            if (!jump.get() || (mc.options.jumpKey.isPressed() && jump.get())) {
                 if (stopmove.get() && mc.player.prevY < mc.player.getY()) mc.player.setVelocity(0, 0, 0);
 
                 if (timer > delay.get() || delay.get() == 0) {
@@ -175,25 +208,37 @@ public class Tower extends Module {
 
                 timer++;
             }
-        } else if ((mc.options.keyJump.isPressed() && jump.get()) || !jump.get()) {
-            Vec3d vel = mc.player.getVelocity();
+        } else if (!jump.get() || (mc.options.jumpKey.isPressed() && jump.get())) {
+            Vec3d velocity = mc.player.getVelocity();
 
-            int y = mc.player.getBlockY();
+            if (mc.player.isOnGround()) mc.player.setVelocity(velocity.x * 0.3, up.get() / 100, mc.player.getVelocity().z * 0.3);
+            if (VectorUtils.getCollision(mc.player.getBlockPos().down()) == null || VectorUtils.getCollision(mc.player.getBlockPos().down()).isEmpty()) {
+                mc.player.setVelocity(velocity.x * 0.3, -(down.get() / 100), velocity.z * 0.3);
+            }
+        }
 
-            for (int i = mc.player.getBlockY(); i < mc.world.getHeight(); i--) {
-                if (!VectorUtils.getBlockState(new BlockPos(mc.player.getBlockX(), i, mc.player.getBlockZ())).isAir()) {
-                    y = i + 1;
-                    break;
+        if (packet.get() && !jump.get() || (mc.options.jumpKey.isPressed() && jump.get())) {
+            if (!mc.player.isOnGround()) {
+                VoxelShape shape = VectorUtils.getCollision(new BlockPos(mc.player.getPos().x, (int) Math.round(mc.player.getPos().y), mc.player.getPos().z).down());
+
+                if (shape == null || shape.isEmpty() && downPacket.get()) {
+                    mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), Math.floor(mc.player.getY()), mc.player.getZ(), true));
+                    mc.player.setPosition(mc.player.getX(), Math.floor(mc.player.getY()), mc.player.getZ());
                 }
+
+                return;
             }
 
-            if (mc.player.getY() - y >= 7.5) {
-                VectorUtils.place(mc.player.getBlockPos().down(), item, rotate.get(), 50);
-            } else {
-                VectorUtils.place(new BlockPos(mc.player.getBlockX(), y, mc.player.getBlockZ()), item, rotate.get(), 50);
-            }
+            double x = mc.player.getX();
+            double y = mc.player.getY();
+            double z = mc.player.getZ();
 
-            mc.player.setVelocity(vel.x, speed.get(), vel.z);
+            mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 0.41999998688698, z, true));
+            mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 0.75319998052120, z, true));
+            mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 1.00133597911214, z, true));
+            mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 1.16610926093821, z, true));
+
+            mc.player.setPosition(mc.player.getX(), mc.player.getY() + 1.15, mc.player.getZ());
         }
     }
 
@@ -231,14 +276,6 @@ public class Tower extends Module {
         return !(block instanceof FallingBlock) || !FallingBlock.canFallThrough(mc.world.getBlockState(pos));
     }
 
-    private boolean isDangerousCrystal() {
-        for (Entity entity : mc.world.getEntities()) {
-            if (entity instanceof EndCrystalEntity && VectorUtils.distance(mc.player.getBlockPos(), entity.getBlockPos()) <= 1.5) return true;
-        }
-
-        return false;
-    }
-
     private boolean getBypass() {
         return !bypass.get();
     }
@@ -247,19 +284,17 @@ public class Tower extends Module {
         BlockPos pos = mc.player.getBlockPos();
         FindItemResult block = VectorUtils.findInHotbar(itemStack -> validItem(itemStack, pos));
 
-        if (!block.found()) return;
-        if (!checkHead(pos)) return;
-        if (isDangerousCrystal()) return;
+        if (!block.found() || !checkHead(pos)) return;
 
         if (mc.player.getY() != mc.player.getBlockPos().getY() && antikick.get()) {
             mc.player.updatePosition(mc.player.getX(), (int) mc.player.getY(), mc.player.getZ());
         }
 
         if (instant.get()) {
-            mc.player.networkHandler.sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), mc.player.getY() + 0.4, mc.player.getZ(), onGround.get()));
-            mc.player.networkHandler.sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), mc.player.getY() + 0.75, mc.player.getZ(), onGround.get()));
-            mc.player.networkHandler.sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), mc.player.getY() + 1.01, mc.player.getZ(), onGround.get()));
-            mc.player.networkHandler.sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), mc.player.getY() + 1.15, mc.player.getZ(), onGround.get()));
+            mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), mc.player.getY() + 0.4, mc.player.getZ(), onGround.get()));
+            mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), mc.player.getY() + 0.75, mc.player.getZ(), onGround.get()));
+            mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), mc.player.getY() + 1.01, mc.player.getZ(), onGround.get()));
+            mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), mc.player.getY() + 1.15, mc.player.getZ(), onGround.get()));
         }
 
         InvUtils.swap(block.getSlot(), true);
@@ -267,14 +302,14 @@ public class Tower extends Module {
         if (shouldSneak(pos)) mc.player.setSneaking(true);
 
         mc.interactionManager.interactBlock(mc.player, mc.world, Hand.MAIN_HAND, new BlockHitResult(Utils.vec3d(pos), Direction.UP, pos, false));
-        mc.player.networkHandler.sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
+        mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
 
         InvUtils.swapBack();
 
         double height = bypass.get() ? -mc.player.getY() - 2.5 : speed.get();
 
         if (instant.get()) {
-            mc.player.networkHandler.sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), (int) (mc.player.getY() + height), mc.player.getZ(), onGround.get()));
+            mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), (int) (mc.player.getY() + height), mc.player.getZ(), onGround.get()));
         } else {
             mc.player.updatePosition(mc.player.getX(), (int) (mc.player.getY() + height), mc.player.getZ());
         }

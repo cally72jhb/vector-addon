@@ -1,6 +1,6 @@
 package cally72jhb.addon.system.modules.combat;
 
-import cally72jhb.addon.VectorAddon;
+import cally72jhb.addon.system.categories.Categories;
 import meteordevelopment.meteorclient.events.packets.PacketEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.*;
@@ -92,7 +92,7 @@ public class BowBomb extends Module {
     );
 
     public BowBomb() {
-        super(VectorAddon.Combat, "bow-bomb", "Kills / Pops entities 1 shot with the bow.");
+        super(Categories.Combat, "bow-bomb", "Kills / Pops entities 1 shot with the bow.");
     }
 
     private long lastShoot;
@@ -115,14 +115,14 @@ public class BowBomb extends Module {
     @EventHandler
     public void onPreTick(TickEvent.Pre event) {
         if (isSpoofable()) {
-            if (mc.player.getItemUseTime() > 0 && mc.options.keyUse.isPressed()) activate();
+            if (mc.player.getItemUseTime() > 0 && mc.options.useKey.isPressed()) activate();
             else if (pause.get()) deactivate();
         }
     }
 
     @EventHandler
     public void onTick(TickEvent.Post event) {
-        if (spoofed && !mc.options.keyUse.isPressed() && pause.get()) activate();
+        if (spoofed && !mc.options.useKey.isPressed() && pause.get()) activate();
         else if (pause.get()) deactivate();
     }
 

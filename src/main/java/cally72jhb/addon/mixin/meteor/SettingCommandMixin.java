@@ -1,6 +1,6 @@
 package cally72jhb.addon.mixin.meteor;
 
-import cally72jhb.addon.VectorAddon;
+import cally72jhb.addon.utils.VectorUtils;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import meteordevelopment.meteorclient.gui.GuiThemes;
 import meteordevelopment.meteorclient.gui.screens.ModuleScreen;
@@ -10,7 +10,6 @@ import meteordevelopment.meteorclient.systems.commands.arguments.ModuleArgumentT
 import meteordevelopment.meteorclient.systems.commands.arguments.SettingArgumentType;
 import meteordevelopment.meteorclient.systems.commands.arguments.SettingValueArgumentType;
 import meteordevelopment.meteorclient.systems.commands.commands.SettingCommand;
-import meteordevelopment.meteorclient.systems.modules.Module;
 import net.minecraft.command.CommandSource;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -28,9 +27,7 @@ public class SettingCommandMixin extends Command {
     @Inject(method = "build", at = @At("HEAD"), remap = false)
     private void onInit(LiteralArgumentBuilder<CommandSource> builder, CallbackInfo info) {
         builder.then(argument("module", ModuleArgumentType.module()).executes(context -> {
-            Module module = ModuleArgumentType.getModule(context, "module");
-
-            VectorAddon.screen = new ModuleScreen(GuiThemes.get(), module);
+            VectorUtils.screen = new ModuleScreen(GuiThemes.get(), ModuleArgumentType.getModule(context, "module"));
 
             return SINGLE_SUCCESS;
         }));

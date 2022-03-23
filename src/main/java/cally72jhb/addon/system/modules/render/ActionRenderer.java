@@ -1,6 +1,6 @@
 package cally72jhb.addon.system.modules.render;
 
-import cally72jhb.addon.VectorAddon;
+import cally72jhb.addon.system.categories.Categories;
 import cally72jhb.addon.utils.VectorUtils;
 import meteordevelopment.meteorclient.events.entity.player.BreakBlockEvent;
 import meteordevelopment.meteorclient.events.entity.player.InteractBlockEvent;
@@ -105,7 +105,7 @@ public class ActionRenderer extends Module {
     private final List<RenderBlock> renderBlocks = new ArrayList<>();
 
     public ActionRenderer() {
-        super(VectorAddon.Misc, "action-render", "Outlines interacted, placed and broken blocks.");
+        super(Categories.Misc, "action-render", "Outlines interacted, placed and broken blocks.");
     }
 
     @Override
@@ -221,15 +221,15 @@ public class ActionRenderer extends Module {
 
                 if (shape == null || shape.isEmpty()) return;
 
-                if (shapeMode == ShapeMode.Both || shapeMode == ShapeMode.Lines) {
+                if (shapeMode.lines()) {
                     shape.forEachEdge((minX, minY, minZ, maxX, maxY, maxZ) -> {
                         event.renderer.line(pos.getX() + minX, pos.getY() + minY, pos.getZ() + minZ, pos.getX() + maxX, pos.getY() + maxY, pos.getZ() + maxZ, lines);
                     });
                 }
 
-                if (shapeMode == ShapeMode.Both || shapeMode == ShapeMode.Sides) {
+                if (shapeMode.sides()) {
                     for (Box box : shape.getBoundingBoxes()) {
-                        event.renderer.box(pos.getX() + box.minX, pos.getY() + box.minY, pos.getZ() + box.minZ, pos.getX() + box.maxX, pos.getY() + box.maxY, pos.getZ() + box.maxZ, sides, lines, shapeMode, 0);
+                        event.renderer.box(pos.getX() + box.minX, pos.getY() + box.minY, pos.getZ() + box.minZ, pos.getX() + box.maxX, pos.getY() + box.maxY, pos.getZ() + box.maxZ, sides, lines, ShapeMode.Sides, 0);
                     }
                 }
             }

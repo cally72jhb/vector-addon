@@ -1,6 +1,6 @@
 package cally72jhb.addon.system.modules.player;
 
-import cally72jhb.addon.VectorAddon;
+import cally72jhb.addon.system.categories.Categories;
 import meteordevelopment.meteorclient.events.packets.PacketEvent;
 import meteordevelopment.meteorclient.events.render.Render3DEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
@@ -75,7 +75,7 @@ public class ChorusPredict extends Module {
     private Vec3d pos;
 
     public ChorusPredict() {
-        super(VectorAddon.Misc, "chorus-predict", "Predicts the spot where the chorus-fruit will teleport you.");
+        super(Categories.Misc, "chorus-predict", "Predicts the spot where the chorus-fruit will teleport you.");
     }
 
     @Override

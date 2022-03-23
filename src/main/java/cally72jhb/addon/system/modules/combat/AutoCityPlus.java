@@ -1,6 +1,6 @@
 package cally72jhb.addon.system.modules.combat;
 
-import cally72jhb.addon.VectorAddon;
+import cally72jhb.addon.system.categories.Categories;
 import cally72jhb.addon.utils.VectorUtils;
 import meteordevelopment.meteorclient.events.render.Render3DEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
@@ -156,7 +156,7 @@ public class AutoCityPlus extends Module {
     private BlockPos breakingPos;
 
     public AutoCityPlus() {
-        super(VectorAddon.Combat, "auto-city-plus", "Breaks the targets surround.");
+        super(Categories.Combat, "auto-city-plus", "Breaks the targets surround.");
     }
 
     @Override
