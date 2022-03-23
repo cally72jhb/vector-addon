@@ -1,41 +1,52 @@
 # Vector Addon
-A open-source addon for Meteor Client (Meteor Version 0.4.7 Release and fabric 0.12.12)
+A powerful open-source addon for Meteor Client
+providing some combat and many utility modules
+
+(Minecraft 1.18.2 & Meteor 0.4.8 dev-builds & fabric 0.12.12)
 
 [![Discord embed](https://img.shields.io/discord/863813920892518461.svg?logo=discord&logoColor=FFFFFF&style=flat-square&label=Discord&colorA=606060&colorB=7289DA)](https://discord.gg/A3nYgbKeXR)
 
 **Modules:**
 - ActionRenderer
 - AntiPistonPush
+- AntiProne
+- AutoCope
+- AutoCraft
 - AutoEz
 - BedBomb
 - BlinkPlus
 - BorderBypass
 - BowBomb
-- CevBreaker
 - ChorusPredict
-- DebugTools
+- DeathAnimations
 - EntityFly
+- InstaMinePlus
+- InventoryScroll
+- ItemRelease
 - NoFluid
 - PacketConsume
 - PacketFly
+- PacketLogger
 - PacketPlace
-- ParticleRenderer
-- PearlPredict
 - PingSpoof
+- Placeholders
+- PopRenderer
 - PortalGodMode
 - SkeletonESP
 - SpeedBypass
 - StepPlus
 - StorageViewer
-- SurroundPlus
 - Tower
 - VectorPresence
+- VectorSurround
 - Welcomer
 
 **Commands:**
+- ItemCommand
 - MuteCommand
-- TargetCommand
 - StatsCommand
+- TargetCommand
+- TrashCommand
 - UUIDCommand
 
 **Custom Title Screen:**
