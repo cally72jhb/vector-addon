@@ -24,7 +24,6 @@ public class AutoEz extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
     private final SettingGroup sgPops = settings.createGroup("Pops");
     private final SettingGroup sgKills = settings.createGroup("Kills");
-    private final SettingGroup sgLogs = settings.createGroup("Logs");
     private final SettingGroup sgTargeting = settings.createGroup("Targeting");
 
 
@@ -139,59 +138,6 @@ public class AutoEz extends Module {
     );
 
 
-    // Combat Log
-
-
-    private final Setting<Boolean> logMsg = sgLogs.add(new BoolSetting.Builder()
-        .name("combat-log")
-        .description("Sends a messages everytime you make a player combat log.")
-        .defaultValue(true)
-        .build()
-    );
-
-    private final Setting<String> logString = sgLogs.add(new StringSetting.Builder()
-        .name("log-message")
-        .description("The message to send when you made someone log.")
-        .defaultValue("ez log {player}")
-        .visible(() -> logMsg.get() && !randomMsg.get())
-        .build()
-    );
-
-    private final Setting<List<String>> logMessages = sgLogs.add(new StringListSetting.Builder()
-        .name("log-messages")
-        .description("The random messages to send when you made someone log.")
-        .defaultValue(List.of("ez log {player}", "ez {player} just logged", "made {player} log with vector"))
-        .visible(() -> logMsg.get() && randomMsg.get())
-        .build()
-    );
-
-    private final Setting<Integer> logDelay = sgLogs.add(new IntSetting.Builder()
-        .name("log-delay")
-        .description("How long to wait in ticks before sending a log message.")
-        .defaultValue(5)
-        .min(0)
-        .visible(logMsg::get)
-        .build()
-    );
-
-    private final Setting<Double> logRange = sgLogs.add(new DoubleSetting.Builder()
-        .name("log-detection-range")
-        .description("How far players have to be away from you to send a log message.")
-        .defaultValue(15)
-        .min(0)
-        .visible(logMsg::get)
-        .build()
-    );
-
-    private final Setting<Boolean> checkTargetsOnLog = sgTargeting.add(new BoolSetting.Builder()
-        .name("check-targets-on-log")
-        .description("Checks the current target form each module when players log off.")
-        .defaultValue(false)
-        .visible(logMsg::get)
-        .build()
-    );
-
-
     // Targeting
 
 
@@ -285,18 +231,6 @@ public class AutoEz extends Module {
         }
     }
 
-    // Combat Logging
-
-    @EventHandler
-    private void onEntityRemoved(EntityRemovedEvent event) {
-        if (logMsg.get() && event.entity instanceof  PlayerEntity player && !(player instanceof FakePlayerEntity)
-            && check(player, logRange.get(), checkTargetsOnLog.get()) && (logTimer >= logDelay.get() || logDelay.get() == 0)) {
-
-            sendLogMsg(player);
-            logTimer = 0;
-        }
-    }
-
     // Ticking Timers & updating Pops
 
     @EventHandler
@@ -309,10 +243,6 @@ public class AutoEz extends Module {
     }
 
     // Messaging
-
-    private void sendLogMsg(PlayerEntity player) {
-        sendMsg(apply(player, randomMsg.get() && !logMessages.get().isEmpty() ? (logMessages.get().size() > 1 ? logMessages.get().get(random.nextInt(logMessages.get().size())) : logMessages.get().get(0)) : logString.get()));
-    }
 
     private void sendPopMsg(PlayerEntity player) {
         sendMsg(apply(player, randomMsg.get() && !popMessages.get().isEmpty() ? (popMessages.get().size() > 1 ? popMessages.get().get(random.nextInt(popMessages.get().size())) : popMessages.get().get(0)) : popString.get()));

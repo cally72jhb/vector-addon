@@ -1,8 +1,8 @@
 package cally72jhb.addon.mixin;
 
 import cally72jhb.addon.system.modules.movement.AntiPistonPush;
-import cally72jhb.addon.system.modules.movement.NoFluid;
 import cally72jhb.addon.system.modules.movement.AntiProne;
+import cally72jhb.addon.system.modules.movement.NoFluid;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import net.minecraft.block.piston.PistonBehavior;
 import net.minecraft.entity.Entity;

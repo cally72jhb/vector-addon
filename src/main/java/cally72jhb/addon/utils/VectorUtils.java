@@ -3,7 +3,6 @@ package cally72jhb.addon.utils;
 import cally72jhb.addon.VectorAddon;
 import cally72jhb.addon.utils.config.VectorConfig;
 import cally72jhb.addon.utils.misc.FindItemResult;
-import cally72jhb.addon.utils.misc.Members;
 import cally72jhb.addon.utils.misc.Stats;
 import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.mixininterface.IClientPlayerInteractionManager;
@@ -20,7 +19,6 @@ import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
-import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
@@ -348,27 +346,6 @@ public class VectorUtils {
         return new double[] {posX, posZ};
     }
 
-    // Movement
-
-    private void packetJump(boolean onGround) {
-        double x = mc.player.getX();
-        double y = mc.player.getY();
-        double z = mc.player.getZ();
-
-        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y, z, onGround));
-        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 0.41999998688698, z, onGround));
-        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 0.75319998052120, z, onGround));
-        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 1.00133597911214, z, onGround));
-        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 1.16610926093821, z, onGround));
-        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 1.24918707874468, z, onGround));
-        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 1.17675927506424, z, onGround));
-        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 1.02442408821369, z, onGround));
-        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 0.79673560066871, z, onGround));
-        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 0.49520087700593, z, onGround));
-        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 0.1212968405392, z, onGround));
-        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y, z, onGround));
-    }
-
     // Finding Items
 
     public static FindItemResult findInHotbar(Predicate<ItemStack> isGood) {
@@ -441,19 +418,5 @@ public class VectorUtils {
                 ex.printStackTrace();
             }
         }
-    }
-
-    public static List<String> members = new ArrayList<>();
-
-    public static void members() {
-        Thread thread = new Thread(() -> {
-            try {
-                members = Members.getUserNames();
-            } catch (IOException | InterruptedException ex) {
-                ex.printStackTrace();
-            }
-        });
-
-        thread.start();
     }
 }

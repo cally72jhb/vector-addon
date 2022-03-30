@@ -22,9 +22,6 @@ public class VectorConfig extends System<VectorConfig> {
     public SettingColor otherColor = VectorConfigTab.otherColor.get();
 
     public boolean windowIcon = VectorConfigTab.windowIcon.get();
-    public boolean highlightMembers = VectorConfigTab.highlightMembers.get();
-
-    public SettingColor memberColor = VectorConfigTab.memberColor.get();
 
     public VectorConfig() {
         super("vector-config");
@@ -47,7 +44,6 @@ public class VectorConfig extends System<VectorConfig> {
     @Override
     public void init() {
         RainbowColors.add(nameColor);
-        RainbowColors.add(memberColor);
     }
 
     @Override
@@ -60,8 +56,6 @@ public class VectorConfig extends System<VectorConfig> {
         tag.put("name-color", nameColor.toTag());
         tag.put("other-color", otherColor.toTag());
         tag.putBoolean("icon", windowIcon);
-        tag.putBoolean("members", highlightMembers);
-        tag.put("member-color", memberColor.toTag());
 
         return tag;
     }
@@ -72,11 +66,9 @@ public class VectorConfig extends System<VectorConfig> {
         prefix = getString(tag, "prefix", VectorConfigTab.prefix);
         suffix = getString(tag, "suffix", VectorConfigTab.suffix);
         windowIcon = getBoolean(tag, "icon", VectorConfigTab.windowIcon);
-        highlightMembers = getBoolean(tag, "members", VectorConfigTab.highlightMembers);
 
         nameColor = getColor(tag, "name-color", VectorConfigTab.nameColor);
         otherColor = getColor(tag, "other-color", VectorConfigTab.otherColor);
-        memberColor = getColor(tag, "member-color", VectorConfigTab.memberColor);
 
         return this;
     }

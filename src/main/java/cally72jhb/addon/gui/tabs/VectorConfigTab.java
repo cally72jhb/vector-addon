@@ -93,27 +93,6 @@ public class VectorConfigTab extends Tab {
             }).build()
     );
 
-    public static final Setting<Boolean> highlightMembers = sgMisc.add(new BoolSetting.Builder()
-            .name("highlight-members")
-            .description("Highlights Vector Users for you.")
-            .defaultValue(true)
-            .onChanged(bool -> VectorConfig.get().highlightMembers = bool)
-            .onModuleActivated(bool -> {
-                bool.set(VectorConfig.get().highlightMembers);
-                VectorUtils.members();
-            }).build()
-    );
-
-    public static final Setting<SettingColor> memberColor = sgMisc.add(new ColorSetting.Builder()
-            .name("member-color")
-            .description("The color the Vector Users will be highlighted with.")
-            .defaultValue(new SettingColor(255, 255, 145))
-            .onChanged(color -> VectorConfig.get().memberColor = color)
-            .onModuleActivated(color -> color.set(VectorConfig.get().memberColor))
-            .visible(highlightMembers::get)
-            .build()
-    );
-
     public static ConfigScreen currentScreen;
 
     public VectorConfigTab() {
@@ -140,14 +119,6 @@ public class VectorConfigTab extends Tab {
         @Override
         public void initWidgets() {
             add(theme.settings(settings)).expandX();
-
-            WTable table = add(theme.table()).expandX().minWidth(300).widget();
-
-            WButton reload = table.add(theme.button("Reload")).widget();
-
-            reload.action = VectorUtils::members;
-
-            table.row();
         }
 
         @Override

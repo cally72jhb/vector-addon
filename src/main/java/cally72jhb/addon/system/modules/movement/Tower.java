@@ -32,7 +32,8 @@ import java.util.List;
 
 public class Tower extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
-    private final SettingGroup sgSafe = settings.createGroup("Extra Safe");
+    private final SettingGroup sgJump = settings.createGroup("Packet Jump");
+    private final SettingGroup sgCheck = settings.createGroup("Check");
 
     private final Setting<List<Block>> blocks = sgGeneral.add(new BlockListSetting.Builder()
         .name("blocks")
@@ -135,9 +136,9 @@ public class Tower extends Module {
         .build()
     );
 
-    private final Setting<Boolean> onGround = sgGeneral.add(new BoolSetting.Builder()
-        .name("only-on-ground")
-        .description("Sends packets to the server as if you are on ground.")
+    private final Setting<Boolean> onGroundSpoof = sgGeneral.add(new BoolSetting.Builder()
+        .name("on-ground-spoof")
+        .description("Spoofs you on ground server-side.")
         .defaultValue(true)
         .build()
     );
@@ -150,23 +151,68 @@ public class Tower extends Module {
         .build()
     );
 
+    // Packet Jump
+
+    private final Setting<Integer> jumpStart = sgJump.add(new IntSetting.Builder()
+        .name("jump-start")
+        .description("From what point on the start sending the jump packets.")
+        .defaultValue(0)
+        .sliderMin(0)
+        .sliderMax(12)
+        .min(0)
+        .max(12)
+        .noSlider()
+        .build()
+    );
+
+    private final Setting<Integer> jumpEnd = sgJump.add(new IntSetting.Builder()
+        .name("jump-end")
+        .description("Till what point to send the jump packets.")
+        .defaultValue(12)
+        .sliderMin(1)
+        .sliderMax(12)
+        .min(1)
+        .max(12)
+        .noSlider()
+        .build()
+    );
+
+    private final Setting<Integer> placePosition = sgJump.add(new IntSetting.Builder()
+        .name("place-position")
+        .description("When the block is placed.")
+        .defaultValue(6)
+        .sliderMin(0)
+        .sliderMax(12)
+        .min(0)
+        .max(12)
+        .noSlider()
+        .build()
+    );
+
     // Extra Safe
 
-    private final Setting<Boolean> safe = sgSafe.add(new BoolSetting.Builder()
+    private final Setting<Boolean> safe = sgCheck.add(new BoolSetting.Builder()
         .name("safe")
         .description("Doesn't tower if you are in a non full block.")
         .defaultValue(true)
         .build()
     );
 
-    private final Setting<Boolean> antikick = sgSafe.add(new BoolSetting.Builder()
+    private final Setting<Boolean> onlyOnGround = sgGeneral.add(new BoolSetting.Builder()
+        .name("only-on-ground")
+        .description("Sends packets to the server as if you are on ground.")
+        .defaultValue(true)
+        .build()
+    );
+
+    private final Setting<Boolean> antikick = sgCheck.add(new BoolSetting.Builder()
         .name("anti-kick")
         .description("Stops you from getting kicked for fly while towering.")
         .defaultValue(true)
         .build()
     );
 
-    private final Setting<Boolean> stopmove = sgSafe.add(new BoolSetting.Builder()
+    private final Setting<Boolean> stopmove = sgCheck.add(new BoolSetting.Builder()
         .name("stop-move")
         .description("Stops your movement.")
         .defaultValue(true)
@@ -190,7 +236,7 @@ public class Tower extends Module {
 
         FindItemResult item = VectorUtils.findInHotbar(itemStack -> validItem(itemStack, mc.player.getBlockPos()));
 
-        if (!item.found()) return;
+        if (!item.found() || onlyOnGround.get() && !mc.player.isOnGround()) return;
 
         if (mode.get() == Mode.Bypass) {
             if (validBlock(mc.player.getBlockPos()) || validBlock(mc.player.getBlockPos().down())) return;
@@ -208,13 +254,51 @@ public class Tower extends Module {
 
                 timer++;
             }
-        } else if (!jump.get() || (mc.options.jumpKey.isPressed() && jump.get())) {
+        } else if (mode.get() == Mode.Normal && !jump.get() || (mc.options.jumpKey.isPressed() && jump.get())) {
             Vec3d velocity = mc.player.getVelocity();
 
             if (mc.player.isOnGround()) mc.player.setVelocity(velocity.x * 0.3, up.get() / 100, mc.player.getVelocity().z * 0.3);
             if (VectorUtils.getCollision(mc.player.getBlockPos().down()) == null || VectorUtils.getCollision(mc.player.getBlockPos().down()).isEmpty()) {
                 mc.player.setVelocity(velocity.x * 0.3, -(down.get() / 100), velocity.z * 0.3);
             }
+        } else if (mode.get() == Mode.PacketJump && !jump.get() || (mc.options.jumpKey.isPressed() && jump.get())) {
+            double x = mc.player.getX();
+            double y = mc.player.getY();
+            double z = mc.player.getZ();
+
+            BlockPos pos = mc.player.getBlockPos();
+
+            int start = jumpStart.get();
+            int end = jumpEnd.get();
+            int position = placePosition.get();
+
+            boolean onGround = onGroundSpoof.get();
+
+            if (position == 0) place(pos, item);
+            if (start >= 0 && end <= 0) mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y, z, onGround));
+            if (position == 1) place(pos, item);
+            if (start >= 1 && end <= 1) mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 0.41999998688698, z, onGround));
+            if (position == 2) place(pos, item);
+            if (start >= 2 && end <= 2) mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 0.75319998052120, z, onGround));
+            if (position == 3) place(pos, item);
+            if (start >= 3 && end <= 3) mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 1.00133597911214, z, onGround));
+            if (position == 4) place(pos, item);
+            if (start >= 4 && end <= 4) mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 1.16610926093821, z, onGround));
+            if (position == 5) place(pos, item);
+            if (start >= 5 && end <= 5) mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 1.24918707874468, z, onGround));
+            if (position == 6) place(pos, item);
+            if (start >= 6 && end <= 6) mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 1.17675927506424, z, onGround));
+            if (position == 7) place(pos, item);
+            if (start >= 7 && end <= 7) mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 1.02442408821369, z, onGround));
+            if (position == 8) place(pos, item);
+            if (start >= 8 && end <= 8) mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 0.79673560066871, z, onGround));
+            if (position == 9) place(pos, item);
+            if (start >= 9 && end <= 9) mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 0.49520087700593, z, onGround));
+            if (position == 10) place(pos, item);
+            if (start >= 10 && end <= 10) mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 0.12129684053920, z, onGround));
+            if (position == 11) place(pos, item);
+            if (start >= 11 && end <= 11) mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y, z, onGround));
+            if (position == 12) place(pos, item);
         }
 
         if (packet.get() && !jump.get() || (mc.options.jumpKey.isPressed() && jump.get())) {
@@ -284,6 +368,8 @@ public class Tower extends Module {
         BlockPos pos = mc.player.getBlockPos();
         FindItemResult block = VectorUtils.findInHotbar(itemStack -> validItem(itemStack, pos));
 
+        boolean onGround = onGroundSpoof.get();
+
         if (!block.found() || !checkHead(pos)) return;
 
         if (mc.player.getY() != mc.player.getBlockPos().getY() && antikick.get()) {
@@ -291,10 +377,10 @@ public class Tower extends Module {
         }
 
         if (instant.get()) {
-            mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), mc.player.getY() + 0.4, mc.player.getZ(), onGround.get()));
-            mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), mc.player.getY() + 0.75, mc.player.getZ(), onGround.get()));
-            mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), mc.player.getY() + 1.01, mc.player.getZ(), onGround.get()));
-            mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), mc.player.getY() + 1.15, mc.player.getZ(), onGround.get()));
+            mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), mc.player.getY() + 0.4, mc.player.getZ(), onGround));
+            mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), mc.player.getY() + 0.75, mc.player.getZ(), onGround));
+            mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), mc.player.getY() + 1.01, mc.player.getZ(), onGround));
+            mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), mc.player.getY() + 1.15, mc.player.getZ(), onGround));
         }
 
         InvUtils.swap(block.getSlot(), true);
@@ -309,10 +395,21 @@ public class Tower extends Module {
         double height = bypass.get() ? -mc.player.getY() - 2.5 : speed.get();
 
         if (instant.get()) {
-            mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), (int) (mc.player.getY() + height), mc.player.getZ(), onGround.get()));
+            mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), (int) (mc.player.getY() + height), mc.player.getZ(), onGround));
         } else {
             mc.player.updatePosition(mc.player.getX(), (int) (mc.player.getY() + height), mc.player.getZ());
         }
+    }
+
+    private void place(BlockPos pos, FindItemResult item) {
+        InvUtils.swap(item.getSlot(), true);
+
+        if (shouldSneak(pos)) mc.player.setSneaking(true);
+
+        mc.interactionManager.interactBlock(mc.player, mc.world, Hand.MAIN_HAND, new BlockHitResult(Utils.vec3d(pos), Direction.UP, pos, false));
+        mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
+
+        InvUtils.swapBack();
     }
 
     private boolean shouldSneak(BlockPos pos) {
@@ -342,6 +439,7 @@ public class Tower extends Module {
     }
 
     public enum Mode {
+        PacketJump,
         Normal,
         Bypass
     }

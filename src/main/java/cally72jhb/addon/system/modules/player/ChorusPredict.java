@@ -21,13 +21,6 @@ public class ChorusPredict extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
     private final SettingGroup sgRender = settings.createGroup("Render");
 
-    private final Setting<Boolean> accurate = sgGeneral.add(new BoolSetting.Builder()
-        .name("accurate")
-        .description("Whether or not to render the position accurate.")
-        .defaultValue(false)
-        .build()
-    );
-
     private final Setting<Boolean> onSneak = sgGeneral.add(new BoolSetting.Builder()
         .name("on-sneak")
         .description("Only predicts when you are sneaking.")
@@ -39,6 +32,15 @@ public class ChorusPredict extends Module {
         .name("tp-key")
         .description("The key that teleports you to the current spot.")
         .defaultValue(Keybind.fromKey(-1))
+        .build()
+    );
+
+    // Render
+
+    private final Setting<Boolean> accurate = sgRender.add(new BoolSetting.Builder()
+        .name("accurate")
+        .description("Whether or not to render the position accurate.")
+        .defaultValue(false)
         .build()
     );
 

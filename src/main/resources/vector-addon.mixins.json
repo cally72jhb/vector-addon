@@ -6,6 +6,7 @@
     "ClientPlayerEntityMixin",
     "EmitterParticleMixin",
     "EntityMixin",
+    "MinecraftClientMixin",
     "NamespaceResourceManagerMixin",
     "ParticleMixin",
     "RecipeResultCollectionAccessor",
