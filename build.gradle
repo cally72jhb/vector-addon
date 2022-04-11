@@ -39,6 +39,15 @@ dependencies {
 
     // Other Libraries
     library "meteordevelopment:discord-ipc:${project.discordrpc_version}"
+
+    // Installer
+    implementation "org.json:json:${project.json_version}"
+}
+
+jar {
+    manifest {
+        attributes("Main-Class": "cally72jhb.addon.Main")
+    }
 }
 
 processResources {
