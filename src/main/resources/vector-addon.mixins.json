@@ -6,12 +6,10 @@
     "ClientPlayerEntityMixin",
     "EmitterParticleMixin",
     "EntityMixin",
-    "MinecraftClientMixin",
     "NamespaceResourceManagerMixin",
     "ParticleMixin",
     "RecipeResultCollectionAccessor",
     "ReloadableResourceManagerImplMixin",
-    "TitleScreenMixin",
     "TotemParticleMixin",
     "WorldBorderMixin"
   ],

@@ -14,7 +14,6 @@ import meteordevelopment.orbit.EventPriority;
 import net.minecraft.network.Packet;
 import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.listener.ServerPlayPacketListener;
-import net.minecraft.network.packet.s2c.play.CustomPayloadS2CPacket;
 
 import java.lang.reflect.Constructor;
 import java.util.Set;
@@ -75,9 +74,9 @@ public class PacketLogger extends Module {
     }
 
     private class Listener {
-        @EventHandler(priority = EventPriority.HIGHEST + 1)
+        @EventHandler(priority = EventPriority.LOWEST - 10)
         private void onReceivePacket(PacketEvent.Receive event) {
-            if (isActive() && s2c.get() && !s2cPackets.get().contains(event.packet.getClass()) && !s2cPackets.get().contains(event.packet.getClass().getSuperclass())) {
+            if (isActive() && s2c.get() && !event.isCancelled() && !s2cPackets.get().contains(event.packet.getClass()) && !s2cPackets.get().contains(event.packet.getClass().getSuperclass())) {
                 Class<? extends Packet<?>> packet = (Class<? extends Packet<ClientPlayPacketListener>>) event.packet.getClass();
 
                 String name = PacketUtils.getName(packet);
@@ -96,9 +95,9 @@ public class PacketLogger extends Module {
             }
         }
 
-        @EventHandler(priority = EventPriority.HIGHEST + 1)
+        @EventHandler(priority = EventPriority.LOWEST - 10)
         private void onSendPacket(PacketEvent.Send event) {
-            if (isActive() && c2s.get() && !c2sPackets.get().contains(event.packet.getClass()) && !c2sPackets.get().contains(event.packet.getClass().getSuperclass())) {
+            if (isActive() && c2s.get() && !event.isCancelled() && !c2sPackets.get().contains(event.packet.getClass()) && !c2sPackets.get().contains(event.packet.getClass().getSuperclass())) {
                 Class<? extends Packet<?>> packet = (Class<? extends Packet<ServerPlayPacketListener>>) event.packet.getClass();
 
                 String name = PacketUtils.getName(packet);

@@ -2,7 +2,6 @@ package cally72jhb.addon.system.modules.combat;
 
 import cally72jhb.addon.system.categories.Categories;
 import cally72jhb.addon.system.modules.movement.StepPlus;
-import cally72jhb.addon.system.modules.player.BlinkPlus;
 import cally72jhb.addon.utils.VectorUtils;
 import cally72jhb.addon.utils.misc.FindItemResult;
 import it.unimi.dsi.fastutil.ints.IntIterator;
@@ -1170,7 +1169,7 @@ public class VectorSurround extends Module {
         crystalTimer++;
         breakTimer++;
 
-        if (blink.get() && (Modules.get().isActive(Blink.class) || Modules.get().isActive(BlinkPlus.class))) {
+        if (blink.get() && (Modules.get().isActive(Blink.class))) {
             activate();
             return;
         }
@@ -1369,7 +1368,7 @@ public class VectorSurround extends Module {
 
         if (onInterfere.get()) {
             for (Entity entity : mc.world.getEntities()) {
-                if (VectorUtils.distanceBetweenXZ(mc.player.getPos(), entity.getPos())<= 3.15) {
+                if (VectorUtils.distanceXZ(mc.player.getPos(), entity.getPos())<= 3.15) {
                     BlockPos entityPos = entity.getBlockPos();
 
                     if (entity instanceof PlayerEntity && entity != mc.player) {
@@ -1480,10 +1479,10 @@ public class VectorSurround extends Module {
 
     @EventHandler
     private void onPostTick(TickEvent.Post event) {
-        if (blink.get() && (Modules.get().isActive(Blink.class) || Modules.get().isActive(BlinkPlus.class))) return;
+        if (blink.get() && (Modules.get().isActive(Blink.class))) return;
 
         if (toggleOnYChange.get() && mc.player.prevY + yLevel.get() < mc.player.getY()) {
-            if (blink.get() && !Modules.get().isActive(Blink.class) && !Modules.get().isActive(BlinkPlus.class)) toggle();
+            if (blink.get() && !Modules.get().isActive(Blink.class)) toggle();
             return;
         }
 

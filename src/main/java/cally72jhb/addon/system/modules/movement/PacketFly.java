@@ -2,7 +2,6 @@ package cally72jhb.addon.system.modules.movement;
 
 import cally72jhb.addon.system.categories.Categories;
 import cally72jhb.addon.utils.VectorUtils;
-import cally72jhb.addon.utils.misc.SystemTimer;
 import meteordevelopment.meteorclient.events.entity.player.PlayerMoveEvent;
 import meteordevelopment.meteorclient.events.game.GameJoinedEvent;
 import meteordevelopment.meteorclient.events.game.GameLeftEvent;
@@ -872,7 +871,7 @@ public class PacketFly extends Module {
         return true;
     }
 
-    private static class TimeVec3d extends Vec3d {
+    private class TimeVec3d extends Vec3d {
         private final long time;
 
         public TimeVec3d(double xIn, double yIn, double zIn, long time) {
@@ -882,6 +881,30 @@ public class PacketFly extends Module {
 
         public long getTime() {
             return time;
+        }
+    }
+
+    private class SystemTimer {
+        private long time;
+
+        public SystemTimer() {
+            time = System.currentTimeMillis();
+        }
+
+        public boolean hasPassed(double ms) {
+            return System.currentTimeMillis() - time >= ms;
+        }
+
+        public void reset() {
+            time = System.currentTimeMillis();
+        }
+
+        public long getTime() {
+            return time;
+        }
+
+        public void setTime(long time) {
+            this.time = time;
         }
     }
 }

@@ -1,7 +1,6 @@
 package cally72jhb.addon.system;
 
 import cally72jhb.addon.gui.tabs.PlayersTab;
-import cally72jhb.addon.gui.tabs.TitleScreenTab;
 import cally72jhb.addon.gui.tabs.VectorConfigTab;
 import cally72jhb.addon.system.commands.*;
 import cally72jhb.addon.system.hud.CustomChatHud;
@@ -10,14 +9,15 @@ import cally72jhb.addon.system.hud.PacketHud;
 import cally72jhb.addon.system.hud.StatsHud;
 import cally72jhb.addon.system.modules.combat.BedBomb;
 import cally72jhb.addon.system.modules.combat.BowBomb;
-import cally72jhb.addon.system.modules.combat.PacketBurrow;
 import cally72jhb.addon.system.modules.combat.VectorSurround;
 import cally72jhb.addon.system.modules.misc.*;
 import cally72jhb.addon.system.modules.movement.*;
 import cally72jhb.addon.system.modules.player.*;
-import cally72jhb.addon.system.modules.render.*;
+import cally72jhb.addon.system.modules.render.ActionRenderer;
+import cally72jhb.addon.system.modules.render.PopRenderer;
+import cally72jhb.addon.system.modules.render.SkeletonESP;
+import cally72jhb.addon.system.modules.render.StorageViewer;
 import cally72jhb.addon.system.players.Players;
-import cally72jhb.addon.system.titlescreen.TitleScreenManager;
 import cally72jhb.addon.utils.config.VectorConfig;
 import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.events.game.GameLeftEvent;
@@ -58,8 +58,8 @@ public class Systems {
         add(new AutoCope());
         add(new AutoCraft());
         add(new AutoEz());
+        add(new AutoInteract());
         add(new BedBomb());
-        add(new BlinkPlus());
         add(new BorderBypass());
         add(new BowBomb());
         //add(new CevBreaker());
@@ -70,9 +70,7 @@ public class Systems {
         add(new InstaMinePlus());
         add(new InventoryScroll());
         add(new ItemRelease());
-        add(new MultiTask());
         add(new NoFluid());
-        add(new PacketBurrow());
         add(new PacketConsume());
         add(new PacketFly());
         add(new PacketLogger());
@@ -81,8 +79,8 @@ public class Systems {
         add(new Placeholders());
         add(new PopRenderer());
         add(new PortalGodMode());
+        add(new RubberbandFly());
         add(new SkeletonESP());
-        add(new SpeedBypass());
         add(new StepPlus());
         add(new StorageViewer());
         add(new TickShift());
@@ -99,15 +97,12 @@ public class Systems {
         add(new TrashCommand());
         add(new UUIDCommand());
 
-        add(new TitleScreenManager());
         add(new Players());
         add(new VectorConfig());
 
-        TitleScreenManager.get().init();
         Players.get().init();
         VectorConfig.get().init();
 
-        Tabs.get().add(new TitleScreenTab());
         Tabs.get().add(new VectorConfigTab());
         Tabs.get().add(new PlayersTab());
 

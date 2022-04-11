@@ -4,14 +4,12 @@ import cally72jhb.addon.system.categories.Categories;
 import cally72jhb.addon.utils.VectorUtils;
 import it.unimi.dsi.fastutil.chars.Char2CharArrayMap;
 import it.unimi.dsi.fastutil.chars.Char2CharMap;
-import meteordevelopment.meteorclient.events.entity.EntityRemovedEvent;
 import meteordevelopment.meteorclient.events.packets.PacketEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.friends.Friends;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.systems.modules.Modules;
-import meteordevelopment.meteorclient.utils.entity.fakeplayer.FakePlayerEntity;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -172,7 +170,6 @@ public class AutoEz extends Module {
     private int allKills;
     private int killTimer;
     private int popTimer;
-    private int logTimer;
 
     public AutoEz() {
         super(Categories.Misc, "auto-ez", "Send a chat message after killing or poping a player.");
@@ -190,7 +187,6 @@ public class AutoEz extends Module {
         allKills = 0;
         killTimer = 0;
         popTimer = 0;
-        logTimer = 0;
     }
 
     // Pops & Kills
@@ -237,7 +233,6 @@ public class AutoEz extends Module {
     private void onPostTick(TickEvent.Post event) {
         killTimer++;
         popTimer++;
-        logTimer++;
 
         if (mc != null && mc.world != null) for (UUID uuid : new HashSet<>(pops.keySet())) if (mc.world.getPlayerByUuid(uuid) == null) pops.replace(uuid, 0);
     }

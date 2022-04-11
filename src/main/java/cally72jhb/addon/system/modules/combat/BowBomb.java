@@ -127,7 +127,7 @@ public class BowBomb extends Module {
     }
 
     @EventHandler
-    public void onPacketSend(PacketEvent.Send event) {
+    private void onSendPacket(PacketEvent.Send event) {
         if (event.packet == null) return;
 
         if (event.packet instanceof PlayerActionC2SPacket) {

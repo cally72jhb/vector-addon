@@ -112,7 +112,7 @@ public class ChorusPredict extends Module {
     }
 
     @EventHandler
-    private void onSentPacket(PacketEvent.Sent event) {
+    private void onSendPacket(PacketEvent.Send event) {
         if (event.packet instanceof TeleportConfirmC2SPacket packet && packet.getTeleportId() == teleportId) {
             event.cancel();
             teleportId = -1;

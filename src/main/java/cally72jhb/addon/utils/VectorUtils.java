@@ -33,10 +33,8 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.World;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 import java.util.function.Predicate;
 
@@ -90,16 +88,33 @@ public class VectorUtils {
         return Math.sqrt(dX * dX + dY * dY + dZ * dZ);
     }
 
-    public static double distanceBetweenXZ(BlockPos pos1, BlockPos pos2) {
+    public static double distanceXZ(BlockPos pos1, BlockPos pos2) {
         double d = pos1.getX() - pos2.getX();
         double f = pos1.getZ() - pos2.getZ();
         return MathHelper.sqrt((float) (d * d + f * f));
     }
 
-    public static double distanceBetweenXZ(Vec3d pos1, Vec3d pos2) {
+    public static double distanceXZ(Vec3d pos1, Vec3d pos2) {
         double d = pos1.getX() - pos2.getX();
         double f = pos1.getZ() - pos2.getZ();
         return MathHelper.sqrt((float) (d * d + f * f));
+    }
+
+    public static double distanceXZ(double x1, double x2, double z1, double z2) {
+        double d = x1 - x2;
+        double f = z1 - z2;
+        return MathHelper.sqrt((float) (d * d + f * f));
+    }
+
+    public static double distanceY(Vec3d vec1, Vec3d vec2) {
+        double d = vec2.y - vec1.y;
+        if (d < 0) d *= -1;
+
+        return d;
+    }
+
+    public static double distanceY(double y1, double y2) {
+        return y1 - y2;
     }
 
     // Blocks
@@ -324,26 +339,28 @@ public class VectorUtils {
         float side = mc.player.input.movementSideways;
         float yaw = mc.player.prevYaw + (mc.player.getYaw() - mc.player.prevYaw);
 
-        if (forward != 0.0f) {
-            if (side > 0.0f) {
-                yaw += ((forward > 0.0f) ? -45 : 45);
-            } else if (side < 0.0f) {
-                yaw += ((forward > 0.0f) ? 45 : -45);
+        if (forward != 0.0F) {
+            if (side > 0.0F) {
+                yaw += ((forward > 0.0F) ? -45 : 45);
+            } else if (side < 0.0F) {
+                yaw += ((forward > 0.0F) ? 45 : -45);
             }
-            side = 0.0f;
-            if (forward > 0.0f) {
-                forward = 1.0f;
-            } else if (forward < 0.0f) {
-                forward = -1.0f;
+
+            side = 0.0F;
+
+            if (forward > 0.0F) {
+                forward = 1.0F;
+            } else if (forward < 0.0F) {
+                forward = -1.0F;
             }
         }
 
-        final double sin = Math.sin(Math.toRadians(yaw + 90.0f));
-        final double cos = Math.cos(Math.toRadians(yaw + 90.0f));
-        final double posX = forward * speed * cos + side * speed * sin;
-        final double posZ = forward * speed * sin - side * speed * cos;
+        double sin = Math.sin(Math.toRadians(yaw + 90.0F));
+        double cos = Math.cos(Math.toRadians(yaw + 90.0F));
+        double dx = forward * speed * cos + side * speed * sin;
+        double dz = forward * speed * sin - side * speed * cos;
 
-        return new double[] {posX, posZ};
+        return new double[] { dx, dz };
     }
 
     // Finding Items

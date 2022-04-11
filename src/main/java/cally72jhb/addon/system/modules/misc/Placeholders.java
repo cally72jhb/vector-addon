@@ -132,6 +132,7 @@ public class Placeholders extends Module {
                 add(new Pair<>(":vector:", "https://cally72jhb.github.io/website/"));
                 add(new Pair<>(":skull:", "☠"));
                 add(new Pair<>(":sword:", "\uD83D\uDDE1"));
+                add(new Pair<>(":blade:", "\uD83D\uDDE1"));
                 add(new Pair<>(":bow:", "\uD83C\uDFF9"));
                 add(new Pair<>(":trident:", "\uD83D\uDD31"));
                 add(new Pair<>(":potion:", "\uD83E\uDDEA"));
@@ -193,6 +194,7 @@ public class Placeholders extends Module {
                 add(new Pair<>(":vector:", "https://cally72jhb.github.io/website/"));
                 add(new Pair<>(":skull:", "☠"));
                 add(new Pair<>(":sword:", "\uD83D\uDDE1"));
+                add(new Pair<>(":blade:", "\uD83D\uDDE1"));
                 add(new Pair<>(":bow:", "\uD83C\uDFF9"));
                 add(new Pair<>(":trident:", "\uD83D\uDD31"));
                 add(new Pair<>(":potion:", "\uD83E\uDDEA"));

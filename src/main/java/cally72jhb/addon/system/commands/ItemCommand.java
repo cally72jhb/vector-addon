@@ -61,7 +61,7 @@ public class ItemCommand extends Command {
     }
 
     private void clickSlot(int syncId, int id, int button, SlotActionType action) {
-        if (id > 0) {
+        if (id > 0 && button > 0) {
             ScreenHandler handler = mc.player.currentScreenHandler;
 
             DefaultedList<Slot> slots = handler.slots;

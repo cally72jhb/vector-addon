@@ -266,6 +266,8 @@ public class AutoCraft extends Module {
     );
 
     private SearchableContainer<RecipeResultCollection> container;
+    private List<Recipe<?>> recipes;
+
     private CraftingScreenHandler silentHandler;
 
     private Explosion explosion;
@@ -280,6 +282,8 @@ public class AutoCraft extends Module {
     public void onActivate() {
         craftTicks = 0;
         silentHandler = null;
+
+        recipes = new ArrayList<>();
 
         if (mc.world != null) {
             explosion = new Explosion(mc.world, null, 0, 0, 0, 5.0F, true, Explosion.DestructionType.DESTROY);
@@ -377,26 +381,25 @@ public class AutoCraft extends Module {
                         mc.player.getRecipeBook().setGuiOpen(RecipeBookCategory.CRAFTING, true);
                     }
 
-                    if (container == null && mc.getSearchableContainer(SearchManager.RECIPE_OUTPUT) != null) container = mc.getSearchableContainer(SearchManager.RECIPE_OUTPUT);
+                    if (container == null || recipes.isEmpty()) reload();
 
-                    int item = 0;
+                    if (!recipes.isEmpty() && (getEmptySlots(0, 35) > 0 || drop.get())) {
+                        int item = 0;
 
-                    if (getEmptySlots(0, 35) > 0 || getEmptySlots(0, 35) == 0 && drop.get()) {
-                        for (RecipeResultCollection collection : container.findAll("")) {
-                            for (Recipe<?> recipe : ((RecipeResultCollectionAccessor) collection).getRecipes()) {
-                                if (items.get().contains(recipe.getOutput().getItem()) && canCraft(recipe)) {
-                                    if (!craftAll.get()) {
-                                        for (int i = 0; i < getEmptySlots(0, 35) && i <= craftAmount.get(); i++) clickRecipe(handler, recipe, false);
-                                    } else {
-                                        clickRecipe(handler, recipe, true);
-                                    }
-
-                                    clickSlot(handler.syncId, 0, 1, drop.get() ? SlotActionType.THROW : SlotActionType.QUICK_MOVE);
-
-                                    item++;
-                                    craftTicks = 0;
-                                    if (item >= maxItems.get() || getEmptySlots(0, 35) == 0 && !drop.get()) return;
+                        for (Recipe<?> recipe : recipes) {
+                            if (items.get().contains(recipe.getOutput().getItem()) && canCraft(recipe)) {
+                                if (!craftAll.get()) {
+                                    for (int i = 0; i < getEmptySlots(0, 35) && i <= craftAmount.get(); i++)
+                                        clickRecipe(handler, recipe, false);
+                                } else {
+                                    clickRecipe(handler, recipe, true);
                                 }
+
+                                clickSlot(handler.syncId, 0, 1, drop.get() ? SlotActionType.THROW : SlotActionType.QUICK_MOVE);
+
+                                item++;
+                                craftTicks = 0;
+                                if (item >= maxItems.get() || getEmptySlots(0, 35) == 0 && !drop.get()) return;
                             }
                         }
                     }
@@ -451,6 +454,7 @@ public class AutoCraft extends Module {
 
     private boolean canCraft(Recipe<?> recipe) {
         int checked = 0;
+
 
         for (int i = 0; i < recipe.getIngredients().size() - 1; i++) {
             Ingredient ingredient = recipe.getIngredients().get(i);
@@ -508,6 +512,23 @@ public class AutoCraft extends Module {
     }
 
     // Other Utils
+
+    private void reload() {
+        if (mc != null && mc.world != null && mc.player != null) {
+            if (recipes == null || recipes.isEmpty()) recipes = new ArrayList<>();
+            if (mc.getSearchableContainer(SearchManager.RECIPE_OUTPUT) != null) container = mc.getSearchableContainer(SearchManager.RECIPE_OUTPUT);
+
+            if (container != null) {
+                recipes = new ArrayList<>();
+
+                for (RecipeResultCollection collection : container.findAll("")) {
+                    recipes.addAll(((RecipeResultCollectionAccessor) collection).getRecipes());
+                }
+            }
+
+            explosion = new Explosion(mc.world, null, 0, 0, 0, 5.0F, true, Explosion.DestructionType.DESTROY);
+        }
+    }
 
     private boolean isSurrounded() {
         int i = 0;

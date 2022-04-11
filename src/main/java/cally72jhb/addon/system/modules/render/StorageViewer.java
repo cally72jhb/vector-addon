@@ -268,7 +268,7 @@ public class StorageViewer extends Module {
         for (BlockPos pos : new HashSet<>(chests.keySet())) {
             BlockEntity entity = mc.world.getBlockEntity(pos);
 
-            if (entity == null || !World.isValid(pos) || VectorUtils.distanceBetweenXZ(mc.player.getPos(), Vec3d.ofCenter(pos)) >= mc.options.viewDistance * 17) {
+            if (entity == null || !World.isValid(pos) || VectorUtils.distanceXZ(mc.player.getPos(), Vec3d.ofCenter(pos)) >= mc.options.viewDistance * 17) {
                 chests.remove(pos);
             } else if (chests.containsKey(pos) && storageBlocks.get().contains(mc.world.getBlockEntity(pos).getType())) {
                 Vec3 vec = new Vec3();
