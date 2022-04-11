@@ -13,49 +13,42 @@ providing some combat and many utility modules
 [![Releases embed](https://badgen.net/github/releases/cally72jhb/vector-addon?style=flat-square&label=Releases&color=158FCC)](https://github.com/cally72jhb/vector-addon/releases)
 [![Release embed](https://badgen.net/github/release/cally72jhb/vector-addon?style=flat-square&label=Latest+Release&color=158FCC)](https://github.com/cally72jhb/vector-addon/releases)
 
-**Modules:**
-- ActionRenderer
-- AntiPistonPush
-- AntiProne
-- AutoCope
-- AutoCraft
-- AutoEz
-- BedBomb
-- BlinkPlus
-- BorderBypass
-- BowBomb
-- ChorusPredict
-- DeathAnimations
-- EntityFly
-- InstaMinePlus
-- InventoryScroll
-- ItemRelease
-- NoFluid
-- PacketConsume
-- PacketFly
-- PacketLogger
-- PacketPlace
-- PingSpoof
-- Placeholders
-- PopRenderer
-- PortalGodMode
-- SkeletonESP
-- SpeedBypass
-- StepPlus
-- StorageViewer
-- Tower
-- VectorPresence
-- VectorSurround
-- Welcomer
 
-**Commands:**
-- ItemCommand
-- MuteCommand
-- StatsCommand
-- TargetCommand
-- TrashCommand
-- UUIDCommand
 
-**Custom Title Screen:**
-
-<img src="https://raw.githubusercontent.com/cally72jhb/cally72jhb/main/assets/background.png" width="800px">
+|    **Modules:**    |    **Commands:**   |
+|--------------------|:------------------:|
+| - ActionRenderer   | - ItemCommand      |
+| - AntiPistonPush   | - MuteCommand      |
+| - AntiProne        | - StatsCommand     |
+| - AutoCope         | - TargetCommand    |
+| - AutoCraft        | - TrashCommand     |
+| - AutoEz           | - UUIDCommand      |
+| - AutoInteract     |                    |
+| - BedBomb          |                    |
+| - BorderBypass     |                    |
+| - BowBomb          |                    |
+| - ChatEncryption   |                    |
+| - ChorusPredict    |                    |
+| - DeathAnimations  |                    |
+| - EntityFly        |                    |
+| - InstaMinePlus    |                    |
+| - InventoryScroll  |                    |
+| - ItemRelease      |                    |
+| - NoFluid          |                    |
+| - PacketConsume    |                    |
+| - PacketFly        |                    |
+| - PacketLogger     |                    |
+| - PacketPlace      |                    |
+| - PingSpoof        |                    |
+| - Placeholders     |                    |
+| - PopRenderer      |                    |
+| - PortalGodMode    |                    |
+| - RubberbandFly    |                    |
+| - SkeletonESP      |                    |
+| - StepPlus         |                    |
+| - StorageViewer    |                    |
+| - TickShift        |                    |
+| - Tower            |                    |
+| - VectorPresence   |                    |
+| - VectorSurround   |                    |
+| - Welcomer         |                    |
