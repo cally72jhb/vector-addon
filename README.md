@@ -17,7 +17,7 @@ Meteor Client in yourmods folder                            <br/>
 
 
 |    **Modules:**    |    **Commands:**   |
-|--------------------|:------------------:|
+|--------------------|--------------------|
 | - ActionRenderer   | - ItemCommand      |
 | - AntiPistonPush   | - MuteCommand      |
 | - AntiProne        | - StatsCommand     |
