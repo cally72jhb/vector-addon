@@ -5,11 +5,11 @@
 Vector is a powerful open-source addon for Meteor Client      <br/>
 providing some combat and many utility modules                <br/>
 To install Vector correctly put it along side with            <br/>
-Meteor Client in yourmods folder                              <br/>
+Meteor Client in your mods folder                             <br/>
 
 (Minecraft 1.18.2 & Meteor dev-builds & fabric 0.13.3)        <br/>
   
-[The Vector Website](https://cally72jhb.github.io/website/)  <br/>
+[[ The Vector Website ]](https://cally72jhb.github.io/website/)  <br/>
 
 
 <img src="https://invidget.switchblade.xyz/A3nYgbKeXR">       <br/>
@@ -25,42 +25,45 @@ Meteor Client in yourmods folder                              <br/>
 
 
 
-|    **Modules:**    |    **Commands:**   |
-|--------------------|--------------------|
-| - ActionRenderer   | - ItemCommand      |
-| - AntiPistonPush   | - MuteCommand      |
-| - AntiProne        | - StatsCommand     |
-| - AutoCope         | - TargetCommand    |
-| - AutoCraft        | - TrashCommand     |
-| - AutoEz           | - UUIDCommand      |
-| - AutoInteract     |                    |
-| - BedBomb          |                    |
-| - BorderBypass     |                    |
-| - BowBomb          |                    |
-| - ChatEncryption   |                    |
-| - ChorusPredict    |                    |
-| - DeathAnimations  |                    |
-| - EntityFly        |                    |
-| - InstaMinePlus    |                    |
-| - InventoryScroll  |                    |
-| - ItemRelease      |                    |
-| - NoFluid          |                    |
-| - PacketConsume    |                    |
-| - PacketFly        |                    |
-| - PacketLogger     |                    |
-| - PacketPlace      |                    |
-| - PingSpoof        |                    |
-| - Placeholders     |                    |
-| - PopRenderer      |                    |
-| - PortalGodMode    |                    |
-| - RubberbandFly    |                    |
-| - SkeletonESP      |                    |
-| - StepPlus         |                    |
-| - StorageViewer    |                    |
-| - TickShift        |                    |
-| - Tower            |                    |
-| - VectorPresence   |                    |
-| - VectorSurround   |                    |
-| - Welcomer         |                    |
+|    **Modules:**        |    **Commands:**   |
+|------------------------|--------------------|
+| - Action Renderer      | - ItemCommand      |
+| - Anti Lag Back        | - MuteCommand      |
+| - Anti Piston Push     | - StatsCommand     |
+| - Anti Prone           | - TargetCommand    |
+| - Auto Cope            | - TrashCommand     |
+| - Auto Craft           | - UUIDCommand      |
+| - Auto Ez              |                    |
+| - Auto Interact        |                    |
+| - Bed Bomb             |                    |
+| - Bow Bomb             |                    |
+| - Chat Encryption      |                    |
+| - Chorus Predict       |                    |
+| - Death Animations     |                    |
+| - Entity Fly           |                    |
+| - Insta Mine Plus      |                    |
+| - Inventory Scroll     |                    |
+| - Item Release         |                    |
+| - No Block Trace       |                    |
+| - No Collision         |                    |
+| - No Fluid             |                    |
+| - Packet Consume       |                    |
+| - Packet Fly           |                    |
+| - Packet Logger        |                    |
+| - Packet Place         |                    |
+| - Ping Spoof           |                    |
+| - Placeholders         |                    |
+| - Pop Renderer         |                    |
+| - Portal God Mode      |                    |
+| - Rubberband Fly       |                    |
+| - Reverse Step Bypass  |                    |
+| - Skeleton ESP         |                    |
+| - Step Plus            |                    |
+| - Storage Viewer       |                    |
+| - Tick Shift           |                    |
+| - Tower                |                    |
+| - Vector Presence      |                    |
+| - Vector Surround      |                    |
+| - Welcomer             |                    |
   
-  </div>
+</div>
