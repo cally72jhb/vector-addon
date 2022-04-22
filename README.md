@@ -32,8 +32,7 @@ Meteor Client in your mods folder                             <br/>
 | - Anti Piston Push     | - StatsCommand     |
 | - Anti Prone           | - TargetCommand    |
 | - Auto Cope            | - TrashCommand     |
-| - Auto Craft           | - UUIDCommand      |
-| - Auto Ez              |                    |
+| - Auto Ez              | - UUIDCommand      |
 | - Auto Interact        |                    |
 | - Bed Bomb             |                    |
 | - Bow Bomb             |                    |
@@ -55,8 +54,8 @@ Meteor Client in your mods folder                             <br/>
 | - Placeholders         |                    |
 | - Pop Renderer         |                    |
 | - Portal God Mode      |                    |
-| - Rubberband Fly       |                    |
 | - Reverse Step Bypass  |                    |
+| - Rubberband Fly       |                    |
 | - Skeleton ESP         |                    |
 | - Step Plus            |                    |
 | - Storage Viewer       |                    |
