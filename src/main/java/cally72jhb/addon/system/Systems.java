@@ -9,6 +9,7 @@ import cally72jhb.addon.system.hud.PacketHud;
 import cally72jhb.addon.system.hud.StatsHud;
 import cally72jhb.addon.system.modules.combat.BedBomb;
 import cally72jhb.addon.system.modules.combat.BowBomb;
+import cally72jhb.addon.system.modules.combat.PacketHoleFill;
 import cally72jhb.addon.system.modules.combat.VectorSurround;
 import cally72jhb.addon.system.modules.misc.*;
 import cally72jhb.addon.system.modules.movement.*;
@@ -53,16 +54,14 @@ public class Systems {
 
         // Modules
         add(new ActionRenderer());
+        add(new AntiLagBack());
         add(new AntiPistonPush());
         add(new AntiProne());
         add(new AutoCope());
-        add(new AutoCraft());
         add(new AutoEz());
         add(new AutoInteract());
         add(new BedBomb());
-        add(new BorderBypass());
         add(new BowBomb());
-        //add(new CevBreaker());
         add(new ChatEncryption());
         add(new ChorusPredict());
         add(new DeathAnimations());
@@ -70,15 +69,19 @@ public class Systems {
         add(new InstaMinePlus());
         add(new InventoryScroll());
         add(new ItemRelease());
+        add(new NoBlockTrace());
+        add(new NoCollision());
         add(new NoFluid());
         add(new PacketConsume());
         add(new PacketFly());
+        add(new PacketHoleFill());
         add(new PacketLogger());
         add(new PacketPlace());
         add(new PingSpoof());
         add(new Placeholders());
         add(new PopRenderer());
         add(new PortalGodMode());
+        add(new ReverseStepBypass());
         add(new RubberbandFly());
         add(new SkeletonESP());
         add(new StepPlus());

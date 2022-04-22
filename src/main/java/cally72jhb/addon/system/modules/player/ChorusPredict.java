@@ -11,6 +11,7 @@ import meteordevelopment.meteorclient.utils.misc.Keybind;
 import meteordevelopment.meteorclient.utils.render.RenderUtils;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.orbit.EventHandler;
+import meteordevelopment.orbit.EventPriority;
 import net.minecraft.item.Items;
 import net.minecraft.network.packet.c2s.play.TeleportConfirmC2SPacket;
 import net.minecraft.network.packet.s2c.play.PlayerPositionLookS2CPacket;
@@ -99,7 +100,7 @@ public class ChorusPredict extends Module {
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST - 55)
     private void onReceivePacket(PacketEvent.Receive event) {
         if (!(event.packet instanceof PlayerPositionLookS2CPacket packet) || (!mc.player.isSneaking() && onSneak.get()) || !(mc.player.getMainHandStack().getItem() == Items.CHORUS_FRUIT && mc.player.isUsingItem() && (mc.player.getMainHandStack().getItem().isFood() || mc.player.getOffHandStack().getItem().isFood()))) return;
 

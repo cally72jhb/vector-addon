@@ -3,6 +3,7 @@ package cally72jhb.addon.utils.window;
 import cally72jhb.addon.Main;
 import cally72jhb.addon.utils.window.components.buttons.ButtonType;
 import cally72jhb.addon.utils.window.components.buttons.CustomTypeButton;
+import cally72jhb.addon.utils.window.components.text.Text;
 import cally72jhb.addon.utils.window.theme.Theme;
 
 import javax.imageio.ImageIO;

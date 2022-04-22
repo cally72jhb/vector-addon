@@ -148,7 +148,7 @@ public class AutoEz extends Module {
 
     private final Setting<Boolean> checkTargets = sgTargeting.add(new BoolSetting.Builder()
         .name("check-targets")
-        .description("Checks the current target form each module.")
+        .description("Checks if the player is targeted in any module.")
         .defaultValue(true)
         .build()
     );

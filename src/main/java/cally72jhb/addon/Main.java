@@ -1,7 +1,7 @@
 package cally72jhb.addon;
 
 import cally72jhb.addon.utils.window.ExternalPanel;
-import cally72jhb.addon.utils.window.Text;
+import cally72jhb.addon.utils.window.components.text.Text;
 import cally72jhb.addon.utils.window.theme.LightTheme;
 
 import java.awt.*;
@@ -87,42 +87,43 @@ public class Main {
 
         content.add(getLine("Modules:", new Color(75, 75, 75), 1));
 
-        content.add(getLine("- ActionRenderer", new Color(0, 0, 0), 0));
-        content.add(getLine("- AntiPistonPush", new Color(0, 0, 0), 0));
-        content.add(getLine("- AntiProne", new Color(0, 0, 0), 0));
-        content.add(getLine("- AutoCope", new Color(0, 0, 0), 0));
-        content.add(getLine("- AutoCraft", new Color(0, 0, 0), 0));
-        content.add(getLine("- AutoEz", new Color(0, 0, 0), 0));
-        content.add(getLine("- AutoInteract", new Color(0, 0, 0), 0));
-        content.add(getLine("- BedBomb", new Color(0, 0, 0), 0));
-        content.add(getLine("- BlinkPlus", new Color(0, 0, 0), 0));
-        content.add(getLine("- BorderBypass", new Color(0, 0, 0), 0));
-        content.add(getLine("- BowBomb", new Color(0, 0, 0), 0));
-        content.add(getLine("- ChatEncryption", new Color(0, 0, 0), 0));
-        content.add(getLine("- ChorusPredict", new Color(0, 0, 0), 0));
-        content.add(getLine("- DeathAnimations", new Color(0, 0, 0), 0));
-        content.add(getLine("- EntityFly", new Color(0, 0, 0), 0));
-        content.add(getLine("- InstaMinePlus", new Color(0, 0, 0), 0));
-        content.add(getLine("- InventoryScroll", new Color(0, 0, 0), 0));
-        content.add(getLine("- ItemRelease", new Color(0, 0, 0), 0));
-        content.add(getLine("- MultiTask", new Color(0, 0, 0), 0));
-        content.add(getLine("- NoFluid", new Color(0, 0, 0), 0));
-        content.add(getLine("- PacketConsume", new Color(0, 0, 0), 0));
-        content.add(getLine("- PacketFly", new Color(0, 0, 0), 0));
-        content.add(getLine("- PacketLogger", new Color(0, 0, 0), 0));
-        content.add(getLine("- PacketPlace", new Color(0, 0, 0), 0));
-        content.add(getLine("- PingSpoof", new Color(0, 0, 0), 0));
+        content.add(getLine("- Action Renderer", new Color(0, 0, 0), 0));
+        content.add(getLine("- Anti LagBack", new Color(0, 0, 0), 0));
+        content.add(getLine("- Anti PistonPush", new Color(0, 0, 0), 0));
+        content.add(getLine("- Anti Prone", new Color(0, 0, 0), 0));
+        content.add(getLine("- Auto Cope", new Color(0, 0, 0), 0));
+        content.add(getLine("- Auto Ez", new Color(0, 0, 0), 0));
+        content.add(getLine("- Auto Interact", new Color(0, 0, 0), 0));
+        content.add(getLine("- Bed Bomb", new Color(0, 0, 0), 0));
+        content.add(getLine("- Bow Bomb", new Color(0, 0, 0), 0));
+        content.add(getLine("- Chat Encryption", new Color(0, 0, 0), 0));
+        content.add(getLine("- Chorus Predict", new Color(0, 0, 0), 0));
+        content.add(getLine("- Death Animations", new Color(0, 0, 0), 0));
+        content.add(getLine("- Entity Fly", new Color(0, 0, 0), 0));
+        content.add(getLine("- Insta Mine Plus", new Color(0, 0, 0), 0));
+        content.add(getLine("- Inventory Scroll", new Color(0, 0, 0), 0));
+        content.add(getLine("- Item Release", new Color(0, 0, 0), 0));
+        content.add(getLine("- No BlockTrace", new Color(0, 0, 0), 0));
+        content.add(getLine("- No Collision", new Color(0, 0, 0), 0));
+        content.add(getLine("- No Fluid", new Color(0, 0, 0), 0));
+        content.add(getLine("- Packet Consume", new Color(0, 0, 0), 0));
+        content.add(getLine("- Packet Fly", new Color(0, 0, 0), 0));
+        content.add(getLine("- Packet Hole Fill", new Color(0, 0, 0), 0));
+        content.add(getLine("- Packet Logger", new Color(0, 0, 0), 0));
+        content.add(getLine("- Packet Place", new Color(0, 0, 0), 0));
+        content.add(getLine("- Ping Spoof", new Color(0, 0, 0), 0));
         content.add(getLine("- Placeholders", new Color(0, 0, 0), 0));
-        content.add(getLine("- PopRenderer", new Color(0, 0, 0), 0));
-        content.add(getLine("- PortalGodMode", new Color(0, 0, 0), 0));
-        content.add(getLine("- SkeletonESP", new Color(0, 0, 0), 0));
-        content.add(getLine("- SpeedBypass", new Color(0, 0, 0), 0));
-        content.add(getLine("- StepPlus", new Color(0, 0, 0), 0));
-        content.add(getLine("- StorageViewer", new Color(0, 0, 0), 0));
-        content.add(getLine("- TickShift", new Color(0, 0, 0), 0));
+        content.add(getLine("- Pop Renderer", new Color(0, 0, 0), 0));
+        content.add(getLine("- Portal GodMode", new Color(0, 0, 0), 0));
+        content.add(getLine("- Reverse Step Bypass", new Color(0, 0, 0), 0));
+        content.add(getLine("- Rubberband Fly", new Color(0, 0, 0), 0));
+        content.add(getLine("- Skeleton ESP", new Color(0, 0, 0), 0));
+        content.add(getLine("- Step Plus", new Color(0, 0, 0), 0));
+        content.add(getLine("- Storage Viewer", new Color(0, 0, 0), 0));
+        content.add(getLine("- Tick Shift", new Color(0, 0, 0), 0));
         content.add(getLine("- Tower", new Color(0, 0, 0), 0));
-        content.add(getLine("- VectorPresence", new Color(0, 0, 0), 0));
-        content.add(getLine("- VectorSurround", new Color(0, 0, 0), 0));
+        content.add(getLine("- Vector Presence", new Color(0, 0, 0), 0));
+        content.add(getLine("- Vector Surround", new Color(0, 0, 0), 0));
         content.add(getLine("- Welcomer", new Color(0, 0, 0), 0));
 
         content.add(getSpace());
@@ -132,12 +133,12 @@ public class Main {
 
         content.add(getLine("Commands:", new Color(75, 75, 75), 1));
 
-        content.add(getLine("- ItemCommand", new Color(0, 0, 0), 0));
-        content.add(getLine("- MuteCommand", new Color(0, 0, 0), 0));
-        content.add(getLine("- StatsCommand", new Color(0, 0, 0), 0));
-        content.add(getLine("- TargetCommand", new Color(0, 0, 0), 0));
-        content.add(getLine("- TrashCommand", new Color(0, 0, 0), 0));
-        content.add(getLine("- UUIDCommand", new Color(0, 0, 0), 0));
+        content.add(getLine("- Item Command", new Color(0, 0, 0), 0));
+        content.add(getLine("- Mute Command", new Color(0, 0, 0), 0));
+        content.add(getLine("- Stats Command", new Color(0, 0, 0), 0));
+        content.add(getLine("- Target Command", new Color(0, 0, 0), 0));
+        content.add(getLine("- Trash Command", new Color(0, 0, 0), 0));
+        content.add(getLine("- UUID Command", new Color(0, 0, 0), 0));
 
         print();
         print("Refreshing content & making window visible");

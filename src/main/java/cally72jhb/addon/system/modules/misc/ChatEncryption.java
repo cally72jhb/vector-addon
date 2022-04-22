@@ -159,7 +159,7 @@ public class ChatEncryption extends Module {
                         return string;
                     }
 
-                    string = string.substring(0, index).concat(string.substring(index).replaceFirst(encryptionPrefix.get() + toEncrypt + cipherSuffix.get(), decryptionPrefix.get() + encrypted + cipherSuffix.get()));
+                    string = string.substring(0, index).concat(string.substring(index).replaceFirst(encryptionPrefix.get() + toEncrypt + cipherSuffix.get(), getDecryptionPrefix() + encrypted + cipherSuffix.get()));
                 }
 
                 if (string.length() > 256) {
@@ -194,12 +194,12 @@ public class ChatEncryption extends Module {
             String originalString = builder.toString();
             Text original = event.getMessage();
 
-            if (string.contains(decryptionPrefix.get()) && string.contains(cipherSuffix.get()) && string.indexOf(decryptionPrefix.get()) < string.indexOf(cipherSuffix.get(), string.indexOf(decryptionPrefix.get()))) {
+            if (string.contains(getDecryptionPrefix()) && string.contains(cipherSuffix.get()) && string.indexOf(getDecryptionPrefix()) < string.indexOf(cipherSuffix.get(), string.indexOf(getDecryptionPrefix()))) {
                 try {
                     int index;
 
-                    while ((index = string.indexOf(decryptionPrefix.get())) != -1) {
-                        String toDecrypt = string.substring(string.indexOf(decryptionPrefix.get(), index) + decryptionPrefix.get().length(), string.indexOf(cipherSuffix.get(), index));
+                    while ((index = string.indexOf(getDecryptionPrefix())) != -1) {
+                        String toDecrypt = string.substring(string.indexOf(getDecryptionPrefix(), index) + getDecryptionPrefix().length(), string.indexOf(cipherSuffix.get(), index));
                         String decrypted;
 
                         if (decryptionDebug.get()) {
@@ -222,7 +222,7 @@ public class ChatEncryption extends Module {
                             return;
                         }
 
-                        string = string.substring(0, index).concat(string.substring(index).replace(decryptionPrefix.get() + toDecrypt + cipherSuffix.get(), decrypted));
+                        string = string.substring(0, index).concat(string.substring(index).replace(getDecryptionPrefix() + toDecrypt + cipherSuffix.get(), decrypted));
                     }
 
                     BaseText copy = new LiteralText("[Copy]");
@@ -281,11 +281,13 @@ public class ChatEncryption extends Module {
         };
     }
 
+    private String getDecryptionPrefix() {
+        return encryptionPrefix.get().equals(decryptionPrefix.get()) ? decryptionPrefix.get() + ":" : decryptionPrefix.get();
+    }
+
     private String getKey() {
         String finalKey = validate(key.get());
-
         if (finalKey.length() > getMaxKeySize(algorithm.get())) finalKey = finalKey.substring(0, getMaxKeySize(algorithm.get()));
-
         return finalKey;
     }
 

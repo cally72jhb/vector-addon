@@ -13,10 +13,10 @@ public class StepPlus extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
     private final SettingGroup sgAutomatic = settings.createGroup("Automatic");
 
-    private final Setting<Mode> mode = sgGeneral.add(new EnumSetting.Builder<Mode>()
-        .name("mode")
-        .description("How to bypass.")
-        .defaultValue(Mode.NCP)
+    private final Setting<StepMode> stepMode = sgGeneral.add(new EnumSetting.Builder<StepMode>()
+        .name("step-mode")
+        .description("How to bypass stepping.")
+        .defaultValue(StepMode.NCP)
         .build()
     );
 
@@ -38,7 +38,7 @@ public class StepPlus extends Module {
         .name("use-timer")
         .description("Whether or not to use a timer.")
         .defaultValue(false)
-        .visible(() -> mode.get() == Mode.NCP)
+        .visible(() -> stepMode.get() == StepMode.NCP)
         .build()
     );
 
@@ -49,7 +49,7 @@ public class StepPlus extends Module {
         .min(0.1)
         .sliderMin(1.25)
         .sliderMax(1.75)
-        .visible(() -> mode.get() == Mode.NCP && useTimer.get())
+        .visible(() -> stepMode.get() == StepMode.NCP && useTimer.get())
         .build()
     );
 
@@ -57,7 +57,7 @@ public class StepPlus extends Module {
         .name("extra-packet")
         .description("Sends an extra packet after steping up a block.")
         .defaultValue(true)
-        .visible(() -> mode.get() == Mode.NCP)
+        .visible(() -> stepMode.get() == StepMode.NCP)
         .build()
     );
 
@@ -65,7 +65,7 @@ public class StepPlus extends Module {
         .name("spoof-on-ground")
         .description("Spoofs you server-side on ground.")
         .defaultValue(false)
-        .visible(() -> mode.get() == Mode.NCP)
+        .visible(() -> stepMode.get() == StepMode.NCP)
         .build()
     );
 
@@ -73,7 +73,7 @@ public class StepPlus extends Module {
         .name("accurate")
         .description("Sends more accurate packets to the server.")
         .defaultValue(true)
-        .visible(() -> mode.get() == Mode.NCP)
+        .visible(() -> stepMode.get() == StepMode.NCP)
         .build()
     );
 
@@ -81,7 +81,7 @@ public class StepPlus extends Module {
         .name("debug")
         .description("Informs you about the step height when stepping up a block.")
         .defaultValue(false)
-        .visible(() -> mode.get() == Mode.NCP)
+        .visible(() -> stepMode.get() == StepMode.NCP)
         .build()
     );
 
@@ -89,7 +89,7 @@ public class StepPlus extends Module {
         .name("bypass")
         .description("Allows to step a little higher then one block.")
         .defaultValue(false)
-        .visible(() -> mode.get() == Mode.NCP)
+        .visible(() -> stepMode.get() == StepMode.NCP)
         .build()
     );
 
@@ -100,7 +100,7 @@ public class StepPlus extends Module {
         .min(0.001)
         .sliderMin(0.001)
         .sliderMax(0.015)
-        .visible(() -> mode.get() == Mode.NCP && bypass.get())
+        .visible(() -> stepMode.get() == StepMode.NCP && bypass.get())
         .build()
     );
 
@@ -117,7 +117,7 @@ public class StepPlus extends Module {
         .sliderMin(1)
         .sliderMax(7)
         .noSlider()
-        .visible(() -> mode.get() == Mode.NCP)
+        .visible(() -> stepMode.get() == StepMode.NCP)
         .build()
     );
 
@@ -135,7 +135,7 @@ public class StepPlus extends Module {
         .min(0.55)
         .sliderMin(0.55)
         .sliderMax(1.249)
-        .visible(() -> mode.get() == Mode.NCP && automatic.get())
+        .visible(() -> stepMode.get() == StepMode.NCP && automatic.get())
         .build()
     );
 
@@ -146,7 +146,7 @@ public class StepPlus extends Module {
         .min(0.55)
         .sliderMin(0.55)
         .sliderMax(1.249)
-        .visible(() -> mode.get() == Mode.NCP && automatic.get())
+        .visible(() -> stepMode.get() == StepMode.NCP && automatic.get())
         .build()
     );
 
@@ -157,7 +157,7 @@ public class StepPlus extends Module {
         .min(0.55)
         .sliderMin(0.55)
         .sliderMax(1.249)
-        .visible(() -> mode.get() == Mode.NCP && automatic.get())
+        .visible(() -> stepMode.get() == StepMode.NCP && automatic.get())
         .build()
     );
 
@@ -168,7 +168,7 @@ public class StepPlus extends Module {
         .min(0.55)
         .sliderMin(0.55)
         .sliderMax(1.249)
-        .visible(() -> mode.get() == Mode.NCP && automatic.get())
+        .visible(() -> stepMode.get() == StepMode.NCP && automatic.get())
         .build()
     );
 
@@ -179,7 +179,7 @@ public class StepPlus extends Module {
         .min(0.55)
         .sliderMin(0.55)
         .sliderMax(1.249)
-        .visible(() -> mode.get() == Mode.NCP && automatic.get())
+        .visible(() -> stepMode.get() == StepMode.NCP && automatic.get())
         .build()
     );
 
@@ -190,7 +190,7 @@ public class StepPlus extends Module {
         .min(0.55)
         .sliderMin(0.55)
         .sliderMax(1.249)
-        .visible(() -> mode.get() == Mode.NCP && automatic.get())
+        .visible(() -> stepMode.get() == StepMode.NCP && automatic.get())
         .build()
     );
 
@@ -201,11 +201,11 @@ public class StepPlus extends Module {
         .min(0.55)
         .sliderMin(0.55)
         .sliderMax(1.249)
-        .visible(() -> mode.get() == Mode.NCP && automatic.get())
+        .visible(() -> stepMode.get() == StepMode.NCP && automatic.get())
         .build()
     );
 
-    private float prevStepHeight;
+    private float prevStepHeight = -1;
 
     public StepPlus() {
         super(Categories.Movement, "step-plus", "Allows you to walk up full blocks.");
@@ -218,7 +218,7 @@ public class StepPlus extends Module {
 
     @Override
     public void onDeactivate() {
-        mc.player.stepHeight = prevStepHeight;
+        update();
 
         Modules.get().get(Timer.class).setOverride(Timer.OFF);
     }
@@ -232,7 +232,7 @@ public class StepPlus extends Module {
             return;
         }
 
-        if (mode.get() == Mode.NORMAL) {
+        if (stepMode.get() == StepMode.Normal) {
             mc.player.stepHeight = 1.001F;
             return;
         }
@@ -288,6 +288,10 @@ public class StepPlus extends Module {
 
     // Utils
 
+    private void update() {
+        if (mc != null && mc.player != null && prevStepHeight > 0) mc.player.stepHeight = prevStepHeight;
+    }
+
     private void sendPacket(double x, double y, double z) {
         mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y, z, spoofOnGround.get() || mc.player.isOnGround()));
     }
@@ -301,8 +305,8 @@ public class StepPlus extends Module {
     }
 
     private double[] directionSpeed(float speed) {
-        float forward = mc.player.input.movementForward;
-        float side = mc.player.input.movementSideways;
+        float forward = mc.player.forwardSpeed;
+        float side = mc.player.sidewaysSpeed;
         float yaw = mc.player.prevYaw + (mc.player.getYaw() - mc.player.prevYaw);
 
         if (forward != 0.0F) {
@@ -329,8 +333,8 @@ public class StepPlus extends Module {
         return new double[] { dx, dz };
     }
 
-    public enum Mode {
-        NORMAL,
+    public enum StepMode {
+        Normal,
         NCP,
     }
 

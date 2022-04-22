@@ -31,6 +31,18 @@ public class ItemCommand extends Command {
             return SINGLE_SUCCESS;
         }));
 
+        builder.then(argument("from", IntegerArgumentType.integer()).then(argument("to", IntegerArgumentType.integer()).executes(context -> {
+            clickSlot(0, context.getArgument("from", Integer.class), context.getArgument("to", Integer.class), SlotActionType.SWAP);
+
+            return SINGLE_SUCCESS;
+        })));
+
+        builder.then(literal("bypass").then(argument("from", IntegerArgumentType.integer()).then(argument("to", IntegerArgumentType.integer()).executes(context -> {
+            clickSlot(mc.player != null && mc.player.currentScreenHandler != null ? mc.player.currentScreenHandler.syncId : 0, context.getArgument("from", Integer.class), context.getArgument("to", Integer.class), SlotActionType.SWAP);
+
+            return SINGLE_SUCCESS;
+        }))));
+
         builder.then(literal("head").executes(context -> {
             clickSlot(39);
 
@@ -70,7 +82,12 @@ public class ItemCommand extends Command {
 
             for (Slot slot : slots) list.add(slot.getStack().copy());
 
-            handler.onSlotClick(id, button, action, mc.player);
+            try {
+                handler.onSlotClick(id, button, action, mc.player);
+            } catch (IndexOutOfBoundsException exception) {
+                exception.printStackTrace();
+            }
+
             Int2ObjectMap<ItemStack> stacks = new Int2ObjectOpenHashMap();
 
             for (int slot = 0; slot < i; slot++) {

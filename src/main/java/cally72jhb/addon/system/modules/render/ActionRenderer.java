@@ -1,7 +1,6 @@
 package cally72jhb.addon.system.modules.render;
 
 import cally72jhb.addon.system.categories.Categories;
-import cally72jhb.addon.utils.VectorUtils;
 import meteordevelopment.meteorclient.events.entity.player.BreakBlockEvent;
 import meteordevelopment.meteorclient.events.entity.player.InteractBlockEvent;
 import meteordevelopment.meteorclient.events.entity.player.PlaceBlockEvent;
@@ -32,7 +31,7 @@ public class ActionRenderer extends Module {
     private final Setting<List<Block>> blocks = sgGeneral.add(new BlockListSetting.Builder()
         .name("blocks")
         .description("Selected blocks.")
-        .defaultValue(new ArrayList<>())
+        .defaultValue(List.of())
         .build()
     );
 
@@ -71,11 +70,16 @@ public class ActionRenderer extends Module {
         .build()
     );
 
+
+    // Render
+
+
     private final Setting<Integer> renderTicks = sgRender.add(new IntSetting.Builder()
         .name("ticks")
         .description("How many ticks it should take for a block to disappear.")
         .defaultValue(10)
         .min(1)
+        .sliderMin(1)
         .sliderMax(8)
         .build()
     );
@@ -137,7 +141,7 @@ public class ActionRenderer extends Module {
 
     @EventHandler
     private void onBreak(BreakBlockEvent event) {
-        if (!breaking.get() || shouldRender(VectorUtils.getBlock(event.blockPos))) return;
+        if (!breaking.get() || shouldRender(mc.world.getBlockState(event.blockPos).getBlock())) return;
 
         RenderBlock block = renderBlockPool.get().set(event.blockPos);
 
@@ -147,7 +151,7 @@ public class ActionRenderer extends Module {
     @EventHandler
     private void onInteract(InteractBlockEvent event) {
         if (mc.player == null || event.hand == null || mc.player.getStackInHand(event.hand) == null) return;
-        if (!interact.get() || shouldRender(VectorUtils.getBlock(event.result.getBlockPos()))) return;
+        if (!interact.get() || shouldRender(mc.world.getBlockState(event.result.getBlockPos()).getBlock())) return;
         if (mc.player.getStackInHand(event.hand).getItem() instanceof BlockItem) return;
 
         RenderBlock block = renderBlockPool.get().set(event.result.getBlockPos());
@@ -194,7 +198,7 @@ public class ActionRenderer extends Module {
 
         public RenderBlock set(BlockPos blockPos) {
             pos.set(blockPos);
-            state = VectorUtils.getBlockState(blockPos);
+            state = mc.world.getBlockState(blockPos);
             ticks = renderTicks.get();
 
             sides = new Color(sideColor.get());

@@ -24,7 +24,7 @@ public class ItemRelease extends Module {
 
     private final Setting<List<Item>> items = sgGeneral.add(new ItemListSetting.Builder()
         .name("items")
-        .description("Items to display trajectories for.")
+        .description("The items allowed to be released.")
         .defaultValue(getDefaultItems())
         .filter(this::itemFilter)
         .build()

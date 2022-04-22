@@ -22,7 +22,6 @@ import net.minecraft.nbt.NbtString;
 import oshi.util.tuples.Pair;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 public class Placeholders extends Module {
@@ -47,7 +46,9 @@ public class Placeholders extends Module {
     private void onSendMessage(SendMessageEvent event) {
         if (!placeholders.isEmpty()) {
             for (Pair<String, String> placeholder : placeholders) {
-                if (event.message.contains(placeholder.getA())) event.message = event.message.replaceAll(placeholder.getA(), placeholder.getB());
+                if (placeholder != null && placeholder.getA() != null && event.message.contains(placeholder.getA())) {
+                    event.message = event.message.replaceAll(placeholder.getA(), placeholder.getB());
+                }
             }
         }
     }
@@ -56,22 +57,10 @@ public class Placeholders extends Module {
     private void onSendRawMessage(SendRawMessageEvent event) {
         if (useRawType.get() && !placeholders.isEmpty()) {
             for (Pair<String, String> placeholder : placeholders) {
-                if (event.message.contains(placeholder.getA())) event.message = event.message.replaceAll(placeholder.getA(), placeholder.getB());
+                if (placeholder != null && placeholder.getA() != null && event.message.contains(placeholder.getA())) {
+                    event.message = event.message.replaceAll(placeholder.getA(), placeholder.getB());
+                }
             }
-        }
-    }
-
-    // Utils
-
-    public Collection<String> getPlaceholders() {
-        if (placeholders != null && !placeholders.isEmpty()) {
-            List<String> list = new ArrayList<>();
-
-            for (Pair<String, String> placeholder : placeholders) list.add(placeholder.getA());
-
-            return list;
-        } else {
-            return null;
         }
     }
 
@@ -79,7 +68,7 @@ public class Placeholders extends Module {
 
     @Override
     public WWidget getWidget(GuiTheme theme) {
-        placeholders.removeIf(placeholder -> placeholder.getA().isEmpty());
+        placeholders.removeIf(placeholder -> placeholder == null || placeholder.getA() != null && placeholder.getA().isEmpty());
 
         WTable table = theme.table();
         fillTable(theme, table);
@@ -91,24 +80,40 @@ public class Placeholders extends Module {
         if (!placeholders.isEmpty()) {
             for (int i = 0; i < placeholders.size(); i++) {
                 int messageI = i;
-                String messageA = placeholders.get(i).getA();
-                String messageB = placeholders.get(i).getB();
 
-                WTextBox left = table.add(theme.textBox(messageA)).minWidth(300).expandX().widget();
-                left.action = () -> placeholders.set(messageI, new Pair<>(left.get(), messageB));
+                if (placeholders.get(i) != null && placeholders.get(i).getA() != null && placeholders.get(i).getB() != null
+                    && !placeholders.get(i).getA().isEmpty() && !placeholders.get(i).getB().isEmpty()) {
 
-                WTextBox right = table.add(theme.textBox(messageB)).minWidth(300).expandX().widget();
-                right.action = () -> placeholders.set(messageI, new Pair<>(messageA, right.get()));
+                    String messageA = placeholders.get(i).getA();
+                    String messageB = placeholders.get(i).getB();
 
-                WMinus delete = table.add(theme.minus()).widget();
-                delete.action = () -> {
-                    placeholders.remove(messageI);
+                    WTextBox left = table.add(theme.textBox(messageA)).minWidth(300).expandX().widget();
+                    left.action = () -> placeholders.set(messageI, new Pair<>(left.get(), messageB));
 
-                    table.clear();
-                    fillTable(theme, table);
-                };
+                    WTextBox right = table.add(theme.textBox(messageB)).minWidth(300).expandX().widget();
+                    right.action = () -> placeholders.set(messageI, new Pair<>(messageA, right.get()));
 
-                table.row();
+                    WMinus delete = table.add(theme.minus()).widget();
+                    delete.action = () -> {
+                        placeholders.remove(messageI);
+
+                        table.clear();
+                        fillTable(theme, table);
+                    };
+
+                    table.row();
+                } else if (placeholders.get(i) != null && placeholders.get(i).getA() == null && placeholders.get(i).getB() != null) {
+                    WMinus delete = table.add(theme.minus()).widget();
+                    delete.action = () -> {
+                        placeholders.remove(messageI);
+
+                        table.clear();
+                        fillTable(theme, table);
+                    };
+
+                    table.add(theme.label(placeholders.get(i).getB()));
+                    table.row();
+                }
             }
         }
 
@@ -128,18 +133,8 @@ public class Placeholders extends Module {
         // Reset
         WButton reset = table.add(theme.button("Reset")).widget();
         reset.action = () -> {
-            placeholders = new ArrayList<>() {{
-                add(new Pair<>(":vector:", "https://cally72jhb.github.io/website/"));
-                add(new Pair<>(":skull:", "☠"));
-                add(new Pair<>(":sword:", "\uD83D\uDDE1"));
-                add(new Pair<>(":blade:", "\uD83D\uDDE1"));
-                add(new Pair<>(":bow:", "\uD83C\uDFF9"));
-                add(new Pair<>(":trident:", "\uD83D\uDD31"));
-                add(new Pair<>(":potion:", "\uD83E\uDDEA"));
-                add(new Pair<>(":bottle:", "⚗"));
-                add(new Pair<>(":rod:", "\uD83C\uDFA3"));
-                add(new Pair<>(":shield:", "\uD83D\uDEE1"));
-            }};
+            resetPlaceholders();
+
             table.clear();
             fillTable(theme, table);
         };
@@ -148,6 +143,7 @@ public class Placeholders extends Module {
         WButton clear = table.add(theme.button("Clear")).widget();
         clear.action = () -> {
             placeholders.clear();
+
             table.clear();
             fillTable(theme, table);
         };
@@ -157,12 +153,13 @@ public class Placeholders extends Module {
     public NbtCompound toTag() {
         NbtCompound tag = super.toTag();
 
-        placeholders.removeIf(placeholder -> placeholder.getA().isEmpty());
+        placeholders.removeIf(placeholder -> placeholder == null || placeholder.getA() != null && placeholder.getA().isEmpty());
+
         NbtList leftTag = new NbtList();
         NbtList rightTag = new NbtList();
 
         for (Pair<String, String> placeholder : placeholders) {
-            leftTag.add(NbtString.of(placeholder.getA()));
+            leftTag.add(placeholder.getA() == null ? NbtString.of("") : NbtString.of(placeholder.getA()));
             rightTag.add(NbtString.of(placeholder.getB()));
         }
 
@@ -176,34 +173,107 @@ public class Placeholders extends Module {
     public Module fromTag(NbtCompound tag) {
         placeholders.clear();
 
-        ArrayList<String> left = new ArrayList<>();
-        ArrayList<String> right = new ArrayList<>();
+        List<String> left = new ArrayList<>();
+        List<String> right = new ArrayList<>();
 
         if (tag.contains("left") && tag.contains("right")) {
             NbtList leftTag = tag.getList("left", 8);
             NbtList rightTag = tag.getList("right", 8);
 
-            for (NbtElement element : leftTag) left.add(element.asString());
+            for (NbtElement element : leftTag) left.add(element.asString().isEmpty() ? null : element.asString());
             for (NbtElement element : rightTag) right.add(element.asString());
 
             for (int i = 0; i < left.size() && i < right.size(); i++) {
                 placeholders.add(new Pair<>(left.get(i), right.get(i)));
             }
         } else {
-            placeholders = new ArrayList<>() {{
-                add(new Pair<>(":vector:", "https://cally72jhb.github.io/website/"));
-                add(new Pair<>(":skull:", "☠"));
-                add(new Pair<>(":sword:", "\uD83D\uDDE1"));
-                add(new Pair<>(":blade:", "\uD83D\uDDE1"));
-                add(new Pair<>(":bow:", "\uD83C\uDFF9"));
-                add(new Pair<>(":trident:", "\uD83D\uDD31"));
-                add(new Pair<>(":potion:", "\uD83E\uDDEA"));
-                add(new Pair<>(":bottle:", "⚗"));
-                add(new Pair<>(":rod:", "\uD83C\uDFA3"));
-                add(new Pair<>(":shield:", "\uD83D\uDEE1"));
-            }};
+            resetPlaceholders();
         }
 
         return super.fromTag(tag);
+    }
+
+    private void resetPlaceholders() {
+        placeholders = new ArrayList<>() {{
+            add(new Pair<>(":skull:", "☠"));
+            add(new Pair<>(":sword:", "\uD83D\uDDE1"));
+            add(new Pair<>(":pick:", "⛏"));
+            add(new Pair<>(":blade:", "⚔"));
+            add(new Pair<>(":bow:", "\uD83C\uDFF9"));
+            add(new Pair<>(":trident:", "\uD83D\uDD31"));
+            add(new Pair<>(":fork:", "ψ"));
+            add(new Pair<>(":rod:", "\uD83C\uDFA3"));
+            add(new Pair<>(":shield:", "\uD83D\uDEE1"));
+
+            add(new Pair<>(null, "Containers"));
+
+            add(new Pair<>(":potion:", "\uD83E\uDDEA"));
+            add(new Pair<>(":bottle:", "⚗"));
+            add(new Pair<>(":bucket:", "\uD83E\uDEA3"));
+
+            add(new Pair<>(null, "Directions"));
+
+            add(new Pair<>(":right:", "»"));
+            add(new Pair<>(":left:", "«"));
+            add(new Pair<>(":up:", "↑"));
+            add(new Pair<>(":down:", "↓"));
+
+            add(new Pair<>(null, "Faces"));
+
+            add(new Pair<>(":smiley-1:", "☻"));
+            add(new Pair<>(":smiley-2:", "☺"));
+            add(new Pair<>(":smiley-3:", "☹"));
+
+            add(new Pair<>(":face-1:", "( ❛ʖ ❛)"));
+            add(new Pair<>(":face-2:", "ಠ_ಠ"));
+            add(new Pair<>(":face-3:", "( ¯ʖ¯)"));
+            add(new Pair<>(":face-4:", "¯\\_( •ʖ •)_/¯"));
+            add(new Pair<>(":face-5:", "¯\\_( ❛ʖ ❛)_/¯"));
+
+            add(new Pair<>(null, "Environmental"));
+
+            add(new Pair<>(":cloud:", "☁"));
+            add(new Pair<>(":rain-cloud:", "\uD83C\uDF27"));
+            add(new Pair<>(":thunder-cloud:", "⛈"));
+            add(new Pair<>(":thunder:", "⚡"));
+            add(new Pair<>(":fire:", "\uD83D\uDD25"));
+            add(new Pair<>(":star-1:", "⭐"));
+            add(new Pair<>(":star-2:", "☆"));
+            add(new Pair<>(":meteor:", "☄"));
+            add(new Pair<>(":sun:", "☀"));
+            add(new Pair<>(":moon:", "☽"));
+            add(new Pair<>(":snow:", "❄"));
+            add(new Pair<>(":atomic:", "☣"));
+
+            add(new Pair<>(null, "Other"));
+
+            add(new Pair<>(":hearth:", "❤"));
+            add(new Pair<>(":food:", "\uD83C\uDF56"));
+            add(new Pair<>(":anchor:", "⚓"));
+            add(new Pair<>(":scissor:", "✂"));
+            add(new Pair<>(":mail:", "✉"));
+            add(new Pair<>(":yin-yang:", "☯"));
+            add(new Pair<>(":peace:", "☮"));
+            add(new Pair<>(":infinity:", "∞"));
+            add(new Pair<>(":umbrella:", "☂"));
+            add(new Pair<>(":cock:", "╭ᑎ╮"));
+            add(new Pair<>(":dick:", "┌▎┐"));
+            add(new Pair<>(":penis:", "┌∩┐"));
+            add(new Pair<>(":?:", "�"));
+            add(new Pair<>(":tm:", "™"));
+            add(new Pair<>(":reg:", "®"));
+            add(new Pair<>(":copy:", "©"));
+
+            add(new Pair<>(":note-1:", "♩"));
+            add(new Pair<>(":note-2:", "♪"));
+            add(new Pair<>(":note-3:", "♫"));
+            add(new Pair<>(":note-4:", "♬"));
+
+            add(new Pair<>(":clock-1:", "⌚"));
+            add(new Pair<>(":clock-2:", "⌛"));
+            add(new Pair<>(":clock-3:", "⏳"));
+
+            add(new Pair<>(":vector:", "https://cally72jhb.github.io/website/"));
+        }};
     }
 }

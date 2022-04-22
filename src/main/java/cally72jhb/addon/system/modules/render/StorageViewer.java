@@ -226,7 +226,7 @@ public class StorageViewer extends Module {
 
                             mc.getNetworkHandler().sendPacket(new PlayerInteractBlockC2SPacket((item.getHand() != null && item.found()) ? item.getHand() : Hand.OFF_HAND, new BlockHitResult(Utils.vec3d(position), getDir(position), position, false)));
 
-                            chest = VectorUtils.getBlock(position) instanceof ChestBlock && ChestBlock.getDoubleBlockType(VectorUtils.getBlockState(position)) == DoubleBlockProperties.Type.SECOND;
+                            chest = mc.world.getBlockState(position).getBlock() instanceof ChestBlock && ChestBlock.getDoubleBlockType(mc.world.getBlockState(position)) == DoubleBlockProperties.Type.SECOND;
 
                             close = true;
                             pos = position;
@@ -330,7 +330,7 @@ public class StorageViewer extends Module {
 
         for (Direction dir : Direction.values()) {
             if (closest.get()) {
-                if (visible.get() && !VectorUtils.isSolid(pos.offset(dir))) sides.add(dir);
+                if (visible.get() && !mc.world.getBlockState(pos.offset(dir)).getOutlineShape(mc.world, pos.offset(dir)).isEmpty()) sides.add(dir);
             } else {
                 sides.add(dir);
             }
@@ -348,7 +348,7 @@ public class StorageViewer extends Module {
     private void drawBackground(int x, int y, double scale, BlockPos pos) {
         GL.bindTexture(TEXTURE);
 
-        Color color = customColor.get() ? containerColor.get() : Utils.getShulkerColor(VectorUtils.getBlock(pos).asItem().getDefaultStack());
+        Color color = customColor.get() ? containerColor.get() : Utils.getShulkerColor(mc.world.getBlockState(pos).getBlock().asItem().getDefaultStack());
 
         Renderer2D.TEXTURE.begin();
         Renderer2D.TEXTURE.texQuad(x, y, 176 * scale, 67 * scale, color);

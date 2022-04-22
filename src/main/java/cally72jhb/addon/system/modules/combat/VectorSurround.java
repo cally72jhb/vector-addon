@@ -43,14 +43,13 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.ShapeContext;
 import net.minecraft.client.render.BlockBreakingInfo;
+import net.minecraft.client.sound.PositionedSoundInstance;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.TntEntity;
 import net.minecraft.entity.decoration.EndCrystalEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.ToolItem;
 import net.minecraft.network.packet.c2s.play.*;
 import net.minecraft.sound.BlockSoundGroup;
 import net.minecraft.sound.SoundCategory;
@@ -356,14 +355,6 @@ public class VectorSurround extends Module {
         .name("packet-place")
         .description("Places blocks with packets instead of normally.")
         .defaultValue(true)
-        .build()
-    );
-
-    private final Setting<Boolean> randomOffset = sgBypass.add(new BoolSetting.Builder()
-        .name("random-offset")
-        .description("Offsets the placement position randomly.")
-        .defaultValue(false)
-        .visible(packetPlace::get)
         .build()
     );
 
@@ -1133,7 +1124,8 @@ public class VectorSurround extends Module {
 
         if (noInteract.get() && (mc.player.getBlockPos().equals(pos)
             || mc.player.getBlockPos().up().equals(pos))
-            && VectorUtils.isClickable(VectorUtils.getBlock(pos))) {
+            && VectorUtils.isClickable(mc.world.getBlockState(pos).getBlock())) {
+
             event.cancel();
         }
     }
@@ -1152,7 +1144,7 @@ public class VectorSurround extends Module {
 
     @EventHandler
     private void onPlayerMove(PlayerMoveEvent event) {
-        if (feet.get() && stopMovement.get() && !isSurroundBlock(VectorUtils.getBlock(mc.player.getBlockPos().down())) && event.movement.y < 0) {
+        if (feet.get() && stopMovement.get() && !isSurroundBlock(mc.world.getBlockState(mc.player.getBlockPos().down()).getBlock()) && event.movement.y < 0) {
             ((IVec3d) event.movement).setY(0);
         }
     }
@@ -1209,7 +1201,7 @@ public class VectorSurround extends Module {
                 ArrayList<BlockPos> positions;
 
                 positions = VectorUtils.getPositionsAroundPlayer(bedRange.get());
-                positions.removeIf(pos -> !replaceBlocks.get().contains(VectorUtils.getBlock(pos)) || VectorUtils.distance(mc.player.getPos(), Vec3d.ofCenter(pos)) > bedRange.get());
+                positions.removeIf(pos -> !replaceBlocks.get().contains(mc.world.getBlockState(pos).getBlock()) || VectorUtils.distance(mc.player.getPos(), Vec3d.ofCenter(pos)) > bedRange.get());
 
                 if (!positions.isEmpty()) {
                     positions.sort(Comparator.comparingDouble(pos -> VectorUtils.distance(mc.player.getPos(), Vec3d.ofCenter(pos))));
@@ -1251,7 +1243,7 @@ public class VectorSurround extends Module {
             ArrayList<BlockPos> positions;
 
             positions = VectorUtils.getPositionsAroundPlayer(toggleRange.get());
-            positions.removeIf(pos -> !toggleBlocks.get().contains(VectorUtils.getBlock(pos)) || VectorUtils.distance(mc.player.getPos(), Vec3d.ofCenter(pos)) > toggleRange.get());
+            positions.removeIf(pos -> !toggleBlocks.get().contains(mc.world.getBlockState(pos).getBlock()) || VectorUtils.distance(mc.player.getPos(), Vec3d.ofCenter(pos)) > toggleRange.get());
 
             if (!positions.isEmpty()) {
                 switch (autoToggleMode.get()) {
@@ -1345,12 +1337,12 @@ public class VectorSurround extends Module {
         if (antiButton.get()) {
             for (BlockPos position : surround) {
                 BlockPos pos = mc.player.getBlockPos().add(position);
-                if (antiButtonBlocks.get().contains(VectorUtils.getBlock(pos))) {
+                if (antiButtonBlocks.get().contains(mc.world.getBlockState(pos).getBlock())) {
                     if (placeButton.get()) {
                         for (BlockPos p : surround) {
                             if (canPlace(pos.add(p), true) && !placePositions.contains(pos.add(p))) {
                                 placePositions.add(pos.add(p));
-                            } else if (antiButtonBlocks.get().contains(VectorUtils.getBlock(pos.add(p))) && BlockUtils.canBreak(pos.add(p))) {
+                            } else if (antiButtonBlocks.get().contains(mc.world.getBlockState(pos.add(p)).getBlock()) && BlockUtils.canBreak(pos.add(p))) {
                                 breakPositions.add(pos.add(p));
                                 break;
                             }
@@ -1391,7 +1383,7 @@ public class VectorSurround extends Module {
 
                     if (checkCollision.get() && entity != mc.player) {
                         for (BlockPos position : surround) {
-                            if (doesIntersect(VectorUtils.getCollision(mc.player.getBlockPos().add(position)).getBoundingBox())) {
+                            if (doesIntersect(mc.world.getBlockState(mc.player.getBlockPos().add(position)).getCollisionShape(mc.world, mc.player.getBlockPos().add(position)).getBoundingBox())) {
                                 for (BlockPos pos : extra) {
                                     BlockPos placePos = entityPos.add(pos);
 
@@ -1436,7 +1428,7 @@ public class VectorSurround extends Module {
         if (!placedMap.isEmpty()) {
             for (BlockPos pos : new HashSet<>(placedMap.keySet())) {
                 if (placedMap.containsKey(pos)) {
-                    if (!isSurroundBlock(VectorUtils.getBlock(pos))) {
+                    if (!isSurroundBlock(mc.world.getBlockState(pos).getBlock())) {
                         placedMap.replace(pos, placedMap.get(pos) + 1);
                     } else {
                         placedMap.remove(pos);
@@ -1506,7 +1498,7 @@ public class VectorSurround extends Module {
         BlockPos position = mc.player.getBlockPos().add(pos).up(y);
         if (mc.player.getBlockPos().equals(position) || blocksInTick >= blocksPerTick.get() || checkForPause(position)) return false;
 
-        boolean placed = place(position, getBestBlock(), rotate.get(), renderSwing.get(), !onEntityPlace.get(), randomOffset.get());
+        boolean placed = place(position, getBestBlock(), rotate.get(), renderSwing.get(), !onEntityPlace.get());
 
         if (placed) {
             blocksInTick++;
@@ -1520,7 +1512,7 @@ public class VectorSurround extends Module {
 
     private boolean place(BlockPos pos) {
         if (mc.player.getBlockPos().equals(pos) || blocksInTick >= blocksPerTick.get() || checkForPause(pos)) return false;
-        boolean placed = place(pos, getBestBlock(), rotate.get(), renderSwing.get(), !onEntityPlace.get(), randomOffset.get());
+        boolean placed = place(pos, getBestBlock(), rotate.get(), renderSwing.get(), !onEntityPlace.get());
 
         if (placed) {
             blocksInTick++;
@@ -1534,7 +1526,7 @@ public class VectorSurround extends Module {
 
     private boolean place(BlockPos pos, FindItemResult item) {
         if (mc.player.getBlockPos().equals(pos) || blocksInTick >= blocksPerTick.get() || checkForPause(pos)) return false;
-        boolean placed = place(pos, item, rotate.get(), renderSwing.get(), !onEntityPlace.get(), randomOffset.get());
+        boolean placed = place(pos, item, rotate.get(), renderSwing.get(), !onEntityPlace.get());
 
         if (placed) {
             blocksInTick++;
@@ -1564,9 +1556,9 @@ public class VectorSurround extends Module {
             }
         }
 
-        if (breakBlocks.get() && !isSurroundBlock(VectorUtils.getBlock(pos))
+        if (breakBlocks.get() && !isSurroundBlock(mc.world.getBlockState(pos).getBlock())
             && (!packetPlace.get() || packetPlace.get()
-            && !VectorUtils.getBlockState(pos).getMaterial().isReplaceable())) {
+            && !mc.world.getBlockState(pos).getMaterial().isReplaceable())) {
             breakPositions.add(pos);
         }
     }
@@ -1657,7 +1649,7 @@ public class VectorSurround extends Module {
         List<Direction> directions = new ArrayList<>();
 
         for (Direction dir : Direction.values()) {
-            if (dir != null && VectorUtils.getBlockState(pos.offset(dir)).getMaterial().isReplaceable()) {
+            if (dir != null && mc.world.getBlockState(pos.offset(dir)).getMaterial().isReplaceable()) {
                 directions.add(dir);
             }
         }
@@ -1680,7 +1672,7 @@ public class VectorSurround extends Module {
         int i = 0;
 
         for (BlockPos pos : getSurround()) {
-            Block block = VectorUtils.getBlock(position.add(pos));
+            Block block = mc.world.getBlockState(position.add(pos)).getBlock();
             if (block != null && isSurroundBlock(block)) i++;
         }
 
@@ -1691,7 +1683,7 @@ public class VectorSurround extends Module {
         int i = 0;
 
         for (BlockPos pos : getSurround()) {
-            Block block = VectorUtils.getBlock(position.add(pos));
+            Block block = mc.world.getBlockState(position.add(pos)).getBlock();
             if (block != null && block.getBlastResistance() >= 600.0F) i++;
         }
 
@@ -1702,7 +1694,7 @@ public class VectorSurround extends Module {
         int i = 0;
 
         for (BlockPos pos : getSurround()) {
-            Block block = VectorUtils.getBlock(position.add(pos));
+            Block block = mc.world.getBlockState(position.add(pos)).getBlock();
             if (block != null && isSurroundBlock(block)) i++;
         }
 
@@ -1752,7 +1744,7 @@ public class VectorSurround extends Module {
 
     // Placing
 
-    private boolean place(BlockPos pos, FindItemResult item, boolean rotate, boolean swingHand, boolean checkEntities, boolean randomOffset) {
+    private boolean place(BlockPos pos, FindItemResult item, boolean rotate, boolean swingHand, boolean checkEntities) {
         placedMap.putIfAbsent(pos, isInSurround(pos) ? innerDelay.get() : outerDelay.get());
 
         if (!bypass.get() || bypass.get() && placedMap.containsKey(pos) && (placedMap.get(pos) >= innerDelay.get() && isInSurround(pos) || placedMap.get(pos) >= outerDelay.get() && !isInSurround(pos))) {
@@ -1761,9 +1753,9 @@ public class VectorSurround extends Module {
             if (packetPlace.get()) {
                 if (item != null && item.found()) {
                     if (item.isOffhand()) {
-                        return place(pos, Hand.OFF_HAND, mc.player.getInventory().selectedSlot, rotate, swingHand, checkEntities, randomOffset);
+                        return place(pos, Hand.OFF_HAND, mc.player.getInventory().selectedSlot, rotate, swingHand, checkEntities);
                     } else if (item.isHotbar()) {
-                        return item.isHotbar() && place(pos, Hand.MAIN_HAND, item.getSlot(), rotate, swingHand, checkEntities, randomOffset);
+                        return item.isHotbar() && place(pos, Hand.MAIN_HAND, item.getSlot(), rotate, swingHand, checkEntities);
                     } else {
                         return false;
                     }
@@ -1771,31 +1763,33 @@ public class VectorSurround extends Module {
                     return false;
                 }
             } else {
-                return VectorUtils.place(pos, item, rotate, 100, swingHand, checkEntities, true, randomOffset);
+                return VectorUtils.place(pos, item, rotate, 100, swingHand, checkEntities, true);
             }
         } else {
             return false;
         }
     }
 
-    private boolean place(BlockPos pos, Hand hand, int slot, boolean rotate, boolean swingHand, boolean checkEntities, boolean offsetRandom) {
+    private boolean place(BlockPos pos, Hand hand, int slot, boolean rotate, boolean swingHand, boolean checkEntities) {
         if (slot >= 0 && slot <= 8 || slot == 45) {
             if (!canPlace(pos, checkEntities)) {
                 return false;
             } else {
-                Vec3d hitPos = getHitPos(pos, offsetRandom);
-                BlockPos neighbour = getNeighbourPos(pos);
+                Vec3d hitPos = getHitPos(pos);
                 Direction side = getSide(pos);
+                BlockPos neighbour = getNeighbourPos(pos);
+
+                boolean sneak = !mc.player.isSneaking() && VectorUtils.isClickable(mc.world.getBlockState(neighbour).getBlock());
 
                 if (rotate) {
                     Rotations.rotate(Rotations.getYaw(hitPos), Rotations.getPitch(hitPos), 100, () -> {
                         VectorUtils.swap(slot, swapBack.get());
-                        place(new BlockHitResult(hitPos, side, neighbour, false), hand, swingHand);
+                        place(new BlockHitResult(hitPos, side, neighbour, false), hand, swingHand, sneak);
                         if (swapBack.get()) VectorUtils.swapBack();
                     });
                 } else {
                     VectorUtils.swap(slot, swapBack.get());
-                    place(new BlockHitResult(hitPos, side, neighbour, false), hand, swingHand);
+                    place(new BlockHitResult(hitPos, side, neighbour, false), hand, swingHand, sneak);
                     if (swapBack.get()) VectorUtils.swapBack();
                 }
 
@@ -1806,14 +1800,22 @@ public class VectorSurround extends Module {
         }
     }
 
-    private void place(BlockHitResult result, Hand hand, boolean swing) {
+    private void place(BlockHitResult result, Hand hand, boolean swing, boolean sneak) {
         if (hand != null && result != null && mc.world.getWorldBorder().contains(result.getBlockPos()) && mc.player.getStackInHand(hand).getItem() instanceof BlockItem) {
+            if (sneak) {
+                mc.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(mc.player, ClientCommandC2SPacket.Mode.PRESS_SHIFT_KEY));
+            }
+
             mc.getNetworkHandler().sendPacket(new PlayerInteractBlockC2SPacket(hand, result));
 
             Block block = ((BlockItem) mc.player.getStackInHand(hand).getItem()).getBlock();
             BlockSoundGroup group = block.getSoundGroup(block.getDefaultState());
 
-            mc.world.playSound(result.getBlockPos(), group.getPlaceSound(), SoundCategory.BLOCKS, group.volume, group.pitch, true);
+            mc.getSoundManager().play(new PositionedSoundInstance(group.getPlaceSound(), SoundCategory.BLOCKS, (group.getVolume() + 1.0F) / 8.0F, group.getPitch() * 0.5F, result.getBlockPos()));
+
+            if (sneak) {
+                mc.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(mc.player, ClientCommandC2SPacket.Mode.RELEASE_SHIFT_KEY));
+            }
 
             if (swing) {
                 mc.player.swingHand(hand);
@@ -1823,77 +1825,72 @@ public class VectorSurround extends Module {
         }
     }
 
-    private Vec3d getHitPos(BlockPos pos, boolean offsetRandom) {
-        double px = random.nextDouble(0.9) + 0.5;
-        double py = random.nextDouble(0.9) + 0.5;
-        double pz = random.nextDouble(0.9) + 0.5;
-
-        double x = offsetRandom ? px : 0.5;
-        double y = offsetRandom ? py : 0.5;
-        double z = offsetRandom ? pz : 0.5;
-
-        Vec3d hitPos = new Vec3d(pos.getX() + x, pos.getY() + y, pos.getZ() + z);
+    private Vec3d getHitPos(BlockPos pos) {
         Direction side = getPlaceSide(pos);
+        Vec3d hitPos = new Vec3d(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
 
-        if (side != null) hitPos.add(side.getOffsetX() * 0.5D, side.getOffsetY() * 0.5D, side.getOffsetZ() * 0.5D);
+        if (side != null) {
+            side = side.getOpposite();
+
+            hitPos = hitPos.add(
+                side.getOffsetX() == 0 ? 0 : (side.getOffsetX() > 0 ? 0.5 : -0.5),
+                side.getOffsetY() == 0 ? 0 : (side.getOffsetY() > 0 ? 0.5 : -0.5),
+                side.getOffsetZ() == 0 ? 0 : (side.getOffsetZ() > 0 ? 0.5 : -0.5)
+            );
+        }
 
         return hitPos;
     }
 
-    private BlockPos getNeighbourPos(BlockPos blockPos) {
-        Direction side = getPlaceSide(blockPos);
+    private BlockPos getNeighbourPos(BlockPos pos) {
+        Direction side = getPlaceSide(pos);
         BlockPos neighbour;
 
         if (side == null) {
-            neighbour = blockPos;
+            neighbour = pos;
         } else {
-            neighbour = blockPos.offset(side.getOpposite());
+            neighbour = pos.offset(side.getOpposite());
         }
 
         return neighbour;
     }
 
-    private Direction getSide(BlockPos blockPos) {
-        Direction side = getPlaceSide(blockPos);
+    private Direction getSide(BlockPos pos) {
+        Direction side = getPlaceSide(pos);
 
         return side == null ? Direction.UP : side;
     }
 
-    private boolean canPlace(BlockPos pos, boolean checkEntities) {
-        if (pos == null || mc.world == null || !VectorUtils.getBlockState(pos).getMaterial().isReplaceable()) return false;
-
-        return checkEntities ? mc.world.canPlace(Blocks.OBSIDIAN.getDefaultState(), pos, ShapeContext.absent()) : VectorUtils.getBlockState(pos).getMaterial().isReplaceable();
-    }
-
-    private boolean canBreak(BlockPos pos) {
-        if (pos == null) return false;
-        return !blocks.get().contains(VectorUtils.getBlock(pos))
-            && VectorUtils.distance(mc.player.getPos(), Vec3d.ofCenter(pos)) <= breakRange.get()
-            && VectorUtils.getBlockState(pos).getHardness(mc.world, pos) > 0
-            && !VectorUtils.getBlockState(pos).getOutlineShape(mc.world, pos).isEmpty();
-    }
-
-    private boolean checkHardness(BlockPos pos) {
-        ItemStack stack = mc.player.getMainHandStack();
-        float hardness = VectorUtils.getBlock(pos).getHardness();
-
-        return stack != null && stack.getItem() instanceof ToolItem && VectorUtils.getBlock(pos).getHardness() > 0
-            && ((hardness / stack.getItem().getMiningSpeedMultiplier(mc.player.getMainHandStack(), VectorUtils.getBlockState(pos))) <= maxHardness.get()
-            || hardness <= maxHardness.get());
-    }
-
-    private Direction getPlaceSide(BlockPos blockPos) {
+    private Direction getPlaceSide(BlockPos pos) {
         for (Direction side : Direction.values()) {
-            BlockPos neighbor = blockPos.offset(side);
-            Direction opposite = side.getOpposite();
-            BlockState state = VectorUtils.getBlockState(neighbor);
+            BlockPos neighbor = pos.offset(side);
+            Direction direction = side.getOpposite();
+            BlockState state = mc.world.getBlockState(neighbor);
 
-            if (!state.isAir() && !VectorUtils.isClickable(state.getBlock()) && state.getFluidState().isEmpty()) {
-                return opposite;
+            if (!state.getMaterial().isReplaceable() && state.getFluidState().isEmpty() && !VectorUtils.isClickable(mc.world.getBlockState(pos.offset(direction)).getBlock())) {
+                return direction;
             }
         }
 
         return null;
+    }
+
+    private boolean canPlace(BlockPos pos, boolean checkEntities) {
+        if (pos == null || mc.world == null || !mc.world.getBlockState(pos).getMaterial().isReplaceable()) return false;
+
+        return !checkEntities || mc.world.canPlace(Blocks.OBSIDIAN.getDefaultState(), pos, ShapeContext.absent());
+    }
+
+    private boolean canBreak(BlockPos pos) {
+        if (pos == null) return false;
+        return !blocks.get().contains(mc.world.getBlockState(pos).getBlock())
+            && VectorUtils.distance(mc.player.getPos(), Vec3d.ofCenter(pos)) <= breakRange.get()
+            && mc.world.getBlockState(pos).getHardness(mc.world, pos) > 0
+            && !mc.world.getBlockState(pos).getOutlineShape(mc.world, pos).isEmpty();
+    }
+
+    private boolean checkHardness(BlockPos pos) {
+        return mc.world.getBlockState(pos).getHardness(mc.world, pos) / mc.player.getMainHandStack().getMiningSpeedMultiplier(mc.world.getBlockState(pos)) <= maxHardness.get();
     }
 
     // Constants

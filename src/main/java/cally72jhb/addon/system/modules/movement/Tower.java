@@ -16,10 +16,15 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.FallingBlock;
+import net.minecraft.client.sound.PositionedSoundInstance;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
+import net.minecraft.network.packet.c2s.play.ClientCommandC2SPacket;
 import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
+import net.minecraft.network.packet.c2s.play.PlayerInteractBlockC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
+import net.minecraft.sound.BlockSoundGroup;
+import net.minecraft.sound.SoundCategory;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
@@ -27,7 +32,6 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.shape.VoxelShape;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class Tower extends Module {
@@ -38,7 +42,7 @@ public class Tower extends Module {
     private final Setting<List<Block>> blocks = sgGeneral.add(new BlockListSetting.Builder()
         .name("blocks")
         .description("Selected blocks.")
-        .defaultValue(new ArrayList<>())
+        .defaultValue(List.of())
         .filter(this::blockFilter)
         .build()
     );
@@ -256,9 +260,10 @@ public class Tower extends Module {
             }
         } else if (mode.get() == Mode.Normal && !jump.get() || (mc.options.jumpKey.isPressed() && jump.get())) {
             Vec3d velocity = mc.player.getVelocity();
+            BlockPos pos = mc.player.getBlockPos().down();
 
             if (mc.player.isOnGround()) mc.player.setVelocity(velocity.x * 0.3, up.get() / 100, mc.player.getVelocity().z * 0.3);
-            if (VectorUtils.getCollision(mc.player.getBlockPos().down()) == null || VectorUtils.getCollision(mc.player.getBlockPos().down()).isEmpty()) {
+            if (mc.world.getBlockState(pos).getCollisionShape(mc.world, pos) == null || mc.world.getBlockState(pos).getCollisionShape(mc.world, pos).isEmpty()) {
                 mc.player.setVelocity(velocity.x * 0.3, -(down.get() / 100), velocity.z * 0.3);
             }
         } else if (mode.get() == Mode.PacketJump && !jump.get() || (mc.options.jumpKey.isPressed() && jump.get())) {
@@ -303,7 +308,8 @@ public class Tower extends Module {
 
         if (packet.get() && !jump.get() || (mc.options.jumpKey.isPressed() && jump.get())) {
             if (!mc.player.isOnGround()) {
-                VoxelShape shape = VectorUtils.getCollision(new BlockPos(mc.player.getPos().x, (int) Math.round(mc.player.getPos().y), mc.player.getPos().z).down());
+                BlockPos pos = new BlockPos(mc.player.getPos().x, (int) Math.round(mc.player.getPos().y), mc.player.getPos().z).down();
+                VoxelShape shape = mc.world.getBlockState(pos).getCollisionShape(mc.world, pos);
 
                 if (shape == null || shape.isEmpty() && downPacket.get()) {
                     mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), Math.floor(mc.player.getY()), mc.player.getZ(), true));
@@ -330,7 +336,7 @@ public class Tower extends Module {
     private void onMove(PlayerMoveEvent event) {
         BlockPos pos = mc.player.getBlockPos();
 
-        if (!Block.isShapeFullCube(VectorUtils.getBlockState(pos).getCollisionShape(mc.world, pos))) return;
+        if (!Block.isShapeFullCube(mc.world.getBlockState(pos).getCollisionShape(mc.world, pos))) return;
         if (stopmove.get() && mc.player.prevY < mc.player.getY()) {
             ((IVec3d) event.movement).setY(-1);
         }
@@ -338,14 +344,14 @@ public class Tower extends Module {
 
     private boolean validBlock(BlockPos pos) {
         if (!safe.get()) return false;
-        Block block = VectorUtils.getBlock(pos);
+        Block block = mc.world.getBlockState(pos).getBlock();
         if (block == Blocks.BEDROCK) return false;
         if (blocksFilter.get() == ListMode.Blacklist && blocks.get().contains(block)) return false;
         else if (blocksFilter.get() == ListMode.Whitelist && !blocks.get().contains(block)) return false;
-        if (VectorUtils.getBlockState(pos).isAir()) return false;
-        if (VectorUtils.getBlock(pos) == Blocks.ANVIL) return false;
+        if (mc.world.getBlockState(pos).isAir()) return false;
+        if (mc.world.getBlockState(pos).getBlock() == Blocks.ANVIL) return false;
 
-        return VectorUtils.getBlockState(pos).getCollisionShape(mc.world, pos).isEmpty();
+        return mc.world.getBlockState(pos).getCollisionShape(mc.world, pos).isEmpty();
     }
 
     private boolean validItem(ItemStack itemStack, BlockPos pos) {
@@ -404,28 +410,45 @@ public class Tower extends Module {
     private void place(BlockPos pos, FindItemResult item) {
         InvUtils.swap(item.getSlot(), true);
 
-        if (shouldSneak(pos)) mc.player.setSneaking(true);
+        boolean sneak = !mc.player.isSneaking() && shouldSneak(pos);
 
-        mc.interactionManager.interactBlock(mc.player, mc.world, Hand.MAIN_HAND, new BlockHitResult(Utils.vec3d(pos), Direction.UP, pos, false));
+        if (sneak) {
+            mc.player.setSneaking(true);
+            mc.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(mc.player, ClientCommandC2SPacket.Mode.PRESS_SHIFT_KEY));
+        }
+
+        mc.getNetworkHandler().sendPacket(new PlayerInteractBlockC2SPacket(item.getHand(), new BlockHitResult(Utils.vec3d(pos).add(0, 0.5, 0), Direction.UP, pos, false)));
         mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
+
+        Block block = ((BlockItem) mc.player.getStackInHand(item.getHand()).getItem()).getBlock();
+        BlockSoundGroup group = block.getSoundGroup(block.getDefaultState());
+
+        mc.getSoundManager().play(new PositionedSoundInstance(group.getPlaceSound(), SoundCategory.BLOCKS, (group.getVolume() + 1.0F) / 8.0F, group.getPitch() * 0.5F, pos));
+
+        if (sneak) {
+            mc.player.setSneaking(false);
+            mc.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(mc.player, ClientCommandC2SPacket.Mode.RELEASE_SHIFT_KEY));
+        }
 
         InvUtils.swapBack();
     }
 
     private boolean shouldSneak(BlockPos pos) {
-        return VectorUtils.getBlock(pos) == Blocks.ANVIL || VectorUtils.getBlock(pos) == Blocks.CRAFTING_TABLE || VectorUtils.getBlock(pos.down()) == Blocks.ANVIL || VectorUtils.getBlock(pos.down()) == Blocks.CRAFTING_TABLE;
+        return VectorUtils.isClickable(mc.world.getBlockState(pos).getBlock());
     }
 
     private boolean checkHead(BlockPos blockPos) {
         BlockPos.Mutable pos = new BlockPos(blockPos).mutableCopy();
-        BlockState blockState1 = mc.world.getBlockState(pos.set(mc.player.getX() + .3, mc.player.getY() + 2.3, mc.player.getZ() + .3));
-        BlockState blockState2 = mc.world.getBlockState(pos.set(mc.player.getX() + .3, mc.player.getY() + 2.3, mc.player.getZ() - .3));
-        BlockState blockState3 = mc.world.getBlockState(pos.set(mc.player.getX() - .3, mc.player.getY() + 2.3, mc.player.getZ() - .3));
-        BlockState blockState4 = mc.world.getBlockState(pos.set(mc.player.getX() - .3, mc.player.getY() + 2.3, mc.player.getZ() + .3));
-        boolean air1 = blockState1.getMaterial().isReplaceable();
-        boolean air2 = blockState2.getMaterial().isReplaceable();
-        boolean air3 = blockState3.getMaterial().isReplaceable();
-        boolean air4 = blockState4.getMaterial().isReplaceable();
+        BlockState state1 = mc.world.getBlockState(pos.set(mc.player.getX() + 0.3, mc.player.getY() + 2.3, mc.player.getZ() + 0.3));
+        BlockState state2 = mc.world.getBlockState(pos.set(mc.player.getX() + 0.3, mc.player.getY() + 2.3, mc.player.getZ() - 0.3));
+        BlockState state3 = mc.world.getBlockState(pos.set(mc.player.getX() - 0.3, mc.player.getY() + 2.3, mc.player.getZ() - 0.3));
+        BlockState state4 = mc.world.getBlockState(pos.set(mc.player.getX() - 0.3, mc.player.getY() + 2.3, mc.player.getZ() + 0.3));
+
+        boolean air1 = state1.getMaterial().isReplaceable();
+        boolean air2 = state2.getMaterial().isReplaceable();
+        boolean air3 = state3.getMaterial().isReplaceable();
+        boolean air4 = state4.getMaterial().isReplaceable();
+
         return air1 & air2 & air3 & air4;
     }
 

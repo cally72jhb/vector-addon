@@ -4,9 +4,7 @@ import cally72jhb.addon.VectorAddon;
 import cally72jhb.addon.utils.config.VectorConfig;
 import cally72jhb.addon.utils.misc.FindItemResult;
 import cally72jhb.addon.utils.misc.Stats;
-import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.mixininterface.IClientPlayerInteractionManager;
-import meteordevelopment.meteorclient.mixininterface.IVec3d;
 import meteordevelopment.meteorclient.utils.player.ChatUtils;
 import meteordevelopment.meteorclient.utils.player.InvUtils;
 import meteordevelopment.meteorclient.utils.player.Rotations;
@@ -14,15 +12,19 @@ import meteordevelopment.meteorclient.utils.player.SlotUtils;
 import net.minecraft.block.*;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.sound.PositionedSoundInstance;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.network.packet.c2s.play.ClientCommandC2SPacket;
 import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
+import net.minecraft.network.packet.c2s.play.PlayerInteractBlockC2SPacket;
+import net.minecraft.sound.BlockSoundGroup;
+import net.minecraft.sound.SoundCategory;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
@@ -30,12 +32,10 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.World;
 
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Random;
 import java.util.function.Predicate;
 
 public class VectorUtils {
@@ -71,6 +71,7 @@ public class VectorUtils {
         double dX = x2 - x1;
         double dY = y2 - y1;
         double dZ = z2 - z1;
+
         return Math.sqrt(dX * dX + dY * dY + dZ * dZ);
     }
 
@@ -78,122 +79,73 @@ public class VectorUtils {
         double dX = vec2.x - vec1.x;
         double dY = vec2.y - vec1.y;
         double dZ = vec2.z - vec1.z;
+
         return Math.sqrt(dX * dX + dY * dY + dZ * dZ);
     }
 
-    public static double distance(BlockPos block1, BlockPos block2) {
-        double dX = block2.getX() - block1.getX();
-        double dY = block2.getY() - block1.getY();
-        double dZ = block2.getZ() - block1.getZ();
-        return Math.sqrt(dX * dX + dY * dY + dZ * dZ);
-    }
+    public static double distance(BlockPos pos1, BlockPos pos2) {
+        double dX = pos2.getX() - pos1.getX();
+        double dY = pos2.getY() - pos1.getY();
+        double dZ = pos2.getZ() - pos1.getZ();
 
-    public static double distanceXZ(BlockPos pos1, BlockPos pos2) {
-        double d = pos1.getX() - pos2.getX();
-        double f = pos1.getZ() - pos2.getZ();
-        return MathHelper.sqrt((float) (d * d + f * f));
+        return Math.sqrt(dX * dX + dY * dY + dZ * dZ);
     }
 
     public static double distanceXZ(Vec3d pos1, Vec3d pos2) {
-        double d = pos1.getX() - pos2.getX();
-        double f = pos1.getZ() - pos2.getZ();
-        return MathHelper.sqrt((float) (d * d + f * f));
+        double dX = pos1.getX() - pos2.getX();
+        double dZ = pos1.getZ() - pos2.getZ();
+
+        return MathHelper.sqrt((float) (dX * dX + dZ * dZ));
     }
 
     public static double distanceXZ(double x1, double x2, double z1, double z2) {
-        double d = x1 - x2;
-        double f = z1 - z2;
-        return MathHelper.sqrt((float) (d * d + f * f));
+        double dX = x1 - x2;
+        double dZ = z1 - z2;
+
+        return MathHelper.sqrt((float) (dX * dX + dZ * dZ));
     }
 
-    public static double distanceY(Vec3d vec1, Vec3d vec2) {
-        double d = vec2.y - vec1.y;
-        if (d < 0) d *= -1;
-
-        return d;
+    public static double distanceY(Vec3d pos1, Vec3d pos2) {
+        return Math.abs(pos2.y - pos1.y);
     }
 
     public static double distanceY(double y1, double y2) {
-        return y1 - y2;
+        return Math.abs(y1 - y2);
     }
 
     // Blocks
 
-    public static Block getBlock(BlockPos pos) {
-        if (pos == null) return null;
-        return mc.world.getBlockState(pos).getBlock();
-    }
-
-    public static BlockState getBlockState(BlockPos pos) {
-        if (pos == null) return null;
-        return mc.world.getBlockState(pos);
-    }
-
-    public static VoxelShape getCollision(BlockPos pos) {
-        return getBlockState(pos).getCollisionShape(mc.world, pos);
-    }
-
-    public static boolean isSolid(BlockPos pos) {
-        return getBlockState(pos).isSolidBlock(mc.world, pos);
-    }
-
-    private static final Vec3d hitPos = new Vec3d(0.0D, 0.0D, 0.0D);
-
-    public static boolean place(BlockPos blockPos, FindItemResult findItemResult, int rotationPriority) {
-        return place(blockPos, findItemResult, rotationPriority, true);
-    }
-
-    public static boolean place(BlockPos blockPos, FindItemResult findItemResult, boolean rotate, int rotationPriority) {
-        return place(blockPos, findItemResult, rotate, rotationPriority, true);
-    }
-
-    public static boolean place(BlockPos blockPos, FindItemResult findItemResult, boolean rotate, int rotationPriority, boolean checkEntities) {
-        return place(blockPos, findItemResult, rotate, rotationPriority, true, checkEntities);
-    }
-
-    public static boolean place(BlockPos blockPos, FindItemResult findItemResult, int rotationPriority, boolean checkEntities) {
-        return place(blockPos, findItemResult, true, rotationPriority, true, checkEntities);
-    }
-
-    public static boolean place(BlockPos blockPos, FindItemResult findItemResult, boolean rotate, int rotationPriority, boolean swingHand, boolean checkEntities) {
-        return place(blockPos, findItemResult, rotate, rotationPriority, swingHand, checkEntities, true, false);
-    }
-
-    public static boolean place(BlockPos blockPos, FindItemResult findItemResult, boolean rotate, int rotationPriority, boolean swingHand, boolean checkEntities, boolean swapBack) {
-        return place(blockPos, findItemResult, rotate, rotationPriority, swingHand, checkEntities, swapBack, false);
-    }
-
-    public static boolean place(BlockPos blockPos, FindItemResult findItemResult, boolean rotate, int rotationPriority, boolean swingHand, boolean checkEntities, boolean swapBack, boolean random) {
-        if (findItemResult.isOffhand()) {
-            return place(blockPos, Hand.OFF_HAND, mc.player.getInventory().selectedSlot, rotate, rotationPriority, swingHand, checkEntities, swapBack, random);
+    public static boolean place(BlockPos pos, FindItemResult item, boolean rotate, int rotationPriority, boolean swingHand, boolean checkEntities, boolean swapBack) {
+        if (item.isOffhand()) {
+            return place(pos, Hand.OFF_HAND, mc.player.getInventory().selectedSlot, rotate, rotationPriority, swingHand, checkEntities, swapBack);
         } else {
-            return findItemResult.isHotbar() && place(blockPos, Hand.MAIN_HAND, findItemResult.getSlot(), rotate, rotationPriority, swingHand, checkEntities, swapBack, random);
+            return item.isHotbar() && place(pos, Hand.MAIN_HAND, item.getSlot(), rotate, rotationPriority, swingHand, checkEntities, swapBack);
         }
     }
 
-    public static boolean place(BlockPos blockPos, Hand hand, int slot, boolean rotate, int rotationPriority, boolean swingHand, boolean checkEntities, boolean swapBack, boolean offsetRandom) {
+    public static boolean place(BlockPos pos, Hand hand, int slot, boolean rotate, int rotationPriority, boolean swingHand, boolean checkEntities, boolean swapBack) {
         if (slot >= 0 && slot <= 8 || slot == 45) {
-            if (!canPlace(blockPos, checkEntities)) {
+            if (!canPlace(pos, checkEntities)) {
                 return false;
             } else {
-                Vec3d vec = getHitPos(blockPos, offsetRandom);
+                Vec3d hitPos = getHitPos(pos);
+                Direction side = getSide(pos);
+                BlockPos neighbour = getNeighbourPos(pos);
 
-                ((IVec3d) hitPos).set(vec.x, vec.y, vec.z);
-                BlockPos neighbour = getNeighbourPos(blockPos);
-                Direction side = getSide(blockPos);
+                boolean sneak = !mc.player.isSneaking() && isClickable(mc.world.getBlockState(neighbour).getBlock());
 
                 if (rotate) {
                     Rotations.rotate(Rotations.getYaw(hitPos), Rotations.getPitch(hitPos), rotationPriority, () -> {
                         InvUtils.swap(slot, swapBack);
 
-                        place(new BlockHitResult(hitPos, side, neighbour, false), hand, swingHand);
+                        place(new BlockHitResult(hitPos, side, neighbour, false), hand, swingHand, sneak);
 
                         if (swapBack) InvUtils.swapBack();
                     });
                 } else {
                     InvUtils.swap(slot, swapBack);
 
-                    place(new BlockHitResult(hitPos, side, neighbour, false), hand, swingHand);
+                    place(new BlockHitResult(hitPos, side, neighbour, false), hand, swingHand, sneak);
 
                     if (swapBack) InvUtils.swapBack();
                 }
@@ -205,64 +157,83 @@ public class VectorUtils {
         }
     }
 
-    public static void place(BlockHitResult blockHitResult, Hand hand, boolean swing) {
-        if (hand != null && blockHitResult != null && mc.world.getWorldBorder().contains(blockHitResult.getBlockPos()) && mc.player.getStackInHand(hand).getItem() instanceof BlockItem) {
-            boolean wasSneaking = mc.player.input.sneaking;
-            mc.player.input.sneaking = false;
-
-            ActionResult result = mc.interactionManager.interactBlock(mc.player, mc.world, hand, blockHitResult);
-
-            if (result.shouldSwingHand()) {
-                if (swing) mc.player.swingHand(hand);
-                else mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(hand));
+    public static void place(BlockHitResult result, Hand hand, boolean swing, boolean sneak) {
+        if (hand != null && result != null && mc.world.getWorldBorder().contains(result.getBlockPos()) && mc.player.getStackInHand(hand).getItem() instanceof BlockItem) {
+            if (sneak) {
+                mc.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(mc.player, ClientCommandC2SPacket.Mode.PRESS_SHIFT_KEY));
             }
 
-            mc.player.input.sneaking = wasSneaking;
+            mc.getNetworkHandler().sendPacket(new PlayerInteractBlockC2SPacket(hand, result));
+
+            Block block = ((BlockItem) mc.player.getStackInHand(hand).getItem()).getBlock();
+            BlockSoundGroup group = block.getSoundGroup(block.getDefaultState());
+
+            mc.getSoundManager().play(new PositionedSoundInstance(group.getPlaceSound(), SoundCategory.BLOCKS, (group.getVolume() + 1.0F) / 8.0F, group.getPitch() * 0.5F, result.getBlockPos()));
+
+            if (sneak) {
+                mc.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(mc.player, ClientCommandC2SPacket.Mode.RELEASE_SHIFT_KEY));
+            }
+
+            if (swing) {
+                mc.player.swingHand(hand);
+            } else {
+                mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(hand));
+            }
         }
     }
 
-    public static Vec3d getHitPos(BlockPos blockPos, boolean offsetRandom) {
-        Random random = new Random();
-
-        double px = random.nextDouble(0.9) + 0.5;
-        double py = random.nextDouble(0.9) + 0.5;
-        double pz = random.nextDouble(0.9) + 0.5;
-
-        double x = offsetRandom ? px : 0.5;
-        double y = offsetRandom ? py : 0.5;
-        double z = offsetRandom ? pz : 0.5;
-
-        ((IVec3d) hitPos).set(blockPos.getX() + x, (double) blockPos.getY() + y, (double) blockPos.getZ() + z);
-        Direction side = getPlaceSide(blockPos);
+    public static Vec3d getHitPos(BlockPos pos) {
+        Direction side = getPlaceSide(pos);
+        Vec3d hitPos = new Vec3d(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
 
         if (side != null) {
-            hitPos.add((double) side.getOffsetX() * 0.5D, (double) side.getOffsetY() * 0.5D, (double) side.getOffsetZ() * 0.5D);
+            side = side.getOpposite();
+
+            hitPos = hitPos.add(
+                side.getOffsetX() == 0 ? 0 : (side.getOffsetX() > 0 ? 0.5 : -0.5),
+                side.getOffsetY() == 0 ? 0 : (side.getOffsetY() > 0 ? 0.5 : -0.5),
+                side.getOffsetZ() == 0 ? 0 : (side.getOffsetZ() > 0 ? 0.5 : -0.5)
+            );
         }
 
         return hitPos;
     }
 
-    public static BlockPos getNeighbourPos(BlockPos blockPos) {
-        Direction side = getPlaceSide(blockPos);
+    public static BlockPos getNeighbourPos(BlockPos pos) {
+        Direction side = getPlaceSide(pos);
         BlockPos neighbour;
 
         if (side == null) {
-            neighbour = blockPos;
+            neighbour = pos;
         } else {
-            neighbour = blockPos.offset(side.getOpposite());
+            neighbour = pos.offset(side.getOpposite());
         }
 
         return neighbour;
     }
 
-    public static Direction getSide(BlockPos blockPos) {
-        Direction side = getPlaceSide(blockPos);
+    public static Direction getSide(BlockPos pos) {
+        Direction side = getPlaceSide(pos);
 
         return side == null ? Direction.UP : side;
     }
 
-    public static boolean canPlace(BlockPos pos) {
-        return canPlace(pos, true);
+    public static Direction getPlaceSide(BlockPos pos) {
+        for (Direction side : Direction.values()) {
+            BlockPos neighbor = pos.offset(side);
+            Direction direction = side.getOpposite();
+            BlockState state = mc.world.getBlockState(neighbor);
+
+            if (!state.getMaterial().isReplaceable() && state.getFluidState().isEmpty() && !VectorUtils.isClickable(mc.world.getBlockState(pos.offset(direction)).getBlock())) {
+                return direction;
+            }
+        }
+
+        return null;
+    }
+
+    public static boolean isClickable(Block block) {
+        return block instanceof CraftingTableBlock || block instanceof AnvilBlock || block instanceof AbstractButtonBlock || block instanceof AbstractPressurePlateBlock || block instanceof BlockWithEntity || block instanceof BedBlock || block instanceof FenceGateBlock || block instanceof DoorBlock || block instanceof NoteBlock || block instanceof TrapdoorBlock;
     }
 
     public static boolean canPlace(BlockPos pos, boolean checkEntities) {
@@ -272,30 +243,9 @@ public class VectorUtils {
     public static boolean canPlace(BlockPos pos, BlockState state, boolean checkEntities) {
         if (pos == null || mc.world == null) return false;
         if (!World.isValid(pos)) return false;
-        if (!getBlockState(pos).getMaterial().isReplaceable()) return false;
+        if (!mc.world.getBlockState(pos).getMaterial().isReplaceable()) return false;
 
-        return checkEntities ? mc.world.canPlace(state, pos, ShapeContext.absent()) : getBlockState(pos).getMaterial().isReplaceable();
-    }
-
-    public static Direction getPlaceSide(BlockPos blockPos) {
-        Direction[] var1 = Direction.values();
-        int var2 = var1.length;
-
-        for(int var3 = 0; var3 < var2; ++var3) {
-            Direction side = var1[var3];
-            BlockPos neighbor = blockPos.offset(side);
-            Direction side2 = side.getOpposite();
-            BlockState state = MeteorClient.mc.world.getBlockState(neighbor);
-            if (!state.isAir() && !isClickable(state.getBlock()) && state.getFluidState().isEmpty()) {
-                return side2;
-            }
-        }
-
-        return null;
-    }
-
-    public static boolean isClickable(Block block) {
-        return block instanceof CraftingTableBlock || block instanceof AnvilBlock || block instanceof AbstractButtonBlock || block instanceof AbstractPressurePlateBlock || block instanceof BlockWithEntity || block instanceof BedBlock || block instanceof FenceGateBlock || block instanceof DoorBlock || block instanceof NoteBlock || block instanceof TrapdoorBlock;
+        return !checkEntities || mc.world.canPlace(state, pos, ShapeContext.absent());
     }
 
     public static ArrayList<BlockPos> getPositionsAroundPlayer(double range) {
@@ -367,11 +317,11 @@ public class VectorUtils {
 
     public static FindItemResult findInHotbar(Predicate<ItemStack> isGood) {
         if (isGood.test(mc.player.getOffHandStack())) {
-            return new FindItemResult(SlotUtils.OFFHAND, mc.player.getOffHandStack().getCount());
+            return new FindItemResult(SlotUtils.OFFHAND);
         }
 
         if (isGood.test(mc.player.getMainHandStack())) {
-            return new FindItemResult(mc.player.getInventory().selectedSlot, mc.player.getMainHandStack().getCount());
+            return new FindItemResult(mc.player.getInventory().selectedSlot);
         }
 
         return find(isGood, 0, 8);
@@ -391,18 +341,17 @@ public class VectorUtils {
     }
 
     public static FindItemResult find(Predicate<ItemStack> isGood, int start, int end) {
-        int slot = -1, count = 0;
+        int slot = -1;
 
         for (int i = start; i <= end; i++) {
             ItemStack stack = mc.player.getInventory().getStack(i);
 
             if (isGood.test(stack)) {
                 if (slot == -1) slot = i;
-                count += stack.getCount();
             }
         }
 
-        return new FindItemResult(slot, count);
+        return new FindItemResult(slot);
     }
 
     public static boolean swap(int slot, boolean swapBack) {

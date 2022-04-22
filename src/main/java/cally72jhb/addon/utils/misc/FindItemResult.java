@@ -1,24 +1,18 @@
 package cally72jhb.addon.utils.misc;
 
-import meteordevelopment.meteorclient.utils.player.SlotUtils;
 import net.minecraft.util.Hand;
 
 import static meteordevelopment.meteorclient.MeteorClient.mc;
 
 public class FindItemResult {
-    private final int slot, count;
+    private final int slot;
 
-    public FindItemResult(int slot, int count) {
+    public FindItemResult(int slot) {
         this.slot = slot;
-        this.count = count;
     }
 
     public int getSlot() {
         return slot;
-    }
-
-    public int getCount() {
-        return count;
     }
 
     public boolean found() {
@@ -26,7 +20,7 @@ public class FindItemResult {
     }
 
     public Hand getHand() {
-        if (slot == SlotUtils.OFFHAND) return Hand.OFF_HAND;
+        if (slot == 45) return Hand.OFF_HAND;
         else if (slot == mc.player.getInventory().selectedSlot) return Hand.MAIN_HAND;
         return null;
     }
@@ -40,14 +34,14 @@ public class FindItemResult {
     }
 
     public boolean isHotbar() {
-        return slot >= SlotUtils.HOTBAR_START && slot <= SlotUtils.HOTBAR_END;
+        return slot >= 0 && slot <= 8;
     }
 
     public boolean isMain() {
-        return slot >= SlotUtils.MAIN_START && slot <= SlotUtils.MAIN_END;
+        return slot >= 9 && slot <= 35;
     }
 
     public boolean isArmor() {
-        return slot >= SlotUtils.ARMOR_START && slot <= SlotUtils.ARMOR_END;
+        return slot >= 36 && slot <= 39;
     }
 }

@@ -3,6 +3,8 @@
   "package": "cally72jhb.addon.mixin",
   "compatibilityLevel": "JAVA_16",
   "client": [
+    "AbstractBlockMixin",
+    "AbstractBlockStateMixin",
     "ClientPlayerEntityMixin",
     "EmitterParticleMixin",
     "EntityMixin",

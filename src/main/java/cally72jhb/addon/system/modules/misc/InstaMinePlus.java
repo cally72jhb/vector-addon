@@ -12,8 +12,6 @@ import meteordevelopment.meteorclient.utils.player.Rotations;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.block.BlockState;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.ToolItem;
 import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket;
 import net.minecraft.util.Hand;
@@ -184,9 +182,9 @@ public class InstaMinePlus extends Module {
 
     @EventHandler
     private void onStartBreakingBlock(StartBreakingBlockEvent event) {
-        if (!bypass.get() || bypass.get() && VectorUtils.getBlock(event.blockPos).getHardness() <= maxHardness.get()) {
+        if (!bypass.get() || bypass.get() && mc.world.getBlockState(event.blockPos).getBlock().getHardness() <= maxHardness.get()) {
             direction = event.direction;
-            state = VectorUtils.getBlockState(event.blockPos);
+            state = mc.world.getBlockState(event.blockPos);
             pos = event.blockPos;
         }
     }
@@ -202,7 +200,7 @@ public class InstaMinePlus extends Module {
 
             if (keepOnInvalid.get() && keeping >= keepTicks.get()
                 || !keepOnTooFar.get() && VectorUtils.distance(mc.player.getPos(), Vec3d.ofCenter(pos)) > range.get()
-                || bypass.get() && VectorUtils.getBlock(pos).getHardness() > maxHardness.get()) {
+                || bypass.get() && mc.world.getBlockState(pos).getBlock().getHardness() > maxHardness.get()) {
                 pos = null;
             }
 
@@ -217,7 +215,7 @@ public class InstaMinePlus extends Module {
                     Direction bestDirection = null;
 
                     for (Direction dir : Direction.values()) {
-                        if (!onlyVisible.get() || onlyVisible.get() && VectorUtils.getBlockState(pos.offset(dir)).getOutlineShape(mc.world, pos.offset(dir)) != VoxelShapes.fullCube()) {
+                        if (!onlyVisible.get() || onlyVisible.get() && mc.world.getBlockState(pos.offset(dir)).getOutlineShape(mc.world, pos.offset(dir)) != VoxelShapes.fullCube()) {
                             double distance = VectorUtils.distance(mc.player.getPos(), Vec3d.ofCenter(pos.offset(dir)));
 
                             if (distance < bestDistance) {
@@ -231,7 +229,7 @@ public class InstaMinePlus extends Module {
                 }
 
                 if (shouldMine() && checkHardness(pos)) {
-                    state = VectorUtils.getBlockState(pos);
+                    state = mc.world.getBlockState(pos);
 
                     if (rotate.get()) {
                         Rotations.rotate(Rotations.getYaw(pos), Rotations.getPitch(pos), () -> mc.getNetworkHandler().sendPacket(new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.STOP_DESTROY_BLOCK, pos, direction)));
@@ -249,12 +247,9 @@ public class InstaMinePlus extends Module {
     }
 
     private boolean checkHardness(BlockPos pos) {
-        ItemStack stack = mc.player.getMainHandStack();
-        float hardness = VectorUtils.getBlock(pos).getHardness();
+        if (!bypass.get()) return false;
 
-        return stack != null && stack.getItem() instanceof ToolItem && VectorUtils.getBlock(pos).getHardness() > 0
-            && ((hardness / stack.getItem().getMiningSpeedMultiplier(mc.player.getMainHandStack(), VectorUtils.getBlockState(pos))) <= maxHardness.get()
-            || hardness <= maxHardness.get());
+        return mc.world.getBlockState(pos).getHardness(mc.world, pos) / mc.player.getMainHandStack().getMiningSpeedMultiplier(mc.world.getBlockState(pos)) <= maxHardness.get();
     }
 
     private boolean shouldMine() {
@@ -262,7 +257,7 @@ public class InstaMinePlus extends Module {
     }
 
     public boolean canBreak(BlockPos pos) {
-        BlockState state = VectorUtils.getBlockState(pos);
+        BlockState state = mc.world.getBlockState(pos);
 
         if (!mc.player.isCreative() && state.getHardness(mc.world, pos) <= 0) return false;
         return state.getOutlineShape(mc.world, pos) != VoxelShapes.empty();

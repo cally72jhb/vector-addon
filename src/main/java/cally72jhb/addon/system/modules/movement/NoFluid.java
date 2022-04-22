@@ -1,7 +1,6 @@
 package cally72jhb.addon.system.modules.movement;
 
 import cally72jhb.addon.system.categories.Categories;
-import cally72jhb.addon.utils.VectorUtils;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.BoolSetting;
 import meteordevelopment.meteorclient.settings.Setting;
@@ -92,7 +91,7 @@ public class NoFluid extends Module {
         for(int o = i; o < j; ++o) {
             for(int p = k; p < l; ++p) {
                 for(int q = m; q < n; ++q) {
-                    BlockState state = VectorUtils.getBlockState(mutable.set(o, p, q));
+                    BlockState state = mc.world.getBlockState(mutable.set(o, p, q));
                     if (state.getFluidState() != null) return state.getFluidState().getFluid();
                 }
             }

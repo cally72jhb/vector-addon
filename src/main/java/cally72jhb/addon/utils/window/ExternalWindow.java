@@ -1,5 +1,7 @@
 package cally72jhb.addon.utils.window;
 
+import cally72jhb.addon.utils.window.components.text.Text;
+
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
