@@ -30,7 +30,7 @@ Meteor Client in your mods folder                             <br/>
 Action Renderer     || Renders certain block interactions
 Anti Lag Back       || Cancels huge rubberband
 Anti Piston Push    || Trys to prevent horizontal piston pushing
-Anti Prone          || Stops you from being forced in the swimming animation client-side when getting trapped
+Anti Prone          || Stops you from being forced in the swimming animation client-side
 Auto Cope           || Automatically replies on custom messages or after death
 Auto Ez             || Automatically sends custom messages after killing or popping a player
 Auto Interact       || Interacts with selected entities or blocks for you
