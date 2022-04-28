@@ -27,26 +27,26 @@ Meteor Client in your mods folder                             <br/>
 
 <h1>Modules:</h1>
 <pre>
-Action Renderer     || Renders certain block interactions
-Anti Lag Back       || Cancels huge rubberband
+Action Renderer     || Renders your own block interactions
+Anti Lag Back       || Cancels huge rubberband from anticheats
 Anti Piston Push    || Trys to prevent horizontal piston pushing
 Anti Prone          || Stops you from being forced in the swimming animation client-side
-Auto Cope           || Automatically replies on custom messages or after death
+Auto Cope           || Replies to user defined messages or copes after death
 Auto Ez             || Automatically sends custom messages after killing or popping a player
 Auto Interact       || Interacts with selected entities or blocks for you
-Bed Bomb            || Places and blows up near your targets to deal a lot of damage
+Bed Bomb            || Places and blows up beds near your targets to deal a lot of damage
 Bow Bomb            || Spoofs projectiles to make them travel further and do more damage
 Chorus Predict      || Predicts where your chorus fruit will teleport you
 Death Animations    || Summons custom particles when a player dies
-Entity Fly          || Fly with any living rideable entity
+Entity Fly          || Allowes to fly with any living rideable entity
 Fast Tower          || A bypass for faster towering on most servers
-Insta Mine Plus     || Trys immediately mine blocks
-Inventory Scroll    || Allows you to scroll in your hotbar while having a screen opened
+Insta Mine Plus     || Trys to immediately mine blocks
+Inventory Scroll    || Allows you to scroll in your hotbar while having screens opened
 Item Release        || Automatically releases loaded items after a set delay
 No Block Trace      || Allows you to interact through selected blocks when holding a pickaxe
 No Collision        || Removes selected block or world border collisions client-side
-No Fluid            || Removes water and lava collision for you
-Packet Consume      || Consume eatable or drinkable items with packets
+No Fluid            || Removes water and lava collision client-side
+Packet Consume      || Consumes eatable or drinkable items with packets
 Packet Fly          || Fly with packets on most servers
 Packet Logger       || Prints out some packet debug in chat
 Packet Place        || Place blocks with packets to bypass desyncing with the server
