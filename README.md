@@ -2,7 +2,7 @@
   
 <h1>Vector Addon</h1>
 
-Vector is a powerful open-source addon for Meteor Client      <br/>
+Vector is a powerful open-source addon for [Meteor Client](https://meteorclient.com/)      <br/>
 providing some combat and many utility modules                <br/>
 To install Vector correctly put it along side with            <br/>
 Meteor Client in your mods folder                             <br/>
