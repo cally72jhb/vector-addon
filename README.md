@@ -1,15 +1,13 @@
 <div align="left">
   
-<h1>Vector Addon</h1>
+# [Vector Addon](https://cally72jhb.github.io/website/)
 
 Vector is a powerful open-source addon for [Meteor Client](https://meteorclient.com/)      <br/>
-providing some combat and many utility modules                <br/>
-To install Vector correctly put it along side with            <br/>
-Meteor Client in your mods folder                             <br/>
+providing some combat and many utility modules                                             <br/>
+To install Vector correctly put it along side with                                         <br/>
+[Meteor Client](https://meteorclient.com/) in your mods folder                             <br/>
 
 (Minecraft 1.18.2 & Meteor dev-builds & fabric 0.13.3)        <br/>
-  
-[[ The Vector Website ]](https://cally72jhb.github.io/website/)  <br/>
 
 
 <img src="https://invidget.switchblade.xyz/A3nYgbKeXR">       <br/>
