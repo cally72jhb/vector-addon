@@ -7,8 +7,6 @@ providing some combat and many utility modules                                  
 To install Vector correctly put it along side with                                         <br/>
 [Meteor Client](https://meteorclient.com/) in your mods folder                             <br/>
 
-(Minecraft 1.18.2 & Meteor dev-builds & fabric 0.13.3)        <br/>
-
 
 <img src="https://invidget.switchblade.xyz/A3nYgbKeXR">       <br/>
 
