@@ -2,10 +2,10 @@
   
 # [Vector Addon](https://cally72jhb.github.io/website/)
 
-Vector is a powerful open-source addon for [Meteor Client](https://meteorclient.com/)      <br/>
-providing some combat and many utility modules                                             <br/>
-To install Vector correctly put it along side with                                         <br/>
-Meteor Client in your mods folder                                                          <br/>
+Vector is a powerful open-source addon for Meteor Client      <br/>
+providing some combat and many utility modules                <br/>
+To install Vector correctly, place it in                      <br/>
+your mods folder along with Meteor Client                     <br/>
 
 [![Discord embed](https://img.shields.io/discord/863813920892518461.svg?logo=discord&logoColor=FFFFFF&style=flat-square&label=Discord&colorA=606060&colorB=7289DA)](https://discord.gg/A3nYgbKeXR)
 [![Downloads embed](https://img.shields.io/github/downloads/cally72jhb/vector-addon/total.svg?style=flat-square&label=Downloads&colorA=606060&colorB=4FCF34)](https://github.com/cally72jhb/vector-addon/releases)
