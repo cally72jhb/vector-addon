@@ -179,7 +179,7 @@ public class VectorPresence extends Module {
     }
 
     @EventHandler
-    private void onTick(TickEvent.Post event) {
+    private void onPostTick(TickEvent.Post event) {
         boolean update = false;
 
         // Image

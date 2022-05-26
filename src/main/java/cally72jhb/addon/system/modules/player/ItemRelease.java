@@ -14,6 +14,7 @@ import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerInteractItemC2SPacket;
 import net.minecraft.util.UseAction;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.util.registry.Registry;
 
 import java.util.ArrayList;
@@ -49,7 +50,7 @@ public class ItemRelease extends Module {
         ItemStack stack = mc.player.getMainHandStack();
 
         if (items.get().contains(stack.getItem()) && mc.player.isUsingItem() && mc.player.getItemUseTime() >= delay.get()) {
-            mc.player.networkHandler.sendPacket(new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.RELEASE_USE_ITEM, BlockPos.ORIGIN, mc.player.getHorizontalFacing()));
+            mc.player.networkHandler.sendPacket(new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.RELEASE_USE_ITEM, BlockPos.ORIGIN, Direction.DOWN));
             mc.player.networkHandler.sendPacket(new PlayerInteractItemC2SPacket(mc.player.getActiveHand()));
 
             mc.player.clearActiveItem();

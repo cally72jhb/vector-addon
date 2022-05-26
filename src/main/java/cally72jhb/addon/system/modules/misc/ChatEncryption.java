@@ -1,18 +1,22 @@
 package cally72jhb.addon.system.modules.misc;
 
 import cally72jhb.addon.system.categories.Categories;
-import cally72jhb.addon.system.events.SendRawMessageEvent;
 import cally72jhb.addon.utils.cipher.EncryptUtils;
 import meteordevelopment.meteorclient.events.game.ReceiveMessageEvent;
-import meteordevelopment.meteorclient.events.game.SendMessageEvent;
+import meteordevelopment.meteorclient.events.packets.PacketEvent;
 import meteordevelopment.meteorclient.settings.*;
+import meteordevelopment.meteorclient.systems.config.Config;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.orbit.EventHandler;
+import net.minecraft.network.packet.c2s.play.ChatMessageC2SPacket;
 import net.minecraft.text.*;
 
 public class ChatEncryption extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
+    private final SettingGroup sgRender = settings.createGroup("Render");
+
+    // General
 
     private final Setting<Mode> mode = sgGeneral.add(new EnumSetting.Builder<Mode>()
         .name("mode")
@@ -25,13 +29,6 @@ public class ChatEncryption extends Module {
         .name("algorithm-mode")
         .description("What algorithm to use.")
         .defaultValue(Algorithm.AES)
-        .build()
-    );
-
-    private final Setting<DisplayMode> displayMode = sgGeneral.add(new EnumSetting.Builder<DisplayMode>()
-        .name("display-mode")
-        .description("How to display the decrypted messages.")
-        .defaultValue(DisplayMode.Normal)
         .build()
     );
 
@@ -52,14 +49,14 @@ public class ChatEncryption extends Module {
     private final Setting<String> encryptionPrefix = sgGeneral.add(new StringSetting.Builder()
         .name("encryption-prefix")
         .description("What is used as prefix to encrypt messages.")
-        .defaultValue("!enc:")
+        .defaultValue("enc:")
         .build()
     );
 
     private final Setting<String> decryptionPrefix = sgGeneral.add(new StringSetting.Builder()
         .name("decryption-prefix")
         .description("What is used as prefix to decrypt messages.")
-        .defaultValue("!dnc:")
+        .defaultValue("dnc:")
         .build()
     );
 
@@ -67,6 +64,13 @@ public class ChatEncryption extends Module {
         .name("cipher-suffix")
         .description("What suffix to use to end your messages.")
         .defaultValue(";")
+        .build()
+    );
+
+    private final Setting<Boolean> automatic = sgGeneral.add(new BoolSetting.Builder()
+        .name("automatic")
+        .description("Automatically encrypts every message you send.")
+        .defaultValue(true)
         .build()
     );
 
@@ -91,28 +95,44 @@ public class ChatEncryption extends Module {
         .build()
     );
 
-    private final Setting<Boolean> renderOriginal = sgGeneral.add(new BoolSetting.Builder()
+    private final Setting<Boolean> sendOnFail = sgGeneral.add(new BoolSetting.Builder()
+        .name("send-on-fail")
+        .description("Sends the normal message you would have send when the encyption fails.")
+        .defaultValue(false)
+        .build()
+    );
+
+    // Render
+
+    private final Setting<DisplayMode> displayMode = sgRender.add(new EnumSetting.Builder<DisplayMode>()
+        .name("display-mode")
+        .description("How to display the decrypted messages.")
+        .defaultValue(DisplayMode.Normal)
+        .build()
+    );
+
+    private final Setting<Boolean> renderOriginal = sgRender.add(new BoolSetting.Builder()
         .name("render-original")
         .description("Renders the original message when hovering over the decrypted suffix.")
         .defaultValue(true)
         .build()
     );
 
-    private final Setting<Boolean> renderCopy = sgGeneral.add(new BoolSetting.Builder()
+    private final Setting<Boolean> renderCopy = sgRender.add(new BoolSetting.Builder()
         .name("render-copy-button")
         .description("Renders a button to copy the original message.")
         .defaultValue(true)
         .build()
     );
 
-    private final Setting<SettingColor> decryptedColor = sgGeneral.add(new ColorSetting.Builder()
+    private final Setting<SettingColor> decryptedColor = sgRender.add(new ColorSetting.Builder()
         .name("decrypted-color")
         .description("The color of the decrypted suffix.")
         .defaultValue(new SettingColor(255, 170, 0, 255, false))
         .build()
     );
 
-    private final Setting<SettingColor> copyColor = sgGeneral.add(new ColorSetting.Builder()
+    private final Setting<SettingColor> copyColor = sgRender.add(new ColorSetting.Builder()
         .name("copy-button-color")
         .description("The color of the copy button.")
         .defaultValue(new SettingColor(255, 170, 0, 255, false))
@@ -120,21 +140,45 @@ public class ChatEncryption extends Module {
         .build()
     );
 
+    private boolean cancel;
+
     public ChatEncryption() {
         super(Categories.Misc, "chat-encryption", "Encrypts your chat messages to make them unreadable to other people.");
     }
 
-    @EventHandler
-    private void onSendMessage(SendMessageEvent event) {
-        if (mode.get() == Mode.Encrypt || mode.get() == Mode.Both) event.message = encrypt(event.message);
+    @Override
+    public void onActivate() {
+        cancel = false;
     }
 
     @EventHandler
-    private void onSendRawMessage(SendRawMessageEvent event) {
-        if (mode.get() == Mode.Encrypt || mode.get() == Mode.Both) event.message = encrypt(event.message);
+    private void onSendPacket(PacketEvent.Send event) {
+        if (event.packet instanceof ChatMessageC2SPacket packet && !cancel && (mode.get() == Mode.Encrypt || mode.get() == Mode.Both)) {
+            String encrypted = encrypt(packet.getChatMessage());
+
+            if (sendOnFail.get() || !packet.getChatMessage().equals(encrypted)) {
+                cancel = true;
+                mc.getNetworkHandler().sendPacket(new ChatMessageC2SPacket(encrypted));
+                cancel = false;
+
+                event.cancel();
+            }
+        }
     }
 
-    private String encrypt(String string) {
+    private String encrypt(String message) {
+        StringBuilder builder = new StringBuilder();
+        for (char character : message.toCharArray()) if (isCharacterValid(character)) builder.append(character);
+
+        String string = builder.toString();
+
+        if (automatic.get() && !string.startsWith("/") && !string.startsWith(Config.get().prefix.get())
+            && (!string.contains(encryptionPrefix.get()) || !string.contains(cipherSuffix.get())
+            || string.indexOf(encryptionPrefix.get()) >= string.indexOf(cipherSuffix.get(), string.indexOf(encryptionPrefix.get())))) {
+
+            string = encryptionPrefix.get() + string + cipherSuffix.get();
+        }
+
         if (string.contains(encryptionPrefix.get()) && string.contains(cipherSuffix.get()) && string.indexOf(encryptionPrefix.get()) < string.indexOf(cipherSuffix.get(), string.indexOf(encryptionPrefix.get()))) {
             try {
                 int index;
@@ -177,7 +221,7 @@ public class ChatEncryption extends Module {
             }
         }
 
-        return string;
+        return message;
     }
 
     @EventHandler
@@ -185,14 +229,21 @@ public class ChatEncryption extends Module {
         if (mode.get() == Mode.Decrypt || mode.get() == Mode.Both) {
             StringBuilder builder = new StringBuilder();
 
-            event.getMessage().asOrderedText().accept((i, style, codePoint) -> {
-                builder.append(new String(Character.toChars(codePoint)));
+            event.getMessage().asOrderedText().accept((i, style, point) -> {
+                builder.append(new String(Character.toChars(point)));
                 return true;
             });
 
-            String string = builder.toString();
-            String originalString = builder.toString();
+            String string = "";
+            String originalString = "";
             Text original = event.getMessage();
+
+            for (char character : builder.toString().toCharArray()) {
+                if (isCharacterValid(character)) {
+                    string += character;
+                    originalString += character;
+                }
+            }
 
             if (string.contains(getDecryptionPrefix()) && string.contains(cipherSuffix.get()) && string.indexOf(getDecryptionPrefix()) < string.indexOf(cipherSuffix.get(), string.indexOf(getDecryptionPrefix()))) {
                 try {
@@ -294,15 +345,15 @@ public class ChatEncryption extends Module {
     private String validate(String string) {
         if (string.isEmpty()) return "vector";
 
-        String valid = "";
+        StringBuilder builder = new StringBuilder();
+        for (char character : string.toCharArray()) if (isCharacterValid(character)) builder.append(character);
 
-        for (char character : string.toCharArray()) if (isCharacterValid(character)) valid += character;
-
-        return valid.isEmpty() ? "vector" : valid;
+        return (builder.length() == 0) ? "vector" : builder.toString();
     }
 
     private boolean isCharacterValid(char character) {
-        return character == '_' || character == '-' || character == '<' || character == '>' || character == ':' || character >= 'a' && character <= 'z' || character >= '0' && character <= '9';
+        return character == '_' || character == '-' || character == '=' || character == '<' || character == '>' || character == ':' || character == ';' || character == ',' || character == ' '
+            || character >= 'a' && character <= 'z' || character >= 'A' && character <= 'Z' || character >= '0' && character <= '9';
     }
 
     // Constants

@@ -121,7 +121,7 @@ public class BowBomb extends Module {
     }
 
     @EventHandler
-    public void onTick(TickEvent.Post event) {
+    public void onPostTick(TickEvent.Post event) {
         if (spoofed && !mc.options.useKey.isPressed() && pause.get()) activate();
         else if (pause.get()) deactivate();
     }

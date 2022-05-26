@@ -170,7 +170,7 @@ public class ActionRenderer extends Module {
     // Rendering
 
     @EventHandler
-    private void onRender(Render3DEvent event) {
+    private void onRender3D(Render3DEvent event) {
         if (!renderBlocks.isEmpty()) {
             renderBlocks.sort(Comparator.comparingInt(block -> -block.ticks));
             renderBlocks.forEach(block -> block.render(event, shapeMode.get()));

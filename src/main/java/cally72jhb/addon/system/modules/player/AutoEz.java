@@ -85,7 +85,7 @@ public class AutoEz extends Module {
     private final Setting<List<String>> popMessages = sgPops.add(new StringListSetting.Builder()
         .name("pop-messages")
         .description("The random messages to send when you poped a player.")
-        .defaultValue(List.of("vector on top", "ez {player}", "poped {player} with vector", "{pops} pops on {player} already"))
+        .defaultValue(List.of("ez {player}", "poped {player} with vector", "{pops} pops on {player} already"))
         .visible(() -> popMsg.get() && randomMsg.get())
         .build()
     );

@@ -198,44 +198,13 @@ public class ReverseStepBypass extends Module {
         .build()
     );
 
-    private final Setting<Boolean> checkStepDuration = sgRubberband.add(new BoolSetting.Builder()
-        .name("check-step-duration")
-        .description("Waits when reaching a set amount of steps in a set duration.")
-        .defaultValue(true)
-        .build()
-    );
-
-    private final Setting<Integer> duration = sgRubberband.add(new IntSetting.Builder()
-        .name("duration")
-        .description("The duration in ticks in which steps are counted and evaluated.")
-        .defaultValue(50)
-        .min(10)
-        .sliderMin(40)
-        .sliderMax(75)
-        .noSlider()
-        .visible(checkStepDuration::get)
-        .build()
-    );
-
-    private final Setting<Integer> maxSteps = sgRubberband.add(new IntSetting.Builder()
-        .name("max-steps")
-        .description("The maximum amount of steps in a set duration.")
-        .defaultValue(3)
-        .min(1)
-        .sliderMin(2)
-        .sliderMax(4)
-        .noSlider()
-        .visible(checkStepDuration::get)
-        .build()
-    );
-
     private final Setting<Integer> failWaitDelay = sgRubberband.add(new IntSetting.Builder()
         .name("fail-wait-delay")
         .description("How long to wait in ticks before reverse stepping again.")
         .defaultValue(50)
         .min(5)
         .noSlider()
-        .visible(() -> rubberbandAction.get() != RubberbandAction.Ignore || checkStepDuration.get())
+        .visible(() -> rubberbandAction.get() != RubberbandAction.Ignore)
         .build()
     );
 
@@ -243,14 +212,11 @@ public class ReverseStepBypass extends Module {
         .name("info-on-fail")
         .description("Sends you a client-side message when you fail to reverse step.")
         .defaultValue(true)
-        .visible(() -> rubberbandAction.get() != RubberbandAction.Ignore || checkStepDuration.get())
+        .visible(() -> rubberbandAction.get() != RubberbandAction.Ignore)
         .build()
     );
 
     private int waitTicks;
-    private int durationTicks;
-    private int stepsInDuration;
-
     private int reenableTicks;
 
     private List<Module> prevModules;
@@ -262,9 +228,6 @@ public class ReverseStepBypass extends Module {
     @Override
     public void onActivate() {
         waitTicks = failWaitDelay.get();
-        durationTicks = 0;
-        stepsInDuration = 0;
-
         reenableTicks = 0;
 
         prevModules = new ArrayList<>();
@@ -282,18 +245,6 @@ public class ReverseStepBypass extends Module {
     @EventHandler
     private void onPlayerMove(PlayerMoveEvent event) {
         waitTicks++;
-        durationTicks++;
-
-        if (checkStepDuration.get() && (durationTicks >= duration.get() || stepsInDuration > maxSteps.get())) {
-            if (stepsInDuration > maxSteps.get()) {
-                waitTicks = 0;
-
-                if (infoOnFail.get()) info("Stepped more then " + maxSteps.get() + (maxSteps.get() == 1 ? " time" : " times") + " downwards. Waiting " + failWaitDelay.get() + " ticks...");
-            }
-
-            durationTicks = 0;
-            stepsInDuration = 0;
-        }
 
         if (waitTicks >= failWaitDelay.get() && canReverseStep()
             && (activeWhen.get() != ActiveWhen.Sneaking || activeWhen.get() == ActiveWhen.Sneaking && mc.player.isSneaking())
@@ -306,8 +257,7 @@ public class ReverseStepBypass extends Module {
                 && mc.player.getVelocity().getY() <= 0 && mc.player.getVelocity().getY() >= -0.5
                 && !mc.player.isFallFlying() && !mc.player.noClip && !mc.options.jumpKey.isPressed()
                 && !mc.player.isSubmergedInWater() && !mc.player.isInLava() && !mc.player.isHoldingOntoLadder()
-                && !mc.world.containsFluid(mc.player.getBoundingBox())
-                && !mc.world.isSpaceEmpty(mc.player.getBoundingBox().offset(0, -(maxHeight.get() + 0.01), 0))) {
+                && !mc.world.containsFluid(mc.player.getBoundingBox())) {
 
                 double x = mc.player.getX();
                 double y = mc.player.getY();
@@ -335,8 +285,8 @@ public class ReverseStepBypass extends Module {
 
                         BlockPos second = null;
 
-                        for (CardinalDirection cDir : CardinalDirection.values()) {
-                            Direction direction = cDir.toDirection();
+                        for (CardinalDirection cardinal : CardinalDirection.values()) {
+                            Direction direction = cardinal.toDirection();
 
                             if (doubles.get() && isValidHole(pos.offset(direction), true) && isValidHole(pos.offset(direction).up(), false)) {
                                 int surrounded = 0;
@@ -417,8 +367,6 @@ public class ReverseStepBypass extends Module {
 
                             mc.player.updatePosition(x, blockY, z);
                             if (extraPacket.get()) sendPacket(x, blockY, z);
-
-                            stepsInDuration++;
                         }
                     }
                 }

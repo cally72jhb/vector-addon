@@ -27,6 +27,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.PotionItem;
+import net.minecraft.network.packet.c2s.play.ClientCommandC2SPacket;
 import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerInteractBlockC2SPacket;
 import net.minecraft.sound.BlockSoundGroup;
@@ -35,6 +36,7 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 
 import java.util.ArrayList;
@@ -65,7 +67,7 @@ public class PacketHoleFill extends Module {
     private final Setting<Double> horizontalPlaceRange = sgGeneral.add(new DoubleSetting.Builder()
         .name("horizontal-place-range")
         .description("The horizontal radius in which blocks can be placed.")
-        .defaultValue(4)
+        .defaultValue(3)
         .sliderMin(3)
         .sliderMax(5)
         .min(0)
@@ -76,7 +78,7 @@ public class PacketHoleFill extends Module {
     private final Setting<Double> verticalPlaceRange = sgGeneral.add(new DoubleSetting.Builder()
         .name("vertical-place-range")
         .description("The vertical radius in which blocks can be placed.")
-        .defaultValue(3)
+        .defaultValue(3.25)
         .sliderMin(3)
         .sliderMax(5)
         .min(0)
@@ -159,6 +161,32 @@ public class PacketHoleFill extends Module {
         .name("swap-back")
         .description("Swaps back to the previous slot after placing.")
         .defaultValue(true)
+        .build()
+    );
+
+    private final Setting<Boolean> placeRangeBypass = sgGeneral.add(new BoolSetting.Builder()
+        .name("place-range-bypass")
+        .description("Interacts at the closest possible position to allow a maximal place range.")
+        .defaultValue(true)
+        .build()
+    );
+
+    private final Setting<Boolean> sneakRangeBypass = sgGeneral.add(new BoolSetting.Builder()
+        .name("sneak-range-bypass")
+        .description("Sneaks to lower your eye position to allow a little more vertical range.")
+        .defaultValue(true)
+        .build()
+    );
+
+    private final Setting<Double> sneakActivationWindow = sgGeneral.add(new DoubleSetting.Builder()
+        .name("sneak-activation-window")
+        .description("From what range on to start sneaking when placing blocks.")
+        .defaultValue(2.75)
+        .sliderMin(1.5)
+        .sliderMax(3)
+        .min(0)
+        .max(15)
+        .visible(sneakRangeBypass::get)
         .build()
     );
 
@@ -387,12 +415,16 @@ public class PacketHoleFill extends Module {
     private final Pool<RenderBlock> renderBlockPool = new Pool<>(RenderBlock::new);
     private final List<RenderBlock> renderBlocks = new ArrayList<>();
 
+    private boolean shouldUnsneak;
+
     public PacketHoleFill() {
         super(Categories.Combat, "packet-hole-fill", "Fills safe holes using packets.");
     }
 
     @Override
     public void onActivate() {
+        shouldUnsneak = false;
+
         if (!renderBlocks.isEmpty()) {
             for (RenderBlock block : renderBlocks) renderBlockPool.free(block);
             renderBlocks.clear();
@@ -410,6 +442,13 @@ public class PacketHoleFill extends Module {
     @EventHandler
     private void onPreTick(TickEvent.Pre event) {
         FindItemResult item = findInHotbar(stack -> stack.getItem() instanceof BlockItem block && blocks.get().contains(block.getBlock()));
+
+        if (shouldUnsneak) {
+            mc.player.setSneaking(false);
+            mc.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(mc.player, ClientCommandC2SPacket.Mode.RELEASE_SHIFT_KEY));
+
+            shouldUnsneak = false;
+        }
 
         if (item.found() && !shouldPause()) {
             List<Hole> holes = new ArrayList<>();
@@ -440,8 +479,8 @@ public class PacketHoleFill extends Module {
                                 BlockPos second = null;
                                 Direction excludeDir = null;
 
-                                for (CardinalDirection cDir : CardinalDirection.values()) {
-                                    Direction direction = cDir.toDirection();
+                                for (CardinalDirection cardinal : CardinalDirection.values()) {
+                                    Direction direction = cardinal.toDirection();
 
                                     if (doubles.get() && isValidHole(pos.offset(direction), true) && isValidHole(pos.offset(direction).up(), false) && canPlace(pos.offset(direction))) {
                                         int surrounded = 0;
@@ -483,17 +522,19 @@ public class PacketHoleFill extends Module {
 
                     if (onlyAroundTargets.get()) {
                         for (PlayerEntity player : mc.world.getPlayers()) {
+                            Vec3d pos = player.getEyePos();
+
                             if ((player instanceof FakePlayerEntity || !Friends.get().isFriend(player)) && mc.player != player
                                 && (!ignoreOtherInHole.get() || ignoreOtherInHole.get() && !isHole(player.getBlockPos()))
 
                                 && (hole.isDouble() && doubles.get() && fillBoth.get()
-                                && (VectorUtils.distanceXZ(Vec3d.ofCenter(hole.pos1), player.getPos()) <= horizontalTargetDistance.get()
-                                && VectorUtils.distanceY(hole.pos1.getY() + 0.5, player.getY()) <= verticalTargetDistance.get()
-                                || VectorUtils.distanceXZ(Vec3d.ofCenter(hole.pos2), player.getPos()) <= horizontalTargetDistance.get()
-                                && VectorUtils.distanceY(hole.pos2.getY() + 0.5, player.getY()) <= verticalTargetDistance.get())
+                                && (VectorUtils.distanceXZ(Vec3d.ofCenter(hole.pos1), pos) <= horizontalTargetDistance.get()
+                                && VectorUtils.distanceY(hole.pos1.getY() + 0.5, pos.getY()) <= verticalTargetDistance.get()
+                                || VectorUtils.distanceXZ(Vec3d.ofCenter(hole.pos2), pos) <= horizontalTargetDistance.get()
+                                && VectorUtils.distanceY(hole.pos2.getY() + 0.5, pos.getY()) <= verticalTargetDistance.get())
 
-                                || VectorUtils.distanceXZ(Vec3d.ofCenter(hole.pos1), player.getPos()) <= horizontalTargetDistance.get()
-                                && VectorUtils.distanceY(hole.pos1.getY() + 0.5, player.getY()) <= verticalTargetDistance.get())) {
+                                || VectorUtils.distanceXZ(Vec3d.ofCenter(hole.pos1), pos) <= horizontalTargetDistance.get()
+                                && VectorUtils.distanceY(hole.pos1.getY() + 0.5, pos.getY()) <= verticalTargetDistance.get())) {
 
                                 fill = true;
                                 break;
@@ -504,16 +545,18 @@ public class PacketHoleFill extends Module {
                     if (ignoreCloseFriends.get()) {
                         for (PlayerEntity player : mc.world.getPlayers()) {
                             if (mc.player != player && Friends.get().isFriend(player)) {
+                                Vec3d pos = player.getEyePos();
+
                                 if ((!ignoreFriendInHole.get() || ignoreFriendInHole.get() && !isHole(player.getBlockPos()))
 
                                     && ((hole.isDouble() && doubles.get() && fillBoth.get()
-                                    && (VectorUtils.distanceXZ(player.getPos(), Vec3d.ofCenter(hole.pos1)) < horizontalFriendDistance.get()
-                                    && VectorUtils.distanceXZ(player.getPos(), Vec3d.ofCenter(hole.pos2)) < horizontalFriendDistance.get()
-                                    || VectorUtils.distanceY(player.getY(), hole.pos1.getY() + 0.5) < verticalFriendDistance.get()
-                                    && VectorUtils.distanceY(player.getY(), hole.pos2.getY() + 0.5) < verticalFriendDistance.get()))
+                                    && (VectorUtils.distanceXZ(pos, Vec3d.ofCenter(hole.pos1)) < horizontalFriendDistance.get()
+                                    && VectorUtils.distanceXZ(pos, Vec3d.ofCenter(hole.pos2)) < horizontalFriendDistance.get()
+                                    || VectorUtils.distanceY(pos.getY(), hole.pos1.getY() + 0.5) < verticalFriendDistance.get()
+                                    && VectorUtils.distanceY(pos.getY(), hole.pos2.getY() + 0.5) < verticalFriendDistance.get()))
 
-                                    || VectorUtils.distanceXZ(player.getPos(), Vec3d.ofCenter(hole.pos1)) < horizontalFriendDistance.get()
-                                    || VectorUtils.distanceY(player.getY(), hole.pos1.getY() + 0.5) < verticalFriendDistance.get())) {
+                                    || VectorUtils.distanceXZ(pos, Vec3d.ofCenter(hole.pos1)) < horizontalFriendDistance.get()
+                                    || VectorUtils.distanceY(pos.getY(), hole.pos1.getY() + 0.5) < verticalFriendDistance.get())) {
 
                                     fill = false;
                                     break;
@@ -522,17 +565,19 @@ public class PacketHoleFill extends Module {
                         }
                     }
 
+                    Vec3d eyes = mc.player.getEyePos();
+
                     if (fill && (!ignoreCloseHoles.get() || ignoreCloseHoles.get() && ignoreSelfInHole.get() && isHole(mc.player.getBlockPos())
 
                         || ignoreCloseHoles.get() && ((hole.isDouble() && doubles.get() && fillBoth.get()
-                        && (VectorUtils.distanceXZ(mc.player.getPos(), Vec3d.ofCenter(hole.pos1)) >= horizontalIgnoreDistance.get()
-                        && VectorUtils.distanceXZ(mc.player.getPos(), Vec3d.ofCenter(hole.pos2)) >= horizontalIgnoreDistance.get()
-                        || VectorUtils.distanceY(mc.player.getY(), hole.pos1.getY() + 0.5) >= verticalIgnoreDistance.get()
-                        && VectorUtils.distanceY(mc.player.getY(), hole.pos2.getY() + 0.5) >= verticalIgnoreDistance.get()))
+                        && (VectorUtils.distanceXZ(eyes, Vec3d.ofCenter(hole.pos1)) >= horizontalIgnoreDistance.get()
+                        && VectorUtils.distanceXZ(eyes, Vec3d.ofCenter(hole.pos2)) >= horizontalIgnoreDistance.get()
+                        || VectorUtils.distanceY(eyes.getY(), hole.pos1.getY() + 0.5) >= verticalIgnoreDistance.get()
+                        && VectorUtils.distanceY(eyes.getY(), hole.pos2.getY() + 0.5) >= verticalIgnoreDistance.get()))
 
                         || ((!hole.isDouble() || !doubles.get() || !fillBoth.get())
-                        && (VectorUtils.distanceXZ(mc.player.getPos(), Vec3d.ofCenter(hole.pos1)) >= horizontalIgnoreDistance.get()
-                        || VectorUtils.distanceY(mc.player.getY(), hole.pos1.getY() + 0.5) >= verticalIgnoreDistance.get()))))) {
+                        && (VectorUtils.distanceXZ(eyes, Vec3d.ofCenter(hole.pos1)) >= horizontalIgnoreDistance.get()
+                        || VectorUtils.distanceY(eyes.getY(), hole.pos1.getY() + 0.5) >= verticalIgnoreDistance.get()))))) {
 
                         if (hole.isDouble() && doubles.get() && fillBoth.get()) {
                             if (block < maxBlocksPerTick.get()) {
@@ -578,7 +623,7 @@ public class PacketHoleFill extends Module {
     // Rendering
 
     @EventHandler
-    private void onRender(Render3DEvent event) {
+    private void onRender3D(Render3DEvent event) {
         if (!renderBlocks.isEmpty()) {
             renderBlocks.sort(Comparator.comparingInt(block -> -block.ticks));
             renderBlocks.forEach(block -> block.render(event, shapeMode.get()));
@@ -619,8 +664,8 @@ public class PacketHoleFill extends Module {
 
             BlockPos second = null;
 
-            for (CardinalDirection cDir : CardinalDirection.values()) {
-                Direction direction = cDir.toDirection();
+            for (CardinalDirection cardinal : CardinalDirection.values()) {
+                Direction direction = cardinal.toDirection();
 
                 if (doubles.get() && isValidHole(pos.offset(direction), true) && isValidHole(pos.offset(direction).up(), false)) {
                     int surrounded = 0;
@@ -685,6 +730,14 @@ public class PacketHoleFill extends Module {
                 Direction side = getSide(pos);
                 BlockPos neighbour = getNeighbourPos(pos);
 
+                boolean shouldSneak = !mc.player.isSneaking() && sneakRangeBypass.get() && mc.player.getEyeY() > hitPos.getY() + sneakActivationWindow.get();
+
+                if (shouldSneak) {
+                    mc.player.setSneaking(true);
+                    mc.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(mc.player, ClientCommandC2SPacket.Mode.PRESS_SHIFT_KEY));
+                    shouldUnsneak = true;
+                }
+
                 if (rotate) {
                     Rotations.rotate(Rotations.getYaw(hitPos), Rotations.getPitch(hitPos), 0, () -> {
                         int prevSlot = mc.player.getInventory().selectedSlot;
@@ -738,11 +791,23 @@ public class PacketHoleFill extends Module {
         if (side != null) {
             side = side.getOpposite();
 
-            hitPos = hitPos.add(
-                side.getOffsetX() == 0 ? 0 : (side.getOffsetX() > 0 ? 0.5 : -0.5),
-                side.getOffsetY() == 0 ? 0 : (side.getOffsetY() > 0 ? 0.5 : -0.5),
-                side.getOffsetZ() == 0 ? 0 : (side.getOffsetZ() > 0 ? 0.5 : -0.5)
-            );
+            if (!placeRangeBypass.get()) {
+                hitPos = hitPos.add(
+                    side.getOffsetX() == 0 ? 0 : (side.getOffsetX() > 0 ? 0.5 : -0.5),
+                    side.getOffsetY() == 0 ? 0 : (side.getOffsetY() > 0 ? 0.5 : -0.5),
+                    side.getOffsetZ() == 0 ? 0 : (side.getOffsetZ() > 0 ? 0.5 : -0.5)
+                );
+            }
+        }
+
+        if (placeRangeBypass.get()) {
+            Vec3d target = mc.player.getEyePos();
+
+            double x = MathHelper.clamp(target.getX(), pos.getX(), pos.getX() + 1);
+            double y = MathHelper.clamp(target.getY(), pos.getY(), pos.getY() + 1);
+            double z = MathHelper.clamp(target.getZ(), pos.getZ(), pos.getZ() + 1);
+
+            hitPos = new Vec3d(x, y, z);
         }
 
         return hitPos;

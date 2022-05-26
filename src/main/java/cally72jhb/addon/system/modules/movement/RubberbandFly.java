@@ -1,271 +1,475 @@
 package cally72jhb.addon.system.modules.movement;
 
 import cally72jhb.addon.system.categories.Categories;
+import meteordevelopment.meteorclient.events.entity.player.PlayerMoveEvent;
 import meteordevelopment.meteorclient.events.packets.PacketEvent;
+import meteordevelopment.meteorclient.events.world.CollisionShapeEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.mixin.PlayerPositionLookS2CPacketAccessor;
+import meteordevelopment.meteorclient.mixininterface.IVec3d;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.network.packet.c2s.play.ClientCommandC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
+import net.minecraft.network.packet.c2s.play.TeleportConfirmC2SPacket;
 import net.minecraft.network.packet.s2c.play.PlayerPositionLookS2CPacket;
+import net.minecraft.util.math.Box;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.shape.VoxelShapes;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class RubberbandFly extends Module {
-    private final SettingGroup sgGeneral = settings.getDefaultGroup();
-    private final SettingGroup sgBypass = settings.createGroup("Bypass");
-    private final SettingGroup sgAntiKick = settings.createGroup("Anti Kick");
-    private final SettingGroup sgIdle = settings.createGroup("Idle");
+    private final SettingGroup sgBounds = settings.createGroup("Bounds");
+    private final SettingGroup sgHorizontal = settings.createGroup("Horizontal");
+    private final SettingGroup sgVertical = settings.createGroup("Vertical");
+    private final SettingGroup sgOther = settings.createGroup("Other");
 
-    private final Setting<FlightMode> flightMode = sgGeneral.add(new EnumSetting.Builder<FlightMode>()
-        .name("flight-mode")
-        .description("How to fly on servers.")
-        .defaultValue(FlightMode.Rubberband)
+
+    // Bounds
+
+
+    private final Setting<BoundsType> boundsType = sgBounds.add(new EnumSetting.Builder<BoundsType>()
+        .name("bounds-type")
+        .description("How to rubberband you.")
+        .defaultValue(BoundsType.Normal)
         .build()
     );
 
-    private final Setting<Boolean> bypassVertical = sgGeneral.add(new BoolSetting.Builder()
-        .name("bypass-vertical")
-        .description("Allows to essentially fly up and down on some servers.")
-        .defaultValue(true)
+    private final Setting<BoundsMode> boundsMode = sgBounds.add(new EnumSetting.Builder<BoundsMode>()
+        .name("bounds-mode")
+        .description("What positions to spoof.")
+        .defaultValue(BoundsMode.Both)
+        .visible(() -> boundsType.get() == BoundsType.Small || boundsType.get() == BoundsType.Infinitive)
         .build()
     );
 
-    private final Setting<Double> velocity = sgGeneral.add(new DoubleSetting.Builder()
-        .name("velocity")
-        .description("Your client-side velocity.")
+    private final Setting<CustomMode> customMode = sgBounds.add(new EnumSetting.Builder<CustomMode>()
+        .name("bounds-mode")
+        .description("How the positions are merged with your position.")
+        .defaultValue(CustomMode.SmartRelative)
+        .visible(() -> boundsType.get() == BoundsType.Custom || boundsType.get() == BoundsType.Random)
+        .build()
+    );
+
+    private final Setting<Double> ceilRadius = sgBounds.add(new DoubleSetting.Builder()
+        .name("ceil-radius")
+        .description("The ceil's radius.")
+        .defaultValue(25)
+        .sliderMin(0.1)
+        .sliderMax(250)
+        .visible(() -> boundsType.get() == BoundsType.Ceil)
+        .build()
+    );
+
+    private final Setting<Double> bypassHeight = sgBounds.add(new DoubleSetting.Builder()
+        .name("bypass-height")
+        .description("How high to rubberband you.")
+        .defaultValue(69420)
+        .sliderMin(5)
+        .sliderMax(50)
+        .visible(() -> boundsType.get() == BoundsType.Bypass || boundsType.get() == BoundsType.Alternative || boundsType.get() == BoundsType.Up || boundsType.get() == BoundsType.Down)
+        .build()
+    );
+
+    private final Setting<Integer> digits = sgBounds.add(new IntSetting.Builder()
+        .name("digits")
+        .description("The number digits of the small bounds.")
+        .defaultValue(7)
+        .sliderMin(5)
+        .sliderMax(9)
+        .visible(() -> boundsType.get() == BoundsType.Small)
+        .build()
+    );
+
+    private final Setting<Double> customX = sgBounds.add(new DoubleSetting.Builder()
+        .name("custom-x")
+        .description("The custom x factor.")
+        .defaultValue(100)
+        .sliderMin(-250)
+        .sliderMax(250)
+        .visible(() -> boundsType.get() == BoundsType.Custom)
+        .build()
+    );
+
+    private final Setting<Double> customY = sgBounds.add(new DoubleSetting.Builder()
+        .name("custom-y")
+        .description("The custom y factor.")
+        .defaultValue(100)
+        .sliderMin(-250)
+        .sliderMax(250)
+        .visible(() -> boundsType.get() == BoundsType.Custom)
+        .build()
+    );
+
+    private final Setting<Double> customZ = sgBounds.add(new DoubleSetting.Builder()
+        .name("custom-z")
+        .description("The custom z factor.")
+        .defaultValue(100)
+        .sliderMin(-250)
+        .sliderMax(250)
+        .visible(() -> boundsType.get() == BoundsType.Custom)
+        .build()
+    );
+
+    private final Setting<Double> randomMinX = sgBounds.add(new DoubleSetting.Builder()
+        .name("random-min-x")
+        .description("The minimum x.")
+        .defaultValue(50)
+        .sliderMin(-250)
+        .sliderMax(250)
+        .visible(() -> boundsType.get() == BoundsType.Random)
+        .build()
+    );
+
+    private final Setting<Double> randomMinY = sgBounds.add(new DoubleSetting.Builder()
+        .name("random-min-y")
+        .description("The minimum y.")
+        .defaultValue(50)
+        .sliderMin(-250)
+        .sliderMax(250)
+        .visible(() -> boundsType.get() == BoundsType.Random)
+        .build()
+    );
+
+    private final Setting<Double> randomMinZ = sgBounds.add(new DoubleSetting.Builder()
+        .name("random-min-z")
+        .description("The minimum z.")
+        .defaultValue(50)
+        .sliderMin(-250)
+        .sliderMax(250)
+        .visible(() -> boundsType.get() == BoundsType.Random)
+        .build()
+    );
+
+    private final Setting<Double> randomMaxX = sgBounds.add(new DoubleSetting.Builder()
+        .name("random-max-x")
+        .description("The maximum x.")
+        .defaultValue(50)
+        .min(0.001)
+        .sliderMin(0.1)
+        .sliderMax(250)
+        .visible(() -> boundsType.get() == BoundsType.Random)
+        .build()
+    );
+
+    private final Setting<Double> randomMaxY = sgBounds.add(new DoubleSetting.Builder()
+        .name("random-max-y")
+        .description("The maximum y.")
+        .defaultValue(50)
+        .min(0.001)
+        .sliderMin(0.1)
+        .sliderMax(250)
+        .visible(() -> boundsType.get() == BoundsType.Random)
+        .build()
+    );
+
+    private final Setting<Double> randomMaxZ = sgBounds.add(new DoubleSetting.Builder()
+        .name("random-max-z")
+        .description("The maximum z.")
+        .defaultValue(50)
+        .min(0.001)
+        .sliderMin(0.1)
+        .sliderMax(250)
+        .visible(() -> boundsType.get() == BoundsType.Random)
+        .build()
+    );
+
+
+    // Horizontal
+
+
+    private final Setting<HorizontalMode> horizontalMode = sgHorizontal.add(new EnumSetting.Builder<HorizontalMode>()
+        .name("horizontal-mode")
+        .description("How to fly horizontally on servers.")
+        .defaultValue(HorizontalMode.Precise)
+        .build()
+    );
+
+    private final Setting<Integer> packetDigits = sgHorizontal.add(new IntSetting.Builder()
+        .name("packet-digits")
+        .description("How far to.")
         .defaultValue(0)
-        .min(0)
-        .sliderMin(0)
-        .sliderMax(1.25)
-        .visible(() -> flightMode.get() != FlightMode.Fast)
+        .sliderMin(5)
+        .sliderMax(9)
+        .noSlider()
+        .visible(() -> horizontalMode.get() == HorizontalMode.Small)
         .build()
     );
 
-    private final Setting<Double> speed = sgGeneral.add(new DoubleSetting.Builder()
+    private final Setting<Double> speed = sgHorizontal.add(new DoubleSetting.Builder()
         .name("speed")
         .description("At which speed to travel.")
         .defaultValue(1)
         .min(0.001)
         .sliderMin(0.001)
         .sliderMax(2)
+        .visible(() -> horizontalMode.get() != HorizontalMode.Small)
         .build()
     );
 
-    private final Setting<Double> verticalSpeed = sgGeneral.add(new DoubleSetting.Builder()
-        .name("vertical-speed")
-        .description("At which speed to travel vertically.")
-        .defaultValue(1)
-        .min(0.001)
-        .sliderMin(0.001)
-        .sliderMax(1.5)
-        .visible(() -> flightMode.get() == FlightMode.Packet || bypassVertical.get())
+    private final Setting<Integer> horizontalClips = sgHorizontal.add(new IntSetting.Builder()
+        .name("horizontal-clips")
+        .description("How many times to clip when traveling.")
+        .defaultValue(5)
+        .min(1)
+        .sliderMin(1)
+        .sliderMax(5)
+        .noSlider()
+        .visible(() -> horizontalMode.get() == HorizontalMode.Small)
         .build()
     );
 
-    private final Setting<Double> startFactor = sgGeneral.add(new DoubleSetting.Builder()
-        .name("start-factor")
-        .description("At what point to start.")
+    private final Setting<Double> horizontalStartDistance = sgHorizontal.add(new DoubleSetting.Builder()
+        .name("horizontal-start-distance")
+        .description("After what distance to start clipping.")
         .defaultValue(0.625)
         .min(0)
-        .sliderMin(0.001)
+        .sliderMin(0)
         .sliderMax(1)
-        .visible(() -> flightMode.get() != FlightMode.Packet)
+        .visible(() -> horizontalMode.get() != HorizontalMode.Clip && horizontalMode.get() != HorizontalMode.Small)
         .build()
     );
 
-    private final Setting<Double> airFactor = sgGeneral.add(new DoubleSetting.Builder()
-        .name("air-factor")
-        .description("The movement distance when in air.")
+    private final Setting<Integer> horizontalStartClip = sgHorizontal.add(new IntSetting.Builder()
+        .name("horizontal-start-clip")
+        .description("After what clip to start.")
+        .defaultValue(1)
+        .min(0)
+        .sliderMin(0)
+        .sliderMax(3)
+        .noSlider()
+        .visible(() -> horizontalMode.get() == HorizontalMode.Small)
+        .build()
+    );
+
+    private final Setting<Double> clipDistance = sgHorizontal.add(new DoubleSetting.Builder()
+        .name("clip-distance")
+        .description("How far to clip forwards per cycle.")
         .defaultValue(0.262)
         .min(0.001)
         .sliderMin(0.001)
         .sliderMax(0.312)
-        .visible(() -> flightMode.get() != FlightMode.Packet)
+        .visible(() -> horizontalMode.get() != HorizontalMode.Clip)
         .build()
     );
 
-    private final Setting<Double> waterFactor = sgGeneral.add(new DoubleSetting.Builder()
-        .name("water-factor")
-        .description("The movement distance when in water.")
-        .defaultValue(0.160)
-        .min(0.001)
-        .sliderMin(0.001)
-        .sliderMax(0.212)
-        .visible(() -> flightMode.get() != FlightMode.Packet)
-        .build()
-    );
-
-    private final Setting<Double> sneakFactor = sgGeneral.add(new DoubleSetting.Builder()
-        .name("sneak-factor")
-        .description("The movement distance when sneaking.")
+    private final Setting<Double> slowClipDistance = sgHorizontal.add(new DoubleSetting.Builder()
+        .name("slow-clip-distance")
+        .description("How far to clip forwards when sneaking or sprinting per cycle.")
         .defaultValue(0.212)
         .min(0.001)
         .sliderMin(0.001)
         .sliderMax(0.3)
-        .visible(() -> flightMode.get() != FlightMode.Packet)
+        .visible(() -> horizontalMode.get() != HorizontalMode.Clip)
+        .build()
+    );
+
+    private final Setting<Boolean> acceptTeleport = sgHorizontal.add(new BoolSetting.Builder()
+        .name("accept-teleport")
+        .description("Sends a teleport confirm packet to the server after the bounds.")
+        .defaultValue(true)
         .build()
     );
 
 
-    // Bypass
+    // Vertical
 
 
-    private final Setting<Boolean> spoofOnGround = sgBypass.add(new BoolSetting.Builder()
+    private final Setting<VerticalMode> verticalMode = sgVertical.add(new EnumSetting.Builder<VerticalMode>()
+        .name("vertical-mode")
+        .description("How to fly vertically on servers.")
+        .defaultValue(VerticalMode.Simple)
+        .build()
+    );
+
+    private final Setting<Double> verticalSpeed = sgVertical.add(new DoubleSetting.Builder()
+        .name("vertical-speed")
+        .description("Your vertical speed.")
+        .defaultValue(0.060)
+        .min(0.060)
+        .sliderMin(0.060)
+        .sliderMax(1.5)
+        .visible(() -> verticalMode.get() == VerticalMode.Clip || verticalMode.get() == VerticalMode.Fast)
+        .build()
+    );
+
+    private final Setting<Double> verticalStartDistance = sgVertical.add(new DoubleSetting.Builder()
+        .name("vertical-start-distance")
+        .description("After what distance to start clipping.")
+        .defaultValue(0.015)
+        .min(0)
+        .sliderMin(0)
+        .sliderMax(1)
+        .visible(() -> verticalMode.get() == VerticalMode.Clip || verticalMode.get() == VerticalMode.Fast)
+        .build()
+    );
+
+    private final Setting<Double> verticalClipDistance = sgVertical.add(new DoubleSetting.Builder()
+        .name("vertical-clip-distance")
+        .description("The clip distance when traveling vertically.")
+        .defaultValue(0.06)
+        .min(0.001)
+        .sliderMin(0.001)
+        .sliderMax(1.5)
+        .visible(() -> verticalMode.get() != VerticalMode.None)
+        .build()
+    );
+
+    private final Setting<Boolean> postRubberband = sgVertical.add(new BoolSetting.Builder()
+        .name("post-rubberband")
+        .description("Rubberbands you after clipping.")
+        .defaultValue(true)
+        .visible(() -> verticalMode.get() != VerticalMode.None)
+        .build()
+    );
+
+    private final Setting<Boolean> fakeTeleportAccept = sgVertical.add(new BoolSetting.Builder()
+        .name("fake-teleport-accept")
+        .description("Sends a fake teleport confirm packet after every clip.")
+        .defaultValue(false)
+        .visible(() -> verticalMode.get() == VerticalMode.Clip || verticalMode.get() == VerticalMode.Fast)
+        .build()
+    );
+
+
+    // Other
+
+
+    private final Setting<Boolean> spoofOnGround = sgOther.add(new BoolSetting.Builder()
         .name("spoof-on-ground")
         .description("Sets you server-side on ground.")
         .defaultValue(true)
         .build()
     );
 
-    private final Setting<Boolean> sprint = sgBypass.add(new BoolSetting.Builder()
+    private final Setting<Boolean> sprint = sgOther.add(new BoolSetting.Builder()
         .name("sprint")
         .description("Automatically sprints to allow higher speeds.")
         .defaultValue(true)
         .build()
     );
 
-    private final Setting<Boolean> rubberbandBypass = sgBypass.add(new BoolSetting.Builder()
-        .name("rubberband-bypass")
-        .description("Allows to travel at higher speed on some servers.")
-        .defaultValue(true)
-        .visible(() -> flightMode.get() != FlightMode.Packet)
-        .build()
-    );
-
-    private final Setting<Boolean> strict = sgBypass.add(new BoolSetting.Builder()
-        .name("strict")
-        .description("Stricts your movement.")
+    private final Setting<Boolean> noCollision = sgOther.add(new BoolSetting.Builder()
+        .name("no-collision")
+        .description("Removes block collisions client-side.")
         .defaultValue(false)
-        .visible(() -> flightMode.get() != FlightMode.Packet && rubberbandBypass.get())
         .build()
     );
 
-    private final Setting<Double> rubberbandHeight = sgBypass.add(new DoubleSetting.Builder()
-        .name("rubberband-height")
-        .description("The vertical rubberband height.")
-        .defaultValue(0)
-        .sliderMin(0)
-        .sliderMax(100)
-        .visible(() -> flightMode.get() != FlightMode.Packet && rubberbandBypass.get() && !strict.get())
+    private final Setting<Boolean> smallBounds = sgOther.add(new BoolSetting.Builder()
+        .name("small-bounds")
+        .description("Uses smaller bounds when flying horizontally.")
+        .defaultValue(true)
         .build()
     );
 
-    private final Setting<PosMode> positionMode = sgBypass.add(new EnumSetting.Builder<PosMode>()
-        .name("set-pos-mode")
-        .description("How to update your position.")
-        .defaultValue(PosMode.Post)
+    private final Setting<Boolean> updateRotation = sgOther.add(new BoolSetting.Builder()
+        .name("update-rotation")
+        .description("Updates your rotation while flying.")
+        .defaultValue(true)
         .build()
     );
 
-    private final Setting<CancelMode> cancelMode = sgBypass.add(new EnumSetting.Builder<CancelMode>()
-        .name("cancel-packets-mode")
-        .description("How to cancel irrelevant packets send by you.")
-        .defaultValue(CancelMode.Strict)
+    private final Setting<AntiFallMode> antiFallMode = sgOther.add(new EnumSetting.Builder<AntiFallMode>()
+        .name("anti-fall-mode")
+        .description("How to vertically rubberband you once after enabling the module to reset your velocity.")
+        .defaultValue(AntiFallMode.Up)
         .build()
     );
 
-
-    // Anti Kick
-
-
-    private final Setting<DownMode> downwardsMode = sgAntiKick.add(new EnumSetting.Builder<DownMode>()
-        .name("downwards-mode")
-        .description("How to go downwards.")
-        .defaultValue(DownMode.Post)
+    private final Setting<Boolean> antiKickOnMove = sgOther.add(new BoolSetting.Builder()
+        .name("anti-kick-on-move")
+        .description("Goes downwards after some time to prevent you from being kicked for flight.")
+        .defaultValue(true)
         .build()
     );
 
-    private final Setting<Integer> downwardsDelay = sgAntiKick.add(new IntSetting.Builder()
-        .name("downwards-delay")
+    private final Setting<Integer> antiKickDelay = sgOther.add(new IntSetting.Builder()
+        .name("anti-kick-delay")
         .description("How long to wait before going down again.")
         .defaultValue(15)
-        .min(0)
+        .min(2)
+        .sliderMin(10)
+        .sliderMax(25)
         .noSlider()
-        .visible(() -> downwardsMode.get() != DownMode.None)
+        .visible(antiKickOnMove::get)
         .build()
     );
 
-    private final Setting<Double> downwardsSpeed = sgAntiKick.add(new DoubleSetting.Builder()
-        .name("downwards-speed")
-        .description("How fast to go downwards.")
-        .defaultValue(0.05)
-        .min(0)
-        .sliderMin(0)
-        .sliderMax(1)
-        .visible(() -> downwardsMode.get() != DownMode.None)
-        .build()
-    );
-
-    private final Setting<Boolean> downwardsBypass = sgAntiKick.add(new BoolSetting.Builder()
-        .name("downwards-bypass")
-        .description("Sends downwards packets.")
+    private final Setting<Boolean> antiKickOnIdle = sgOther.add(new BoolSetting.Builder()
+        .name("anti-kick-on-idle")
+        .description("Goes downwards when idling.")
         .defaultValue(true)
-        .visible(() -> downwardsMode.get() == DownMode.Post)
         .build()
     );
 
-    private final Setting<Boolean> tpBack = sgAntiKick.add(new BoolSetting.Builder()
-        .name("tp-back")
-        .description("Teleports you back to your original position.")
+    private final Setting<Boolean> idleTpBack = sgOther.add(new BoolSetting.Builder()
+        .name("idle-tp-back")
+        .description("Teleports you back upwards after going down.")
         .defaultValue(true)
-        .visible(() -> downwardsMode.get() != DownMode.None && !downwardsBypass.get())
+        .visible(antiKickOnIdle::get)
         .build()
     );
 
-
-    // Idle
-
-
-    private final Setting<IdleMode> idleMode = sgIdle.add(new EnumSetting.Builder<IdleMode>()
-        .name("idle-mode")
-        .description("What to do when not moving.")
-        .defaultValue(IdleMode.Bypass)
-        .build()
-    );
-
-    private final Setting<Integer> idleDelay = sgIdle.add(new IntSetting.Builder()
+    private final Setting<Integer> idleDelay = sgOther.add(new IntSetting.Builder()
         .name("idle-delay")
         .description("How long to wait before spoofing again.")
-        .defaultValue(10)
+        .defaultValue(15)
         .min(0)
+        .sliderMin(15)
+        .sliderMax(25)
         .noSlider()
-        .visible(() -> idleMode.get() != IdleMode.None)
+        .visible(antiKickOnIdle::get)
         .build()
     );
 
-    private final Setting<Double> idleRubberbandHeight = sgIdle.add(new DoubleSetting.Builder()
-        .name("downwards-rubberband-height")
-        .description("How high to teleport when idling.")
-        .defaultValue(100)
-        .visible(() -> idleMode.get() == IdleMode.Rubberband)
-        .build()
-    );
-
-    private final Setting<Double> idleVelocity = sgIdle.add(new DoubleSetting.Builder()
-        .name("downwards-velocity")
-        .description("Your velocity when idling.")
-        .defaultValue(0.1)
-        .visible(() -> idleMode.get() == IdleMode.Velocity || idleMode.get() == IdleMode.Bypass)
-        .build()
-    );
-
-    private final Setting<Boolean> tpBackOnIdle = sgIdle.add(new BoolSetting.Builder()
-        .name("tp-back-on-idle")
-        .description("Teleports you back to your original position after idling down.")
+    private final Setting<Boolean> updateVelocity = sgOther.add(new BoolSetting.Builder()
+        .name("update-velocity")
+        .description("Updates your client-side velocity.")
         .defaultValue(true)
-        .visible(() -> idleMode.get() == IdleMode.Bypass)
         .build()
     );
 
-    private int downTicks;
+    private final Setting<Double> velocityMultiplier = sgOther.add(new DoubleSetting.Builder()
+        .name("velocity-multiplier")
+        .description("The value to multiply your client-side velocity with.")
+        .defaultValue(1)
+        .min(0)
+        .sliderMin(0.1)
+        .sliderMax(2.25)
+        .visible(updateVelocity::get)
+        .build()
+    );
+
+    private final Setting<PosUpdateAction> posUpdateAction = sgOther.add(new EnumSetting.Builder<PosUpdateAction>()
+        .name("pos-update-action")
+        .description("What to do when the server requires you to update your position.")
+        .defaultValue(PosUpdateAction.AcceptRequired)
+        .build()
+    );
+
+    private int antiKickTicks;
     private int idleTicks;
 
+    private int ticksExisted;
+
+    private int teleportID;
+    private Vec3d teleportPos;
+
+    private Vec3d velocity;
+
+    private boolean up;
+    private boolean updated;
+
+    private final Random random = new Random();
+
     private List<PlayerMoveC2SPacket> packets;
+    private List<TeleportConfirmC2SPacket> tpPackets;
 
     public RubberbandFly() {
         super(Categories.Movement, "rubberband-fly", "Fly with rubberbanding.");
@@ -273,50 +477,229 @@ public class RubberbandFly extends Module {
 
     @Override
     public void onActivate() {
-        downTicks = 0;
+        antiKickTicks = 0;
         idleTicks = 0;
 
+        ticksExisted = 0;
+
+        teleportID = -1;
+        teleportPos = null;
+
+        velocity = null;
+
+        up = false;
+        updated = true;
+
         packets = new ArrayList<>();
+        tpPackets = new ArrayList<>();
+
+        if (antiFallMode.get() != AntiFallMode.None && mc != null && mc.world != null && mc.getNetworkHandler() != null && !doesCollide(mc.player.getBoundingBox().offset(0, -0.001, 0))) {
+            double factor = ((double) Math.round(verticalClipDistance.get() * 1000) / 1000) * (antiFallMode.get() == AntiFallMode.Down ? 1 : -1);
+
+            if (!doesCollide(mc.player.getBoundingBox().offset(0, -factor + (antiFallMode.get() == AntiFallMode.Down ? 0.001 : -0.001), 0))) {
+                sendPacket(mc.player.getX(), mc.player.getY() - factor, mc.player.getZ(), mc.player.isOnGround());
+                sendPacket(mc.player.getX(), 0, mc.player.getZ());
+            }
+        }
+    }
+
+    @Override
+    public void onDeactivate() {
+        if (sprint.get() && mc.getNetworkHandler() != null) {
+            if (!mc.player.isSprinting()) mc.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(mc.player, ClientCommandC2SPacket.Mode.STOP_SPRINTING));
+
+            if (mc.player != null) mc.player.setSprinting(false);
+        }
+
+        if (mc != null && mc.player != null) {
+            mc.player.setVelocity(0, 0, 0);
+        }
+
+        if (teleportPos != null) {
+            if (teleportID >= 0 && mc.getNetworkHandler() != null) sendTpPacket(teleportID);
+            if (mc != null && mc.player != null) mc.player.updatePosition(teleportPos.getX(), teleportPos.getY(), teleportPos.getZ());
+
+            teleportID = -1;
+            teleportPos = null;
+        }
+    }
+
+    @EventHandler
+    private void onCollisionShape(CollisionShapeEvent event) {
+        if (noCollision.get()) {
+            event.shape = VoxelShapes.empty();
+        }
     }
 
     @EventHandler
     private void onPreTick(TickEvent.Pre event) {
-        boolean shouldGoDown = false;
-        boolean shouldGoUp = false;
-
-        // Anti Kick
-
-        boolean antiKick = downwardsMode.get() == DownMode.Post && (downTicks >= downwardsDelay.get() || downwardsDelay.get() == 0)
-            && downwardsBypass.get() && mc.player.prevY <= mc.player.getY() && (isPlayerMoving() || mc.options.jumpKey.isPressed());
-
-        if (antiKick) {
-            shouldGoDown = true;
-            downTicks = 0;
+        if (ticksExisted == 0) {
+            ticksExisted = 1;
+            return;
         }
 
-        // Main Movement
+        updated = false;
 
-        if ((isPlayerMoving() || flightMode.get() == FlightMode.Packet && (mc.options.jumpKey.isPressed() || mc.options.sneakKey.isPressed())) && flightMode.get() != FlightMode.Fast && !shouldGoDown) {
-            double[] dir = directionSpeed(velocity.get());
+        ticksExisted++;
 
-            double down = (downTicks >= downwardsDelay.get() || downwardsDelay.get() == 0) ? (mc.world.getBlockCollisions(mc.player, mc.player.getBoundingBox().offset(0, -downwardsSpeed.get(), 0)).iterator().hasNext() ? 0 : downwardsSpeed.get()) : 0;
+        if (teleportPos != null) {
+            if (teleportID >= 0) sendTpPacket(teleportID);
+            mc.player.updatePosition(teleportPos.getX(), teleportPos.getY(), teleportPos.getZ());
 
-            double dx = (dir[0] * speed.get() > speed.get() ? speed.get() * (dir[0] > 0 ? 1 : -1) : dir[0] * speed.get());
-            double dz = (dir[1] * speed.get() > speed.get() ? speed.get() * (dir[1] > 0 ? 1 : -1) : dir[1] * speed.get());
+            teleportID = -1;
+            teleportPos = null;
+        }
 
-            Vec3d prevPos = new Vec3d(mc.player.getX() + dx, mc.player.getY() - down, mc.player.getZ() + dz);
+        mc.player.setVelocity(0, 0, 0);
 
-            // Updating Velocity
+        Vec3d bounds = getBounds();
+        Vec3d position = mc.player.getPos();
 
-            double deltaX = dir[0] * speed.get();
-            double deltaZ = dir[1] * speed.get();
+        boolean move = true;
 
-            if (velocity.get() == 0) {
-                deltaX = mc.player.getVelocity().getX();
-                deltaZ = mc.player.getVelocity().getZ();
+        // Vertical Movement / Anti Kick / Idling
+
+        boolean antiKick = antiKickOnMove.get() && (antiKickTicks >= antiKickDelay.get()) && (isPlayerMoving() || mc.options.jumpKey.isPressed());
+        boolean idle = antiKickOnIdle.get() && (idleTicks >= idleDelay.get() || idleDelay.get() == 0 || up && idleTpBack.get()) && !isPlayerMoving() && !mc.options.jumpKey.isPressed() && !mc.options.sneakKey.isPressed();
+
+        if (antiKick) {
+            antiKickTicks = 0;
+        } else if (idle) {
+            idleTicks = 0;
+            move = false;
+        }
+
+        if (verticalMode.get() != VerticalMode.None && (mc.options.jumpKey.isPressed() || mc.options.sneakKey.isPressed()) || antiKick || idle) {
+            double factor = ((double) Math.round(verticalClipDistance.get() * 1000) / 1000);
+            boolean shouldGoDown = antiKick || idle;
+
+            if (mc.options.jumpKey.isPressed() || mc.options.sneakKey.isPressed()) move = false;
+
+            switch (verticalMode.get()) {
+                case Simple -> {
+                    if (mc.options.jumpKey.isPressed() && !shouldGoDown || up && idleTpBack.get() && !mc.options.jumpKey.isPressed() && !mc.options.sneakKey.isPressed()) {
+                        if (!doesCollide(mc.player.getBoundingBox().offset(0, factor - 0.001, 0))) {
+                            sendPacket(mc.player.getX(), mc.player.getY() + factor, mc.player.getZ(), mc.player.isOnGround());
+                            sendPacket(mc.player.getX(), 0, mc.player.getZ());
+
+                            position = new Vec3d(mc.player.getX(), mc.player.getY() + factor, mc.player.getZ());
+                        }
+
+                        up = false;
+                    } else if (mc.options.sneakKey.isPressed() || shouldGoDown) {
+                        if (!doesCollide(mc.player.getBoundingBox().offset(0, -factor + 0.001, 0))) {
+                            sendPacket(mc.player.getX(), mc.player.getY() - factor, mc.player.getZ(), mc.player.isOnGround());
+                            sendPacket(mc.player.getX(), 0, mc.player.getZ());
+
+                            position = new Vec3d(mc.player.getX(), mc.player.getY() - factor, mc.player.getZ());
+                        }
+
+                        if (!doesCollide(mc.player.getBoundingBox().offset(0, -factor - 0.001, 0))) {
+                            up = true;
+                        }
+                    }
+                }
+
+                case Clip -> {
+                    if (mc.options.jumpKey.isPressed() && !shouldGoDown || up && idleTpBack.get() && !mc.options.jumpKey.isPressed() && !mc.options.sneakKey.isPressed()) {
+                        boolean update = false;
+
+                        for (double y = (verticalStartDistance.get() / 10); y < verticalSpeed.get() + 0.01; y += factor) {
+                            if (!doesCollide(mc.player.getBoundingBox().offset(0, y - 0.001, 0))) {
+                                sendPacket(mc.player.getX(), mc.player.getY() + y, mc.player.getZ(), mc.player.isOnGround());
+                                if (!postRubberband.get()) sendBoundsPacket(bounds);
+                                if (fakeTeleportAccept.get()) {
+                                    sendTpPacket(teleportID);
+                                }
+
+                                update = true;
+                            }
+                        }
+
+                        up = false;
+
+                        if (update) {
+                            if (postRubberband.get()) sendBoundsPacket(bounds);
+                            position = new Vec3d(mc.player.getX(), mc.player.getY() + verticalSpeed.get(), mc.player.getZ());
+                        }
+                    } else if (mc.options.sneakKey.isPressed() || shouldGoDown) {
+                        boolean update = false;
+
+                        for (double y = (verticalStartDistance.get() / 10); y < verticalSpeed.get() + 0.01; y += factor) {
+                            if (!doesCollide(mc.player.getBoundingBox().offset(0, -y + 0.001, 0))) {
+                                sendPacket(mc.player.getX(), mc.player.getY() - y, mc.player.getZ(), mc.player.isOnGround());
+                                if (!postRubberband.get()) sendBoundsPacket(bounds);
+                                if (fakeTeleportAccept.get()) {
+                                    sendTpPacket(teleportID);
+                                }
+
+                                update = true;
+                            }
+                        }
+
+                        if (!doesCollide(mc.player.getBoundingBox().offset(0, -verticalSpeed.get() - 0.001, 0))) {
+                            up = true;
+                        }
+
+                        if (update) {
+                            if (postRubberband.get()) sendBoundsPacket(bounds);
+                            position = new Vec3d(mc.player.getX(), mc.player.getY() - verticalSpeed.get(), mc.player.getZ());
+                        }
+                    }
+                }
+
+                case Fast -> {
+                    if (mc.options.jumpKey.isPressed() && !shouldGoDown || up && idleTpBack.get() && !mc.options.jumpKey.isPressed() && !mc.options.sneakKey.isPressed()) {
+                        boolean update = false;
+
+                        for (double y = (verticalStartDistance.get() / 10); y < verticalSpeed.get() + 0.01; y += factor) {
+                            if (!doesCollide(mc.player.getBoundingBox().offset(0, y - 0.001, 0))) {
+                                sendPacket(mc.player.getX(), mc.player.getY() + factor, mc.player.getZ(), mc.player.isOnGround());
+                                if (!postRubberband.get()) sendBoundsPacket(bounds);
+                                if (fakeTeleportAccept.get()) {
+                                    sendTpPacket(teleportID);
+                                }
+
+                                update = true;
+                            }
+                        }
+
+                        up = false;
+
+                        if (update) {
+                            if (postRubberband.get()) sendBoundsPacket(bounds);
+                            position = new Vec3d(mc.player.getX(), mc.player.getY() + verticalSpeed.get(), mc.player.getZ());
+                        }
+                    } else if (mc.options.sneakKey.isPressed() || shouldGoDown) {
+                        boolean update = false;
+
+                        for (double y = (verticalStartDistance.get() / 10); y < verticalSpeed.get() + 0.01; y += factor) {
+                            if (!doesCollide(mc.player.getBoundingBox().offset(0, -y + 0.001, 0))) {
+                                sendPacket(mc.player.getX(), mc.player.getY() - factor, mc.player.getZ(), mc.player.isOnGround());
+                                if (!postRubberband.get()) sendBoundsPacket(bounds);
+                                if (fakeTeleportAccept.get()) {
+                                    sendTpPacket(teleportID);
+                                }
+
+                                update = true;
+                            }
+                        }
+
+                        if (!doesCollide(mc.player.getBoundingBox().offset(0, -verticalSpeed.get() - 0.001, 0))) {
+                            up = true;
+                        }
+
+                        if (update) {
+                            if (postRubberband.get()) sendBoundsPacket(bounds);
+                            position = new Vec3d(mc.player.getX(), mc.player.getY() - verticalSpeed.get(), mc.player.getZ());
+                        }
+                    }
+                }
             }
+        }
 
-            mc.player.setVelocity(deltaX, 0, deltaZ);
+        if (move && isPlayerMoving()) {
+            double[] dir = directionSpeed(speed.get());
 
             // Sprinting
 
@@ -330,188 +713,144 @@ public class RubberbandFly extends Module {
 
             // Different Modes
 
-            if (flightMode.get() == FlightMode.Rubberband) {
-                double y = strict.get() ? (mc.player.getY() <= 10 ? 0 : 0.5) : rubberbandHeight.get();
-                double factor = mc.player.isSneaking() ? sneakFactor.get() : (mc.player.isTouchingWater() ? waterFactor.get() : airFactor.get());
+            double factor = mc.player.isSneaking() || mc.player.getHungerManager().getFoodLevel() <= 6 ? slowClipDistance.get() : clipDistance.get();
 
-                for (double i = (startFactor.get() / 10); i < speed.get(); i += factor) {
-                    double[] factorDir = directionSpeed(i);
+            switch (horizontalMode.get()) {
+                case Clip -> {
+                    double[] distance = directionSpeed(((double) Math.round((speed.get() / 16.666) * 1000) / 1000));
 
-                    if (downwardsMode.get() == DownMode.Pre && (downTicks >= downwardsDelay.get() || downwardsDelay.get() == 0)) downTicks = 0;
-                    double d = (downwardsMode.get() == DownMode.Pre && downTicks >= downwardsDelay.get() || downwardsDelay.get() == 0 ? down : 0);
+                    sendPacket(mc.player.getX() + distance[0], mc.player.getY(), mc.player.getZ() + distance[1], mc.player.isOnGround());
+                    sendBoundsPacket(bounds);
+                    if (acceptTeleport.get()) sendTpPacket(teleportID);
 
-                    sendPacket(mc.player.getX() + factorDir[0], mc.player.getY() - d, mc.player.getZ() + factorDir[1]);
-
-                    if (downwardsMode.get() == DownMode.Pre) downTicks++;
+                    position = new Vec3d(mc.player.getX() + distance[0], mc.player.getY(), mc.player.getZ() + distance[1]);
                 }
 
-                if (positionMode.get() == PosMode.Pre || positionMode.get() == PosMode.Both) {
-                    mc.player.setPos(prevPos.x, prevPos.y, prevPos.z);
+                case Small -> {
+                    double small = factor * Math.pow(10, -packetDigits.get());
+
+                    for (int clip = horizontalStartClip.get(); clip < horizontalClips.get(); clip++) {
+                        double[] speed = directionSpeed(clip * small);
+
+                        sendPacket(mc.player.getX() + speed[0], mc.player.getY(), mc.player.getZ() + speed[1]);
+                    }
+
+                    sendBoundsPacket(bounds);
+                    if (acceptTeleport.get()) sendTpPacket(teleportID);
+                    double[] speed = directionSpeed((Math.max(horizontalClips.get() - 1, 0)) * small);
+
+                    position = new Vec3d(mc.player.getX() + speed[0], mc.player.getY(), mc.player.getZ() + speed[1]);
                 }
 
-                if (rubberbandBypass.get()) {
-                    sendPacket(mc.player.getX() + dir[0], y, mc.player.getZ() + dir[1]);
-                    prevPos = new Vec3d(mc.player.getX() + dir[0], mc.player.getY(), mc.player.getZ() + dir[1]);
+                case Precise -> {
+                    for (double i = (horizontalStartDistance.get() / 10); i < speed.get(); i += factor) {
+                        double[] speed = directionSpeed(i);
 
-                    if (positionMode.get() == PosMode.Post || positionMode.get() == PosMode.Both) {
-                        mc.player.setPos(mc.player.getX() + dir[0], mc.player.getY(), mc.player.getZ() + dir[1]);
+                        sendPacket(mc.player.getX() + speed[0], mc.player.getY(), mc.player.getZ() + speed[1]);
                     }
+
+                    sendBoundsPacket(bounds);
+                    if (acceptTeleport.get()) sendTpPacket(teleportID);
+
+                    position = new Vec3d(mc.player.getX() + dir[0], mc.player.getY(), mc.player.getZ() + dir[1]);
                 }
-            } else if (flightMode.get() == FlightMode.Packet) {
-                double horizontalFactor = ((double) Math.round((speed.get() / 16.666) * 1000) / 1000);
-                double verticalFactor = ((double) Math.round((verticalSpeed.get() / 16.666) * 1000) / 1000);
 
-                if (isPlayerMoving()) {
-                    double[] speed = directionSpeed(horizontalFactor);
+                case Fast -> {
+                    for (double i = (horizontalStartDistance.get() / 10); i < speed.get(); i += factor) {
+                        double[] speed = directionSpeed(factor);
 
-                    sendPacket(mc.player.getX() + speed[0], mc.player.getY(), mc.player.getZ() + speed[1], mc.player.isOnGround());
-                    sendPacket(mc.player.getX(), 0, mc.player.getZ());
-
-                    if (positionMode.get() == PosMode.Pre || positionMode.get() == PosMode.Both) {
-                        mc.player.setPos(mc.player.getX() + speed[0], mc.player.getY(), mc.player.getZ() + speed[1]);
+                        sendPacket(mc.player.getX() + speed[0], mc.player.getY(), mc.player.getZ() + speed[1]);
                     }
-                } else if (mc.options.jumpKey.isPressed()) {
-                    sendPacket(mc.player.getX(), mc.player.getY() + verticalFactor, mc.player.getZ(), mc.player.isOnGround());
-                    sendPacket(mc.player.getX(), 0, mc.player.getZ());
 
-                    if (positionMode.get() == PosMode.Post || positionMode.get() == PosMode.Both) {
-                        mc.player.setPos(mc.player.getX(), mc.player.getY() + verticalFactor, mc.player.getZ());
-                    }
-                } else if (mc.options.sneakKey.isPressed()) {
-                    sendPacket(mc.player.getX(), mc.player.getY() - verticalFactor, mc.player.getZ(), mc.player.isOnGround());
-                    sendPacket(mc.player.getX(), 0, mc.player.getZ());
+                    sendBoundsPacket(bounds);
+                    if (acceptTeleport.get()) sendTpPacket(teleportID);
 
-                    if (positionMode.get() == PosMode.Post || positionMode.get() == PosMode.Both) {
-                        mc.player.setPos(mc.player.getX(), mc.player.getY() - verticalFactor, mc.player.getZ());
-                    }
-                }
-            }
-
-            if (downwardsMode.get() == DownMode.Post && (downTicks >= downwardsDelay.get() || downwardsDelay.get() == 0)) {
-                sendPacket(prevPos.x, prevPos.y - (downwardsMode.get() == DownMode.Post ? down : 0), prevPos.z);
-                if (tpBack.get()) sendPacket(prevPos.x, prevPos.y + (downwardsMode.get() == DownMode.Post ? down : 0), prevPos.z);
-
-                downTicks = 0;
-            }
-        } else if (flightMode.get() == FlightMode.Fast && !shouldGoDown && isPlayerMoving()) {
-            Vec3d vel = mc.player.getVelocity();
-            double factor = mc.player.isSneaking() ? sneakFactor.get() : (mc.player.isTouchingWater() ? waterFactor.get() : airFactor.get());
-
-            for (double i = (startFactor.get() / 10); i < speed.get(); i += factor) {
-                double[] dir = directionSpeed((float) i);
-                sendPacket(mc.player.getX() + dir[0], mc.player.getY(), mc.player.getZ() + dir[1]);
-            }
-
-            if (rubberbandBypass.get()) {
-                sendPacket(mc.player.getX() + vel.x, rubberbandHeight.get(), mc.player.getZ() + vel.z);
-
-                if (positionMode.get() == PosMode.Post || positionMode.get() == PosMode.Both) {
-                    mc.player.setPos(mc.player.getX() + vel.x, mc.player.getY(), mc.player.getZ() + vel.z);
+                    position = new Vec3d(mc.player.getX() + dir[0], mc.player.getY(), mc.player.getZ() + dir[1]);
                 }
             }
         }
 
-        // Idling
+        if (updateVelocity.get()) velocity = new Vec3d(position.getX() - mc.player.getX(), position.getY() - mc.player.getY(), position.getZ() - mc.player.getZ()).multiply(velocityMultiplier.get());
 
-        if (idleMode.get() != IdleMode.None && (idleTicks >= idleDelay.get() || idleDelay.get() == 0) && !isPlayerMoving()) {
-            switch (idleMode.get()) {
-                case Velocity -> {
-                    Vec3d velocity = mc.player.getVelocity();
-                    mc.player.setVelocity(velocity.getX(), idleVelocity.get(), velocity.getZ());
-                }
-
-                case Rubberband -> {
-                    sendPacket(mc.player.getX(), idleRubberbandHeight.get(), mc.player.getZ());
-                    mc.player.setVelocity(0, 0, 0);
-                }
-
-                case Flight -> {
-                    mc.player.setVelocity(0, 0, 0);
-                }
-
-                case TP -> {
-                    sendPacket(mc.player.getX(), mc.player.getY(), mc.player.getZ());
-                    mc.player.updatePosition(mc.player.getX(), mc.player.getY(), mc.player.getZ());
-                    mc.player.setVelocity(0, 0, 0);
-                }
-
-                case Bypass -> {
-                    mc.player.setVelocity(0, 0, 0);
-
-                    if (!mc.options.sneakKey.isPressed() && mc.player.prevY > mc.player.getY() && tpBackOnIdle.get()) {
-                        shouldGoUp = true;
-                        shouldGoDown = false;
-                    } else if (!mc.options.jumpKey.isPressed()) {
-                        shouldGoDown = true;
-                    }
-                }
-            }
-
-            if (sprint.get()) {
-                if (!mc.player.isSprinting()) mc.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(mc.player, ClientCommandC2SPacket.Mode.STOP_SPRINTING));
-
-                mc.player.setSprinting(false);
-            }
-
-            idleTicks = 0;
-        } else if (!isPlayerMoving()) {
-            mc.player.setVelocity(0, 0, 0);
-        }
-
-        // Vertical Anti Kick Movement
-
-        if (bypassVertical.get() && !antiKick || shouldGoDown || shouldGoUp && tpBackOnIdle.get()) {
-            double verticalFactor = ((double) Math.round(((shouldGoDown || shouldGoUp ? (isPlayerMoving() ? downwardsSpeed.get() * 20 : idleVelocity.get() * 10) : verticalSpeed.get()) / 16.666) * 1000) / 1000);
-
-            if ((mc.options.jumpKey.isPressed() && !shouldGoDown || shouldGoUp) && !mc.world.getBlockCollisions(mc.player, mc.player.getBoundingBox().offset(0, verticalFactor, 0)).iterator().hasNext()) {
-                sendPacket(mc.player.getX(), mc.player.getY() + verticalFactor, mc.player.getZ(), mc.player.isOnGround());
-                sendPacket(mc.player.getX(), 0, mc.player.getZ());
-
-                if (positionMode.get() == PosMode.Post || positionMode.get() == PosMode.Both) {
-                    mc.player.setPos(mc.player.getX(), mc.player.getY() + verticalFactor, mc.player.getZ());
-                }
-            } else if ((mc.options.sneakKey.isPressed() || shouldGoDown) && !shouldGoUp && !mc.world.getBlockCollisions(mc.player, mc.player.getBoundingBox().offset(0, -verticalFactor, 0)).iterator().hasNext()) {
-                sendPacket(mc.player.getX(), mc.player.getY() - verticalFactor, mc.player.getZ(), mc.player.isOnGround());
-                sendPacket(mc.player.getX(), 0, mc.player.getZ());
-
-                if (positionMode.get() == PosMode.Post || positionMode.get() == PosMode.Both) {
-                    mc.player.setPos(mc.player.getX(), mc.player.getY() - verticalFactor, mc.player.getZ());
-                }
-            }
-        }
-
-        downTicks++;
+        antiKickTicks++;
         idleTicks++;
+    }
+
+    // Updating Velocity
+
+    @EventHandler
+    private void onPlayerMove(PlayerMoveEvent event) {
+        if (velocity != null && updateVelocity.get()) {
+            ((IVec3d) event.movement).set(velocity.getX(), velocity.getY(), velocity.getZ());
+            velocity = null;
+        }
     }
 
     // Irrelevant Packet Cancel
 
     @EventHandler
     private void onSendPacket(PacketEvent.Send event) {
-        if (event.packet instanceof PlayerMoveC2SPacket packet) {
-            if ((cancelMode.get() == CancelMode.All || cancelMode.get() == CancelMode.Both) && !(event.packet instanceof PlayerMoveC2SPacket.PositionAndOnGround)
-                || (cancelMode.get() == CancelMode.Strict || cancelMode.get() == CancelMode.Both) && !packets.contains(packet)) {
+        if (event.packet instanceof PlayerMoveC2SPacket packet && !packets.remove(packet)) {
+            event.cancel();
+        } else if (event.packet instanceof TeleportConfirmC2SPacket packet
+            && !tpPackets.remove(packet) && (posUpdateAction.get() == PosUpdateAction.AcceptAll
+            || posUpdateAction.get() == PosUpdateAction.AcceptRequired)) {
 
-                packets.remove(packet);
-                event.cancel();
-            }
+            event.cancel();
         }
     }
 
-    // No Rotate
+    // No Rotate / Updating the Position
 
     @EventHandler
     private void onReceivePacket(PacketEvent.Receive event) {
         if (event.packet instanceof PlayerPositionLookS2CPacket packet) {
-            ((PlayerPositionLookS2CPacketAccessor) event.packet).setYaw(mc.player.getYaw());
-            ((PlayerPositionLookS2CPacketAccessor) event.packet).setPitch(mc.player.getPitch());
+            teleportID = packet.getTeleportId();
 
-            packet.getFlags().remove(PlayerPositionLookS2CPacket.Flag.X_ROT);
-            packet.getFlags().remove(PlayerPositionLookS2CPacket.Flag.Y_ROT);
+            if (posUpdateAction.get() == PosUpdateAction.IgnoreRotation) {
+                ((PlayerPositionLookS2CPacketAccessor) event.packet).setYaw(mc.player.getYaw());
+                ((PlayerPositionLookS2CPacketAccessor) event.packet).setPitch(mc.player.getPitch());
+
+                packet.getFlags().remove(PlayerPositionLookS2CPacket.Flag.X_ROT);
+                packet.getFlags().remove(PlayerPositionLookS2CPacket.Flag.Y_ROT);
+            } else if (posUpdateAction.get() != PosUpdateAction.Ignore) {
+                switch (posUpdateAction.get()) {
+                    case AcceptAll -> {
+                        mc.player.updatePosition(packet.getX(), packet.getY(), packet.getZ());
+                        sendTpPacket(packet.getTeleportId());
+                        event.cancel();
+                    }
+
+                    case AcceptRequired -> {
+                        teleportID = packet.getTeleportId();
+                        teleportPos = new Vec3d(packet.getX(), packet.getY(), packet.getZ());
+                        event.cancel();
+                    }
+
+                    case Update -> {
+                        teleportPos = new Vec3d(packet.getX(), packet.getY(), packet.getZ());
+                    }
+                }
+            }
         }
     }
 
     // Utils
+
+    private void sendTpPacket(int id) {
+        TeleportConfirmC2SPacket packet = new TeleportConfirmC2SPacket(id);
+
+        tpPackets.add(packet);
+        mc.getNetworkHandler().sendPacket(packet);
+
+        teleportID = id + 1;
+    }
+
+    private void sendBoundsPacket(Vec3d bounds) {
+        Vec3d tempBounds = smallBounds.get() ? new Vec3d(mc.player.getX(), bounds.getY(), mc.player.getZ()) : bounds;
+
+        sendPacket(tempBounds.getX(), tempBounds.getY(), tempBounds.getZ());
+    }
 
     private void sendPacket(double x, double y, double z) {
         sendPacket(x, y, z, spoofOnGround.get() || mc.player.isOnGround());
@@ -520,12 +859,165 @@ public class RubberbandFly extends Module {
     private void sendPacket(double x, double y, double z, boolean onGround) {
         PlayerMoveC2SPacket packet = new PlayerMoveC2SPacket.PositionAndOnGround(x, y, z, onGround);
 
+        if ((mc.player.prevYaw != mc.player.getYaw() || mc.player.prevPitch != mc.player.getPitch()) && updateRotation.get() && !updated) {
+            packet = new PlayerMoveC2SPacket.Full(x, y, z, updateRotation.get() ? mc.player.getYaw() : 0.0F, updateRotation.get() ? mc.player.getPitch() : 0.0F, onGround);
+            updated = true;
+        }
+
         packets.add(packet);
         mc.getNetworkHandler().sendPacket(packet);
     }
 
+    private Vec3d getBounds() {
+        double x = mc.player.getX();
+        double y = mc.player.getY();
+        double z = mc.player.getZ();
+
+        double infinity = 7.2E+4;
+        double small = 0.95 * Math.pow(10, -digits.get());
+
+        switch (boundsType.get()) {
+            case Up -> {
+                return new Vec3d(x, y + bypassHeight.get(), z);
+            }
+
+            case Down -> {
+                return new Vec3d(x, y - bypassHeight.get(), z);
+            }
+
+            case Ceil -> {
+                double[] speed = directionSpeed(ceilRadius.get());
+
+                double vx = speed[0];
+                double vz = speed[1];
+
+                return new Vec3d(x + vx, y, z + vz);
+            }
+
+            case Zero -> {
+                return new Vec3d(0, 0, 0);
+            }
+
+            case Small -> {
+                switch (boundsMode.get()) {
+                    case Horizontal -> {
+                        return new Vec3d(x > 0 ? small : -small, y, z > 0 ? small : -small);
+                    }
+
+                    case Vertical -> {
+                        new Vec3d(x, y > 0 ? small : -small, z);
+                    }
+                }
+
+                return new Vec3d(x > 0 ? small : -small, y > 0 ? small : -small, z > 0 ? small : -small);
+            }
+
+            case Alternative -> {
+                if (ticksExisted % 2 == 0) {
+                    return new Vec3d(x, y + bypassHeight.get(), z);
+                } else {
+                    return new Vec3d(x, y - bypassHeight.get(), z);
+                }
+            }
+
+            case Infinitive -> {
+                switch (boundsMode.get()) {
+                    case Horizontal -> {
+                        return new Vec3d(x > 0 ? infinity : -infinity, y, z > 0 ? infinity : -infinity);
+                    }
+
+                    case Vertical -> {
+                        return new Vec3d(x, y > 0 ? infinity : -infinity, z);
+                    }
+                }
+
+                return new Vec3d(x > 0 ? infinity : -infinity, y > 0 ? infinity : -infinity, z > 0 ? infinity : -infinity);
+            }
+
+            case Preserve -> {
+                return new Vec3d(x, y, z);
+            }
+
+            case Obscure -> {
+                return new Vec3d(x + random.nextDouble(80) + 20, MathHelper.clamp(y, 1.5, 253.5), z + random.nextDouble(80) + 20);
+            }
+
+            case Bypass -> {
+                return new Vec3d(x, y - bypassHeight.get() < 0 ? 0 : y - bypassHeight.get(), z);
+            }
+
+            case Random -> {
+                Vec3d bounds = new Vec3d(0, 0, 0);
+
+                double dx = randomMinX.get() + random.nextDouble(randomMaxX.get());
+                double dy = randomMinY.get() + random.nextDouble(randomMaxY.get());
+                double dz = randomMinZ.get() + random.nextDouble(randomMaxZ.get());
+
+                switch (customMode.get()) {
+                    case Polar -> {
+                        bounds = new Vec3d(dx, dy, dz);
+                    }
+
+                    case SmartPolar -> {
+                        bounds = new Vec3d(dx * (x > 0 ? 1 : -1), dy * (y > 0 ? 1 : -1), dz * (z > 0 ? 1 : -1));
+                    }
+
+                    case Relative -> {
+                        bounds = new Vec3d(x + dx, y + dy, z + dz);
+                    }
+
+                    case SmartRelative -> {
+                        bounds = new Vec3d(x + dx * (x > 0 ? 1 : -1), y + dy * (y > 0 ? 1 : -1), z + dz * (z > 0 ? 1 : -1));
+                    }
+
+                    case Multiply -> {
+                        bounds = new Vec3d(x * dx, y * dy, z * dz);
+                    }
+                }
+
+                return bounds;
+            }
+
+            case Custom -> {
+                Vec3d bounds = new Vec3d(0, 0, 0);
+
+                switch (customMode.get()) {
+                    case Polar -> {
+                        bounds = new Vec3d(customX.get(), customY.get(), customZ.get());
+                    }
+
+                    case SmartPolar -> {
+                        bounds = new Vec3d(customX.get() * (x > 0 ? 1 : -1), customY.get() * (y > 0 ? 1 : -1), customZ.get() * (z > 0 ? 1 : -1));
+                    }
+
+                    case Relative -> {
+                        bounds = new Vec3d(x + customX.get(), y + customY.get(), z + customZ.get());
+                    }
+
+                    case SmartRelative -> {
+                        bounds = new Vec3d(x + customX.get() * (x > 0 ? 1 : -1), y + customY.get() * (y > 0 ? 1 : -1), z + customZ.get() * (z > 0 ? 1 : -1));
+                    }
+
+                    case Multiply -> {
+                        bounds = new Vec3d(x * customX.get(), y * customY.get(), z * customZ.get());
+                    }
+                }
+
+                return bounds;
+            }
+
+            default -> {
+                return new Vec3d(x, 0, z);
+            }
+        }
+    }
+
+    private boolean doesCollide(Box box) {
+        return !noCollision.get() && mc.world.getBlockCollisions(mc.player, box).iterator().hasNext();
+    }
+
     private boolean isPlayerMoving() {
-        return mc.player.forwardSpeed != 0.0F || mc.player.sidewaysSpeed != 0.0F || mc.player.upwardSpeed != 0.0F;
+        return mc.player.forwardSpeed != 0.0F || mc.player.sidewaysSpeed != 0.0F;
     }
 
     private double[] directionSpeed(double speed) {
@@ -559,38 +1051,65 @@ public class RubberbandFly extends Module {
 
     // Constants
 
-    public enum FlightMode {
-        Fast,
-        Packet,
-        Rubberband
+    public enum BoundsType {
+        Up,
+        Down,
+        Zero,
+
+        Ceil,
+
+        Small,
+        Alternative,
+        Infinitive,
+
+        Preserve,
+
+        Obscure,
+        Bypass,
+        Random,
+        Custom,
+        Normal
     }
 
-    public enum CancelMode {
-        None,
-        All,
-        Strict,
-        Both
+    public enum BoundsMode {
+        Both,
+        Horizontal,
+        Vertical
     }
 
-    public enum PosMode {
-        None,
-        Pre,
-        Post,
-        Both
+    public enum CustomMode {
+        Polar,
+        Relative,
+        SmartPolar,
+        SmartRelative,
+        Multiply
     }
 
-    public enum DownMode {
-        None,
-        Pre,
-        Post
+    public enum HorizontalMode {
+        Clip,
+        Small,
+        Precise,
+        Fast
     }
 
-    public enum IdleMode {
+    public enum VerticalMode {
         None,
-        Velocity,
-        Rubberband,
-        Flight,
-        TP,
-        Bypass
+        Simple,
+        Clip,
+        Fast
+    }
+
+    public enum AntiFallMode {
+        None,
+        Up,
+        Down
+    }
+
+    public enum PosUpdateAction {
+        Ignore,
+        Update,
+        AcceptAll,
+        IgnoreRotation,
+        AcceptRequired
     }
 }

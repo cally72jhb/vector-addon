@@ -1,8 +1,7 @@
 package cally72jhb.addon.system.modules.misc;
 
 import cally72jhb.addon.system.categories.Categories;
-import cally72jhb.addon.system.events.SendRawMessageEvent;
-import meteordevelopment.meteorclient.events.game.SendMessageEvent;
+import meteordevelopment.meteorclient.events.packets.PacketEvent;
 import meteordevelopment.meteorclient.gui.GuiTheme;
 import meteordevelopment.meteorclient.gui.widgets.WWidget;
 import meteordevelopment.meteorclient.gui.widgets.containers.WTable;
@@ -10,55 +9,41 @@ import meteordevelopment.meteorclient.gui.widgets.input.WTextBox;
 import meteordevelopment.meteorclient.gui.widgets.pressable.WButton;
 import meteordevelopment.meteorclient.gui.widgets.pressable.WMinus;
 import meteordevelopment.meteorclient.gui.widgets.pressable.WPlus;
-import meteordevelopment.meteorclient.settings.BoolSetting;
-import meteordevelopment.meteorclient.settings.Setting;
-import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtString;
+import net.minecraft.network.packet.c2s.play.ChatMessageC2SPacket;
 import oshi.util.tuples.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class Placeholders extends Module {
-    private final SettingGroup sgGeneral = settings.getDefaultGroup();
-
-    // General
-
-    private final Setting<Boolean> useRawType = sgGeneral.add(new BoolSetting.Builder()
-        .name("use-raw-type")
-        .description("Replaces the placeholders in commands too.")
-        .defaultValue(true)
-        .build()
-    );
-
     private List<Pair<String, String>> placeholders = new ArrayList<>();
+    private boolean cancel;
 
     public Placeholders() {
         super(Categories.Misc, "placeholders", "Replaces chat messages with your own custom placeholders.");
     }
 
-    @EventHandler
-    private void onSendMessage(SendMessageEvent event) {
-        if (!placeholders.isEmpty()) {
-            for (Pair<String, String> placeholder : placeholders) {
-                if (placeholder != null && placeholder.getA() != null && event.message.contains(placeholder.getA())) {
-                    event.message = event.message.replaceAll(placeholder.getA(), placeholder.getB());
-                }
-            }
-        }
+    @Override
+    public void onActivate() {
+        cancel = false;
     }
 
     @EventHandler
-    private void onSendRawMessage(SendRawMessageEvent event) {
-        if (useRawType.get() && !placeholders.isEmpty()) {
+    private void onSendPacket(PacketEvent.Send event) {
+        if (event.packet instanceof ChatMessageC2SPacket packet && !placeholders.isEmpty() && !cancel) {
             for (Pair<String, String> placeholder : placeholders) {
-                if (placeholder != null && placeholder.getA() != null && event.message.contains(placeholder.getA())) {
-                    event.message = event.message.replaceAll(placeholder.getA(), placeholder.getB());
+                if (placeholder != null && placeholder.getA() != null && packet.getChatMessage().contains(placeholder.getA())) {
+                    cancel = true;
+                    mc.getNetworkHandler().sendPacket(new ChatMessageC2SPacket(packet.getChatMessage().replaceAll(placeholder.getA(), placeholder.getB())));
+                    cancel = false;
+
+                    event.cancel();
                 }
             }
         }
@@ -68,8 +53,6 @@ public class Placeholders extends Module {
 
     @Override
     public WWidget getWidget(GuiTheme theme) {
-        placeholders.removeIf(placeholder -> placeholder == null || placeholder.getA() != null && placeholder.getA().isEmpty());
-
         WTable table = theme.table();
         fillTable(theme, table);
 
@@ -78,6 +61,8 @@ public class Placeholders extends Module {
 
     private void fillTable(GuiTheme theme, WTable table) {
         if (!placeholders.isEmpty()) {
+            placeholders.removeIf(placeholder -> !isValidPlaceholder(placeholder.getA()));
+
             for (int i = 0; i < placeholders.size(); i++) {
                 int messageI = i;
 
@@ -153,13 +138,13 @@ public class Placeholders extends Module {
     public NbtCompound toTag() {
         NbtCompound tag = super.toTag();
 
-        placeholders.removeIf(placeholder -> placeholder == null || placeholder.getA() != null && placeholder.getA().isEmpty());
+        placeholders.removeIf(placeholder -> !isValidPlaceholder(placeholder.getA()));
 
         NbtList leftTag = new NbtList();
         NbtList rightTag = new NbtList();
 
         for (Pair<String, String> placeholder : placeholders) {
-            leftTag.add(placeholder.getA() == null ? NbtString.of("") : NbtString.of(placeholder.getA()));
+            leftTag.add(placeholder.getA() == null ? NbtString.of("") : NbtString.of(placeholder.getA().replace("\\", "\\")));
             rightTag.add(NbtString.of(placeholder.getB()));
         }
 
@@ -189,6 +174,8 @@ public class Placeholders extends Module {
         } else {
             resetPlaceholders();
         }
+
+        placeholders.removeIf(placeholder -> !isValidPlaceholder(placeholder.getA()));
 
         return super.fromTag(tag);
     }
@@ -275,5 +262,9 @@ public class Placeholders extends Module {
 
             add(new Pair<>(":vector:", "https://cally72jhb.github.io/website/"));
         }};
+    }
+
+    private boolean isValidPlaceholder(String placeholder) {
+        return placeholder != null && !placeholder.isEmpty() && !placeholder.contains("\\") && !placeholder.contains("$");
     }
 }

@@ -3,23 +3,17 @@ package cally72jhb.addon.system.modules.movement;
 import cally72jhb.addon.system.categories.Categories;
 import cally72jhb.addon.utils.VectorUtils;
 import meteordevelopment.meteorclient.events.packets.PacketEvent;
-import meteordevelopment.meteorclient.events.render.Render3DEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
-import meteordevelopment.meteorclient.renderer.ShapeMode;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.meteorclient.systems.modules.world.Timer;
-import meteordevelopment.meteorclient.utils.render.RenderUtils;
-import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.network.packet.s2c.play.PlayerPositionLookS2CPacket;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 
 public class TickShift extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
-    private final SettingGroup sgRender = settings.createGroup("Render");
 
     private final Setting<Integer> ticks = sgGeneral.add(new IntSetting.Builder()
         .name("tick-duration")
@@ -90,55 +84,6 @@ public class TickShift extends Module {
         .build()
     );
 
-    // Render
-
-    private final Setting<Boolean> render = sgRender.add(new BoolSetting.Builder()
-        .name("render")
-        .description("Whether or not to render your starting position.")
-        .defaultValue(true)
-        .build()
-    );
-
-    private final Setting<Boolean> accurate = sgRender.add(new BoolSetting.Builder()
-        .name("accurate")
-        .description("Whether or not to render the position accurate.")
-        .defaultValue(true)
-        .visible(render::get)
-        .build()
-    );
-
-    private final Setting<ShapeMode> shapeMode = sgRender.add(new EnumSetting.Builder<ShapeMode>()
-        .name("shape-mode")
-        .description("How the shapes are rendered.")
-        .defaultValue(ShapeMode.Both)
-        .visible(render::get)
-        .build()
-    );
-
-    private final Setting<SettingColor> sideColor = sgRender.add(new ColorSetting.Builder()
-        .name("side-color")
-        .description("The side color of the start position rendering.")
-        .defaultValue(new SettingColor(255, 255, 255, 10))
-        .visible(render::get)
-        .build()
-    );
-
-    private final Setting<SettingColor> lineColor = sgRender.add(new ColorSetting.Builder()
-        .name("line-color")
-        .description("The line color of the start position rendering.")
-        .defaultValue(new SettingColor(255, 255, 255))
-        .visible(render::get)
-        .build()
-    );
-
-    private final Setting<SettingColor> tracerColor = sgRender.add(new ColorSetting.Builder()
-        .name("tracer-color")
-        .description("The color of the tracer.")
-        .defaultValue(new SettingColor(255, 255, 255, 255))
-        .visible(render::get)
-        .build()
-    );
-
     private int tick;
     private int messageTicks;
     private Vec3d startVec;
@@ -204,21 +149,6 @@ public class TickShift extends Module {
             } else if (rubberbandMode.get() == RubberbandMode.Toggle) {
                 tick = 0;
                 startVec = null;
-            }
-        }
-    }
-
-    // Render
-
-    @EventHandler
-    private void onRender(Render3DEvent event) {
-        if (render.get()) {
-            if (startVec != null && !accurate.get()) {
-                event.renderer.box(new BlockPos(startVec.x, startVec.y, startVec.z), sideColor.get(), lineColor.get(), shapeMode.get(), 0);
-                event.renderer.line(RenderUtils.center.x, RenderUtils.center.y, RenderUtils.center.z, startVec.getX() + 0.5, startVec.getY() + 0.5, startVec.getZ() + 0.5, tracerColor.get());
-            } else if (startVec != null && accurate.get()) {
-                event.renderer.box(startVec.x - 0.25, startVec.y, startVec.z - 0.25, startVec.x + 0.25, startVec.y + 1.5, startVec.z + 0.25, sideColor.get(), lineColor.get(), shapeMode.get(), 0);
-                event.renderer.line(RenderUtils.center.x, RenderUtils.center.y, RenderUtils.center.z, startVec.getX(), startVec.getY() + 0.75, startVec.getZ(), tracerColor.get());
             }
         }
     }

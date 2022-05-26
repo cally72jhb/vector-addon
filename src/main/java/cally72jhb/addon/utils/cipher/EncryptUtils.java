@@ -17,13 +17,21 @@ public class EncryptUtils {
 		Cipher cipher = Cipher.getInstance(algorithm);
         cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(Arrays.copyOf(DigestUtils.sha1(key), 16), algorithm));
 
-        return Base64.encodeBase64String(cipher.doFinal(text.getBytes()));
+        try {
+            return Base64.encodeBase64String(cipher.doFinal(text.getBytes()));
+        } catch (Exception exception) {
+            return text;
+        }
 	}
 
 	public static String decrypt(String text, String key, String algorithm) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
 		Cipher cipher = Cipher.getInstance(algorithm);
         cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(Arrays.copyOf(DigestUtils.sha1(key), 16), algorithm));
 
-        return new String(cipher.doFinal(Base64.decodeBase64(text)));
+        try {
+            return new String(cipher.doFinal(Base64.decodeBase64(text)));
+        } catch (Exception exception) {
+            return text;
+        }
 	}
 }

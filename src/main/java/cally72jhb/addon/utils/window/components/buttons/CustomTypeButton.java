@@ -46,7 +46,7 @@ public class CustomTypeButton extends JButton implements MouseListener, MouseMot
         Point start = new Point(width / 2 - 5, height / 2 - 5);
         Point end = new Point(width / 2 + 5, height / 2 + 5);
 
-        switch (type){
+        switch (type) {
             case MINIMIZE:
                 start = new Point(width / 2 - 5,height / 2);
                 end = new Point(width / 2 + 5,height / 2);

@@ -4,7 +4,7 @@ import cally72jhb.addon.system.categories.Categories;
 import it.unimi.dsi.fastutil.chars.Char2CharArrayMap;
 import it.unimi.dsi.fastutil.chars.Char2CharMap;
 import meteordevelopment.meteorclient.events.game.OpenScreenEvent;
-import meteordevelopment.meteorclient.events.game.ReceiveMessageEvent;
+import meteordevelopment.meteorclient.events.packets.PacketEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.gui.GuiTheme;
 import meteordevelopment.meteorclient.gui.widgets.WWidget;
@@ -23,6 +23,7 @@ import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtString;
 import net.minecraft.network.packet.c2s.play.ChatMessageC2SPacket;
+import net.minecraft.network.packet.s2c.play.GameMessageS2CPacket;
 import oshi.util.tuples.Pair;
 
 import java.util.ArrayList;
@@ -58,7 +59,7 @@ public class AutoCope extends Module {
     private final Setting<String> deathString = sgGeneral.add(new StringSetting.Builder()
         .name("death-message")
         .description("The message to send when you died.")
-        .defaultValue("I lagged")
+        .defaultValue("☠")
         .visible(() -> copeOnDeath.get() && !randomMsg.get())
         .build()
     );
@@ -66,7 +67,7 @@ public class AutoCope extends Module {
     private final Setting<List<String>> deathMessages = sgGeneral.add(new StringListSetting.Builder()
         .name("death-messages")
         .description("The random messages to send when you died.")
-        .defaultValue(List.of("☠", "☠☠","gg", "b+ user", "you should pitch a tent for camping"))
+        .defaultValue(List.of("☠", "☠☠", "game lagged","configing", "Accidentally moved due to broken key"))
         .visible(() -> copeOnDeath.get() && randomMsg.get())
         .build()
     );
@@ -102,11 +103,11 @@ public class AutoCope extends Module {
     }
 
     @EventHandler
-    private void onReceiveMessage(ReceiveMessageEvent event) {
-        if (!respondations.isEmpty() && !event.isModified()) {
-            String message = event.getMessage().getString();
+    private void onReceivePacket(PacketEvent.Receive event) {
+        if (event.packet instanceof GameMessageS2CPacket packet) {
+            if (!mc.player.getUuid().equals(packet.getSender()) && !respondations.isEmpty()) {
+                String message = packet.getMessage().getString();
 
-            if (!message.contains(mc.player.getGameProfile().getName())) {
                 List<Pair<String, String>> list = new ArrayList<>(respondations);
                 Collections.shuffle(list);
 
@@ -191,7 +192,6 @@ public class AutoCope extends Module {
             respondations = new ArrayList<>() {{
                 add(new Pair<>("died", "☠"));
                 add(new Pair<>("dead", "☠☠"));
-                add(new Pair<>("!vector", "https://cally72jhb.github.io/website/"));
             }};
             table.clear();
             fillTable(theme, table);
@@ -246,7 +246,6 @@ public class AutoCope extends Module {
             respondations = new ArrayList<>() {{
                 add(new Pair<>("died", "☠"));
                 add(new Pair<>("dead", "☠☠"));
-                add(new Pair<>("!vector", "https://cally72jhb.github.io/website/"));
             }};
         }
 

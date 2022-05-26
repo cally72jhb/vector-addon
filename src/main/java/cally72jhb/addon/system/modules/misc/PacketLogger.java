@@ -86,11 +86,14 @@ public class PacketLogger extends Module {
                     name = PacketUtils.getName(packet);
                 }
 
-                info(name);
+                if (name != null) {
+                    info(name);
 
-                if (s2cConstructor.get()) {
-                    for (Constructor constructor : packet.getConstructors()) info("constructor: " + constructor);
-                    for (Constructor constructor : packet.getDeclaredConstructors()) info("declared constructor: " + constructor);
+                    if (s2cConstructor.get()) {
+                        for (Constructor constructor : packet.getConstructors()) info("constructor: " + constructor);
+                        for (Constructor constructor : packet.getDeclaredConstructors())
+                            info("declared constructor: " + constructor);
+                    }
                 }
             }
         }
@@ -107,11 +110,14 @@ public class PacketLogger extends Module {
                     name = PacketUtils.getName(packet);
                 }
 
-                info(name);
+                if (name != null) {
+                    info(name);
 
-                if (c2sConstructor.get()) {
-                    for (Constructor constructor : packet.getConstructors()) info("constructor: " + constructor);
-                    for (Constructor constructor : packet.getDeclaredConstructors()) info("declared constructor: " + constructor);
+                    if (c2sConstructor.get()) {
+                        for (Constructor constructor : packet.getConstructors()) info("constructor: " + constructor);
+                        for (Constructor constructor : packet.getDeclaredConstructors())
+                            info("declared constructor: " + constructor);
+                    }
                 }
             }
         }

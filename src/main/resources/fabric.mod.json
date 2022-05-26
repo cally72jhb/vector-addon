@@ -27,12 +27,13 @@
     "vector-addon.mixins.json",
     "vector-addon-meteor.mixins.json"
   ],
+  "accessWidener": "vector-addon.accesswidener",
   "custom": {
     "meteor-client:color": "140,245,165"
   },
   "depends": {
-    "java": ">=16",
-    "minecraft": ">=@mc_version@",
+    "java": ">=17",
+    "minecraft": ">=1.18.2",
     "meteor-client": "*"
   }
 }

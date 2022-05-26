@@ -1487,7 +1487,7 @@ public class VectorSurround extends Module {
     // Render
 
     @EventHandler
-    private void onRender(Render3DEvent event) {
+    private void onRender3D(Render3DEvent event) {
         renderBlocks.sort(Comparator.comparingInt(block -> -block.ticks));
         renderBlocks.forEach(block -> block.render(event, sideColor.get(), lineColor.get(), shapeMode.get()));
     }

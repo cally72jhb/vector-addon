@@ -3,21 +3,13 @@ package cally72jhb.addon.system;
 import cally72jhb.addon.gui.tabs.PlayersTab;
 import cally72jhb.addon.gui.tabs.VectorConfigTab;
 import cally72jhb.addon.system.commands.*;
-import cally72jhb.addon.system.hud.CustomChatHud;
-import cally72jhb.addon.system.hud.MemoryHud;
-import cally72jhb.addon.system.hud.PacketHud;
-import cally72jhb.addon.system.hud.StatsHud;
-import cally72jhb.addon.system.modules.combat.BedBomb;
-import cally72jhb.addon.system.modules.combat.BowBomb;
-import cally72jhb.addon.system.modules.combat.PacketHoleFill;
-import cally72jhb.addon.system.modules.combat.VectorSurround;
+import cally72jhb.addon.system.hud.*;
+import cally72jhb.addon.system.modules.combat.*;
 import cally72jhb.addon.system.modules.misc.*;
 import cally72jhb.addon.system.modules.movement.*;
 import cally72jhb.addon.system.modules.player.*;
-import cally72jhb.addon.system.modules.render.ActionRenderer;
-import cally72jhb.addon.system.modules.render.PopRenderer;
-import cally72jhb.addon.system.modules.render.SkeletonESP;
-import cally72jhb.addon.system.modules.render.StorageViewer;
+import cally72jhb.addon.system.modules.render.*;
+import cally72jhb.addon.system.modules.render.notexture.NoTextures;
 import cally72jhb.addon.system.players.Players;
 import cally72jhb.addon.utils.config.VectorConfig;
 import meteordevelopment.meteorclient.MeteorClient;
@@ -57,22 +49,23 @@ public class Systems {
         add(new AntiLagBack());
         add(new AntiPistonPush());
         add(new AntiProne());
+        add(new AutoBed());
         add(new AutoCope());
         add(new AutoEz());
         add(new AutoInteract());
         add(new BedBomb());
+        add(new BobView());
         add(new BowBomb());
         add(new ChatEncryption());
         add(new ChorusPredict());
         add(new DeathAnimations());
         add(new EntityFly());
-        add(new InstaMinePlus());
+        add(new HoleRenderer());
         add(new InventoryScroll());
         add(new ItemRelease());
-        add(new NoBlockTrace());
         add(new NoCollision());
         add(new NoFluid());
-        add(new PacketConsume());
+        add(new NoSwing());
         add(new PacketFly());
         add(new PacketHoleFill());
         add(new PacketLogger());
@@ -83,6 +76,7 @@ public class Systems {
         add(new PortalGodMode());
         add(new ReverseStepBypass());
         add(new RubberbandFly());
+        add(new NoTextures());
         add(new SkeletonESP());
         add(new StepPlus());
         add(new StorageViewer());
@@ -93,7 +87,7 @@ public class Systems {
         add(new Welcomer());
 
         // Commands
-        add(new ItemCommand());
+        add(new MoveItemCommand());
         add(new MuteCommand());
         add(new StatsCommand());
         add(new TargetCommand());
@@ -122,6 +116,7 @@ public class Systems {
         HUD hud = meteordevelopment.meteorclient.systems.Systems.get(HUD.class);
 
         hud.topCenter.add(new CustomChatHud(hud));
+        hud.bottomCenter.add(new FPSGraphHud(hud));
         hud.topLeft.add(new StatsHud(hud));
         hud.topLeft.add(new MemoryHud(hud));
         hud.topLeft.add(new PacketHud(hud));

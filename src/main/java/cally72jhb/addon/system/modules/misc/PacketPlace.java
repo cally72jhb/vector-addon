@@ -8,6 +8,7 @@ import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.systems.modules.Modules;
+import meteordevelopment.meteorclient.systems.modules.combat.Burrow;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.block.*;
 import net.minecraft.client.sound.PositionedSoundInstance;
@@ -30,7 +31,7 @@ public class PacketPlace extends Module {
     private final Setting<List<Module>> modules = sgGeneral.add(new ModuleListSetting.Builder()
         .name("modules")
         .description("Which modules to ignore when placing blocks.")
-        .defaultValue(List.of())
+        .defaultValue(Burrow.class)
         .build()
     );
 
@@ -51,13 +52,13 @@ public class PacketPlace extends Module {
             ItemStack stack = mc.player.getStackInHand(event.hand);
             BlockPos pos = event.result.getBlockPos();
 
-            if (stack.getItem() instanceof BlockItem
+            if (stack.getItem() instanceof BlockItem item
                 && (!isClickable(mc.world.getBlockState(pos).getBlock()) || mc.player.isSneaking())
-                && canPlace(pos, ((BlockItem) stack.getItem()).getBlock().getDefaultState())) {
+                && canPlace(pos.offset(event.result.getSide()), item.getBlock().getDefaultState())) {
 
                 event.cancel();
 
-                place(event.result, event.hand, renderSwing.get());
+                place(event.result, event.hand);
             }
         }
     }
@@ -69,7 +70,7 @@ public class PacketPlace extends Module {
         if (modules.get().isEmpty()) return true;
 
         for (Module module : modules.get()) {
-            if (module.isActive() && Modules.get().getList().contains(module)) return false;
+            if (Modules.get().isActive(module.getClass())) return false;
         }
 
         return true;
@@ -81,8 +82,8 @@ public class PacketPlace extends Module {
 
     // Placing
 
-    private void place(BlockHitResult result, Hand hand, boolean swing) {
-        if (hand != null && result != null && mc.world.getWorldBorder().contains(result.getBlockPos()) && mc.player.getStackInHand(hand).getItem() instanceof BlockItem) {
+    private void place(BlockHitResult result, Hand hand) {
+        if (hand != null && result != null) {
             mc.getNetworkHandler().sendPacket(new PlayerInteractBlockC2SPacket(hand, result));
 
             Block block = ((BlockItem) mc.player.getStackInHand(hand).getItem()).getBlock();
@@ -90,7 +91,7 @@ public class PacketPlace extends Module {
 
             mc.getSoundManager().play(new PositionedSoundInstance(group.getPlaceSound(), SoundCategory.BLOCKS, (group.getVolume() + 1.0F) / 8.0F, group.getPitch() * 0.5F, result.getBlockPos()));
 
-            if (swing) {
+            if (renderSwing.get()) {
                 mc.player.swingHand(hand);
             } else {
                 mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(hand));
@@ -100,6 +101,6 @@ public class PacketPlace extends Module {
 
     private boolean canPlace(BlockPos pos, BlockState state) {
         if (pos == null || mc.world == null || !World.isValid(pos) || !mc.world.getBlockState(pos).getMaterial().isReplaceable()) return false;
-        return mc.world.canPlace(state, pos, ShapeContext.absent());
+        return mc.world.getWorldBorder().contains(pos) && mc.world.canPlace(state, pos, ShapeContext.absent());
     }
 }

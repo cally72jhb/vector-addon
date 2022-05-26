@@ -1,6 +1,5 @@
 package cally72jhb.addon.system.modules.combat;
 
-import cally72jhb.addon.mixin.RecipeResultCollectionAccessor;
 import cally72jhb.addon.system.categories.Categories;
 import cally72jhb.addon.system.players.Players;
 import cally72jhb.addon.utils.VectorUtils;
@@ -11,6 +10,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import meteordevelopment.meteorclient.events.game.GameJoinedEvent;
 import meteordevelopment.meteorclient.events.game.OpenScreenEvent;
+import meteordevelopment.meteorclient.events.packets.PacketEvent;
 import meteordevelopment.meteorclient.events.render.Render3DEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.mixininterface.IClientPlayerInteractionManager;
@@ -30,7 +30,6 @@ import meteordevelopment.meteorclient.utils.misc.Pool;
 import meteordevelopment.meteorclient.utils.player.Rotations;
 import meteordevelopment.meteorclient.utils.render.color.Color;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
-import meteordevelopment.meteorclient.utils.world.BlockUtils;
 import meteordevelopment.meteorclient.utils.world.CardinalDirection;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.block.*;
@@ -52,6 +51,7 @@ import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.*;
 import net.minecraft.network.packet.c2s.play.*;
+import net.minecraft.network.packet.s2c.play.EntityPositionS2CPacket;
 import net.minecraft.recipe.Ingredient;
 import net.minecraft.recipe.Recipe;
 import net.minecraft.recipe.book.RecipeBookCategory;
@@ -85,9 +85,9 @@ public class BedBomb extends Module {
     private final SettingGroup sgBypass = settings.createGroup("Bypass");
     private final SettingGroup sgCalc = settings.createGroup("Calculation");
     private final SettingGroup sgThread = settings.createGroup("Threading");
+    private final SettingGroup sgMode = settings.createGroup("Mode");
     private final SettingGroup sgPlace = settings.createGroup("Place");
     private final SettingGroup sgBreak = settings.createGroup("Break");
-    private final SettingGroup sgCity = settings.createGroup("Auto City");
     private final SettingGroup sgInventory = settings.createGroup("Inventory");
     private final SettingGroup sgCraft = settings.createGroup("Craft");
     private final SettingGroup sgPredict = settings.createGroup("Move Predict");
@@ -232,6 +232,13 @@ public class BedBomb extends Module {
         .build()
     );
 
+    private final Setting<Boolean> ignoreRotationWhenDone = sgRotate.add(new BoolSetting.Builder()
+        .name("ignore-rotation-when-done")
+        .description("Doesn't rotate you when you already face in that direction.")
+        .defaultValue(true)
+        .build()
+    );
+
     private final Setting<Boolean> rotateBack = sgRotate.add(new BoolSetting.Builder()
         .name("rotate-back")
         .description("Rotates back to the original facing after placing the bed.")
@@ -251,15 +258,15 @@ public class BedBomb extends Module {
         .build()
     );
 
-    private final Setting<Boolean> placeBypass = sgBypass.add(new BoolSetting.Builder()
-        .name("place-bypass")
+    private final Setting<Boolean> placeRangeBypass = sgBypass.add(new BoolSetting.Builder()
+        .name("place-range-bypass")
         .description("Interacts at the closest possible position to allow a maximal place range.")
         .defaultValue(true)
         .build()
     );
 
-    private final Setting<Boolean> breakBypass = sgBypass.add(new BoolSetting.Builder()
-        .name("break-bypass")
+    private final Setting<Boolean> breakRangeBypass = sgBypass.add(new BoolSetting.Builder()
+        .name("break-range-bypass")
         .description("Breaks the bed at the closest possible position to allow a maximal break range.")
         .defaultValue(true)
         .build()
@@ -351,9 +358,25 @@ public class BedBomb extends Module {
         .build()
     );
 
+    private final Setting<Boolean> ignoreInHole = sgBypass.add(new BoolSetting.Builder()
+        .name("ignore-in-hole")
+        .description("Doesn't detect targets that are in a hole.")
+        .defaultValue(true)
+        .visible(movingDelay::get)
+        .build()
+    );
+
+    private final Setting<Boolean> ignoreDoubles = sgGeneral.add(new BoolSetting.Builder()
+        .name("ignore-doubles")
+        .description("Ignores players in double holes.")
+        .defaultValue(true)
+        .visible(() -> movingDelay.get() && ignoreInHole.get())
+        .build()
+    );
+
     private final Setting<Integer> movingTicks = sgBypass.add(new IntSetting.Builder()
         .name("moving-ticks")
-        .description("How many ticks to look for moving players.")
+        .description("How many ticks to scan for moving players.")
         .defaultValue(10)
         .min(2)
         .sliderMin(5)
@@ -568,6 +591,74 @@ public class BedBomb extends Module {
     );
 
 
+    // Mode
+
+
+    private final Setting<PlaceType> placeType = sgMode.add(new EnumSetting.Builder<PlaceType>()
+        .name("place-type")
+        .description("How already calculated positions are handled.")
+        .defaultValue(PlaceType.Active)
+        .build()
+    );
+
+    private final Setting<Boolean> recalcOnDamge = sgMode.add(new BoolSetting.Builder()
+        .name("recalc-on-damage")
+        .description("Recalculates the position when the current position deals the targets too less damage.")
+        .defaultValue(true)
+        .visible(() -> placeType.get() != PlaceType.Active)
+        .build()
+    );
+
+    private final Setting<Boolean> recalcOnVisibility = sgMode.add(new BoolSetting.Builder()
+        .name("recalc-on-visibility")
+        .description("Recalculates the position when the current position isn't visible to the target.")
+        .defaultValue(true)
+        .visible(() -> placeType.get() != PlaceType.Active)
+        .build()
+    );
+
+    private final Setting<Boolean> recalcOnTooFar = sgMode.add(new BoolSetting.Builder()
+        .name("recalc-on-too-far")
+        .description("Recalculates the position when the current position is too far from the targets.")
+        .defaultValue(true)
+        .visible(() -> placeType.get() != PlaceType.Active)
+        .build()
+    );
+
+    private final Setting<Double> recalcDistance = sgMode.add(new DoubleSetting.Builder()
+        .name("recalc-distance")
+        .description("After what distance from the target to recalculate.")
+        .defaultValue(12.5)
+        .sliderMin(7.5)
+        .sliderMax(15)
+        .min(0)
+        .visible(() -> placeType.get() != PlaceType.Active && recalcOnTooFar.get())
+        .build()
+    );
+
+    private final Setting<Integer> recalcDelay = sgMode.add(new IntSetting.Builder()
+        .name("recalc-delay")
+        .description("How many ticks to wait before calculating the position again.")
+        .defaultValue(50)
+        .sliderMin(25)
+        .sliderMax(75)
+        .min(0)
+        .visible(() -> placeType.get() != PlaceType.Active)
+        .build()
+    );
+
+    private final Setting<Integer> minRecalcTicks = sgMode.add(new IntSetting.Builder()
+        .name("min-recalc-ticks")
+        .description("The minimum time the old position should be kept.")
+        .defaultValue(5)
+        .sliderMin(0)
+        .sliderMax(10)
+        .min(0)
+        .visible(() -> placeType.get() != PlaceType.Active)
+        .build()
+    );
+
+
     // Place
 
 
@@ -737,116 +828,6 @@ public class BedBomb extends Module {
         .description("Will check the damage a bed deals friends before breaking it.")
         .defaultValue(true)
         .visible(() -> checkFriends.get() && breakMode.get() != BreakMode.None)
-        .build()
-    );
-
-
-    // Auto City
-
-
-    private final Setting<Boolean> autoCity = sgCity.add(new BoolSetting.Builder()
-        .name("auto-city")
-        .description("Breaks the targets surround to allow the bed bomb to deal damage again.")
-        .defaultValue(false)
-        .build()
-    );
-
-    private final Setting<Keybind> forceCity = sgCity.add(new KeybindSetting.Builder()
-        .name("force-city")
-        .description("The keybinding used to city your targets.")
-        .defaultValue(Keybind.fromKey(-1))
-        .visible(autoCity::get)
-        .build()
-    );
-
-    private final Setting<Boolean> automatic = sgCity.add(new BoolSetting.Builder()
-        .name("automatic")
-        .description("Will automatically start citing targets that are fully surrounded.")
-        .defaultValue(false)
-        .visible(autoCity::get)
-        .build()
-    );
-
-    private final Setting<Boolean> rotate = sgCity.add(new BoolSetting.Builder()
-        .name("rotate")
-        .description("Faces the blocks being broken.")
-        .defaultValue(true)
-        .visible(autoCity::get)
-        .build()
-    );
-
-    private final Setting<Integer> cityDelay = sgCity.add(new IntSetting.Builder()
-        .name("city-delay")
-        .description("How many ticks to wait before citing again.")
-        .defaultValue(5)
-        .sliderMin(0)
-        .sliderMax(8)
-        .min(0)
-        .noSlider()
-        .visible(autoCity::get)
-        .build()
-    );
-
-    private final Setting<Double> cityRange = sgCity.add(new DoubleSetting.Builder()
-        .name("city-range")
-        .description("How far city can mine and place blocks.")
-        .defaultValue(4.5)
-        .sliderMin(0)
-        .sliderMax(8)
-        .min(1)
-        .visible(autoCity::get)
-        .build()
-    );
-
-    private final Setting<CityScanMode> cityScanMode = sgCity.add(new EnumSetting.Builder<CityScanMode>()
-        .name("city-scan-mode")
-        .description("What blocks to prioritize.")
-        .defaultValue(CityScanMode.Closest)
-        .visible(autoCity::get)
-        .build()
-    );
-
-    private final Setting<Boolean> instaMine = sgCity.add(new BoolSetting.Builder()
-        .name("insta-mine")
-        .description("Tryes to mine blocks instant.")
-        .defaultValue(false)
-        .visible(autoCity::get)
-        .build()
-    );
-
-    private final Setting<Double> maxHardness = sgCity.add(new DoubleSetting.Builder()
-        .name("max-hardness")
-        .description("The maximum hardness a block can have for it to be instant mined.")
-        .defaultValue(0.3)
-        .min(0)
-        .sliderMax(1)
-        .visible(() -> autoCity.get() && instaMine.get())
-        .build()
-    );
-
-    private final Setting<Integer> instaTickDelay = sgCity.add(new IntSetting.Builder()
-        .name("mine-tick-delay")
-        .description("The delay between the attempted breaks.")
-        .defaultValue(0)
-        .min(0)
-        .sliderMax(20)
-        .visible(() -> autoCity.get() && instaMine.get())
-        .build()
-    );
-
-    private final Setting<Boolean> pausePlacingOnCity = sgCity.add(new BoolSetting.Builder()
-        .name("pause-placing-on-city")
-        .description("Pauses the normal placing while citing.")
-        .defaultValue(true)
-        .visible(autoCity::get)
-        .build()
-    );
-
-    private final Setting<Boolean> pauseBreakingOnCity = sgCity.add(new BoolSetting.Builder()
-        .name("pause-breaking-on-city")
-        .description("Pauses the normal breaking while citing.")
-        .defaultValue(true)
-        .visible(autoCity::get)
         .build()
     );
 
@@ -1056,6 +1037,10 @@ public class BedBomb extends Module {
         .name("silent-craft")
         .description("Hides the crafting inventory screen client-side.")
         .defaultValue(false)
+        .onChanged(bool -> {
+            resetSilentHandler();
+            silentHandler = null;
+        })
         .visible(autoCraft::get)
         .build()
     );
@@ -1204,10 +1189,10 @@ public class BedBomb extends Module {
     // Movement Predict
 
 
-    private final Setting<Boolean> predictMovement = sgPredict.add(new BoolSetting.Builder()
-        .name("predict-movement")
-        .description("Predicts a players movement.")
-        .defaultValue(true)
+    private final Setting<PredictMode> predictMode = sgPredict.add(new EnumSetting.Builder<PredictMode>()
+        .name("predict-mode")
+        .description("How to predict a players movement.")
+        .defaultValue(PredictMode.None)
         .onChanged(bool -> {
             predictions = new HashMap<>();
             predictedResults = new HashMap<>();
@@ -1219,7 +1204,7 @@ public class BedBomb extends Module {
         .name("ignore-self")
         .description("Ignores yourself when predicting the movement.")
         .defaultValue(true)
-        .visible(predictMovement::get)
+        .visible(() -> predictMode.get() != PredictMode.None)
         .build()
     );
 
@@ -1230,7 +1215,7 @@ public class BedBomb extends Module {
         .min(10)
         .sliderMin(25)
         .sliderMax(75)
-        .visible(predictMovement::get)
+        .visible(() -> predictMode.get() != PredictMode.None)
         .build()
     );
 
@@ -1245,7 +1230,7 @@ public class BedBomb extends Module {
             predictions = new HashMap<>();
             predictedResults = new HashMap<>();
         })
-        .visible(predictMovement::get)
+        .visible(() -> predictMode.get() == PredictMode.Average)
         .build()
     );
 
@@ -1256,7 +1241,7 @@ public class BedBomb extends Module {
         .min(0)
         .sliderMin(0)
         .sliderMax(5)
-        .visible(predictMovement::get)
+        .visible(() -> predictMode.get() == PredictMode.Average)
         .build()
     );
 
@@ -1267,7 +1252,7 @@ public class BedBomb extends Module {
         .min(0)
         .sliderMin(10)
         .sliderMax(40)
-        .visible(predictMovement::get)
+        .visible(() -> predictMode.get() == PredictMode.Average)
         .build()
     );
 
@@ -1278,7 +1263,7 @@ public class BedBomb extends Module {
         .min(0)
         .sliderMin(0.25)
         .sliderMax(0.75)
-        .visible(predictMovement::get)
+        .visible(() -> predictMode.get() == PredictMode.Average)
         .build()
     );
 
@@ -1289,7 +1274,7 @@ public class BedBomb extends Module {
         .min(0)
         .sliderMin(0)
         .sliderMax(0.5)
-        .visible(predictMovement::get)
+        .visible(() -> predictMode.get() == PredictMode.Average)
         .build()
     );
 
@@ -1297,7 +1282,7 @@ public class BedBomb extends Module {
         .name("check-collision")
         .description("Checks block collisions of the predicted positions.")
         .defaultValue(true)
-        .visible(predictMovement::get)
+        .visible(() -> predictMode.get() != PredictMode.None)
         .build()
     );
 
@@ -1310,7 +1295,7 @@ public class BedBomb extends Module {
         .sliderMin(1)
         .sliderMax(100)
         .noSlider()
-        .visible(() -> predictMovement.get() && checkCollision.get())
+        .visible(() -> predictMode.get() == PredictMode.Average && checkCollision.get())
         .build()
     );
 
@@ -1360,22 +1345,6 @@ public class BedBomb extends Module {
     private final Setting<Boolean> displayTarget = sgDisplay.add(new BoolSetting.Builder()
         .name("display-target")
         .description("Displays the current target.")
-        .defaultValue(true)
-        .visible(display::get)
-        .build()
-    );
-
-    private final Setting<Boolean> displayState = sgDisplay.add(new BoolSetting.Builder()
-        .name("display-state")
-        .description("Displays the current placing or breaking state.")
-        .defaultValue(false)
-        .visible(display::get)
-        .build()
-    );
-
-    private final Setting<Boolean> displayDelay = sgDisplay.add(new BoolSetting.Builder()
-        .name("display-delay")
-        .description("Displays the current delay.")
         .defaultValue(true)
         .visible(display::get)
         .build()
@@ -1442,24 +1411,32 @@ public class BedBomb extends Module {
         .build()
     );
 
-    private final Setting<Boolean> renderOnlyOnce = sgBedRender.add(new BoolSetting.Builder()
-        .name("only-once-render")
-        .description("Doesn't render a place animation, if there already is a block being rendered.")
+    private final Setting<Boolean> growIfAlreadyExist = sgBedRender.add(new BoolSetting.Builder()
+        .name("grow-if-already-exist")
+        .description("Grows the rendered block when there would be another block rendered.")
         .defaultValue(true)
         .visible(() -> renderType.get() != RenderType.None)
         .build()
     );
 
-    private final Setting<Integer> ticksLeftPercent = sgBedRender.add(new IntSetting.Builder()
-        .name("ticks-left-percent")
-        .description("How many ticks have to be left in percent for the beds to be rendered.")
-        .defaultValue(75)
+    private final Setting<Boolean> keepColor = sgBedRender.add(new BoolSetting.Builder()
+        .name("keep-color")
+        .description("Keeps the same color when growing.")
+        .defaultValue(false)
+        .visible(() -> renderType.get() != RenderType.None && growIfAlreadyExist.get())
+        .build()
+    );
+
+    private final Setting<Integer> growTicks = sgBedRender.add(new IntSetting.Builder()
+        .name("grow-ticks")
+        .description("How many ticks to grow the block again.")
+        .defaultValue(5)
         .min(1)
-        .max(100)
-        .sliderMin(1)
-        .sliderMax(75)
+        .max(50)
+        .sliderMin(5)
+        .sliderMax(15)
         .noSlider()
-        .visible(() -> renderType.get() != RenderType.None && renderOnlyOnce.get())
+        .visible(() -> renderType.get() != RenderType.None && growIfAlreadyExist.get())
         .build()
     );
 
@@ -1481,39 +1458,6 @@ public class BedBomb extends Module {
         .description("Renders a extra element in the middle of the bed.")
         .defaultValue(false)
         .visible(() -> renderType.get() == RenderType.Advanced)
-        .build()
-    );
-
-    private final Setting<Boolean> shrink = sgBedRender.add(new BoolSetting.Builder()
-        .name("shrink")
-        .description("Shrinks the block overlay after a while.")
-        .defaultValue(false)
-        .visible(() -> renderType.get() != RenderType.None)
-        .build()
-    );
-
-    private final Setting<Integer> shrinkTicks = sgBedRender.add(new IntSetting.Builder()
-        .name("shrink-ticks")
-        .description("How many ticks to wait before shrinking the block.")
-        .defaultValue(5)
-        .min(0)
-        .max(50)
-        .sliderMax(25)
-        .visible(() -> renderType.get() != RenderType.None && shrink.get())
-        .noSlider()
-        .build()
-    );
-
-    private final Setting<Double> shrinkSpeed = sgBedRender.add(new DoubleSetting.Builder()
-        .name("shrink-speed")
-        .description("How fast to shrink the overlay.")
-        .defaultValue(2.5)
-        .min(1)
-        .max(50)
-        .sliderMin(1)
-        .sliderMax(25)
-        .noSlider()
-        .visible(() -> renderType.get() != RenderType.None && shrink.get())
         .build()
     );
 
@@ -1630,16 +1574,13 @@ public class BedBomb extends Module {
     private int placeTicks;
     private int breakTicks;
     private int craftTicks;
-    private int cityTicks;
-    private int instaTicks;
+    private int recalcTicks;
 
     // Results
 
     private Direction placeDir;
     private BlockPos placePos;
     private BlockPos breakPos;
-
-    private BlockPos breakingPos;
 
     // Threads
 
@@ -1658,16 +1599,13 @@ public class BedBomb extends Module {
 
     // Other
 
-    private State state;
-
     private long calcTime;
     private long calcTicks;
 
     private int slot = -1;
-    private boolean citing;
 
     public BedBomb() {
-        super(Categories.Combat, "bed-bomber", "Places and blows up beds near targets to deal alot of damage.");
+        super(Categories.Combat, "bed-bomber", "Places and blows up beds near targets to deal a lot of damage.");
     }
 
     @Override
@@ -1680,14 +1618,12 @@ public class BedBomb extends Module {
         placeTicks = 0;
         breakTicks = 0;
         craftTicks = 0;
-        cityTicks = 0;
-        instaTicks = 0;
+        recalcTicks = 0;
 
         calcTime = 0;
         calcTicks = 0;
 
         slot = -1;
-        citing = false;
 
         placeDir = null;
         placePos = null;
@@ -1697,8 +1633,6 @@ public class BedBomb extends Module {
         craftFailTimes = 0;
         failed = false;
         crafted = true;
-
-        state = State.Idling;
 
         multiThread = new ArrayList<>();
         bestPositions = new ArrayList<>();
@@ -1716,17 +1650,7 @@ public class BedBomb extends Module {
 
     @Override
     public void onDeactivate() {
-        if (mc != null && mc.world != null && mc.player != null && mc.getNetworkHandler() != null
-            && (silentHandler != null
-            || mc.player.currentScreenHandler != null && mc.player.currentScreenHandler != mc.player.playerScreenHandler
-            && mc.player.currentScreenHandler instanceof CraftingScreenHandler)) {
-
-            mc.getNetworkHandler().sendPacket(new CloseHandledScreenC2SPacket(silentCraft.get() && silentHandler != null ? silentHandler.syncId : mc.player.currentScreenHandler.syncId));
-            mc.player.currentScreenHandler = mc.player.playerScreenHandler;
-            mc.setScreen(null);
-
-            silentHandler = null;
-        }
+        resetSilentHandler();
 
         if (!renderBlocks.isEmpty()) {
             for (RenderBlock block : renderBlocks) renderBlockPool.free(block);
@@ -1740,13 +1664,7 @@ public class BedBomb extends Module {
             String info = "";
 
             if (displayTarget.get() && targets != null && !targets.isEmpty()) info += "[" + targets.get(0).getGameProfile().getName() + "] ";
-            if (displayDelay.get()) {
-                if (state == State.Placing) info += "[" + (speedPlaceKey.get().isPressed() ? speedPlaceDelay.get() : placeDelay.get()) + (displayMS.get() ? " | " : "] ");
-                else if (state == State.Breaking) info += "[" + (speedBreakKey.get().isPressed() ? speedBreakDelay.get() : breakDelay.get()) + (displayMS.get() ? " | " : "] ");
-                else info += "[0" + (displayMS.get() ? " | " : "] ");
-            }
-            if (displayMS.get()) info += (!displayDelay.get() ? "[" : "") + calcTime + "ms]";
-            if (displayState.get()) info += " [" + state + "]";
+            if (displayMS.get()) info += "[" + calcTime + "ms]";
 
             if (info.endsWith(" ")) info = info.substring(0, info.length() - 1);
 
@@ -1766,11 +1684,8 @@ public class BedBomb extends Module {
         placeTicks++;
         breakTicks++;
         craftTicks++;
-        cityTicks++;
-        instaTicks++;
+        recalcTicks++;
         calcTicks++;
-
-        citing = false;
 
         if (shouldPause()) return;
         if (mc.world.getDimension().isBedWorking() && !ignoreDimension.get()) {
@@ -1778,6 +1693,8 @@ public class BedBomb extends Module {
             toggle();
             return;
         }
+
+        // Auto Move
 
         if (autoMove.get()) {
             FindItemResult bed = VectorUtils.find(stack -> stack.getItem() instanceof BedItem, 9, 35);
@@ -1870,6 +1787,8 @@ public class BedBomb extends Module {
                 }
             }
         }
+
+        // Auto Craft
 
         if (autoCraft.get() && !failed && craftFailTimes >= failAmount.get() + 1 && canRefill() && needRefill() && !isInventoryFull()) {
             if (infoOnFail.get()) info("Failed to craft " + failAmount.get() + (failAmount.get() == 1 ? " time" : " times") + ". Waiting " + failWaitDelay.get() + " ticks.");
@@ -1983,7 +1902,6 @@ public class BedBomb extends Module {
 
                     if (antiDesync.get()) mc.player.getInventory().updateItems();
 
-                    state = State.Idling;
                     silentHandler = null;
 
                     craftFailTimes = 0;
@@ -1992,8 +1910,6 @@ public class BedBomb extends Module {
                     if (openRecipeBook.get() && mc.player.getRecipeBook() != null && !mc.player.getRecipeBook().isGuiOpen(RecipeBookCategory.CRAFTING)) {
                         mc.player.getRecipeBook().setGuiOpen(RecipeBookCategory.CRAFTING, true);
                     }
-
-                    state = State.Crafting;
 
                     if (container == null || recipes.isEmpty()) reload();
 
@@ -2047,7 +1963,7 @@ public class BedBomb extends Module {
 
         // Movement Predict
 
-        if (predictMovement.get()) {
+        if (predictMode.get() == PredictMode.Average) {
             if (!predictions.isEmpty()) {
                 for (int id : new HashSet<>(predictions.keySet())) {
                     Entity entity = mc.world.getEntityById(id);
@@ -2198,8 +2114,45 @@ public class BedBomb extends Module {
                         && VectorUtils.distanceY(mc.player.getY(), entity.getY()) >= verticalTargetRange.get()
                         && VectorUtils.distance(positions.get(0), positions.get(positions.size() - 1)) >= movingDistance.get()) {
 
-                        moving = true;
-                        break;
+                        boolean valid = !ignoreInHole.get();
+
+                        if (ignoreInHole.get()) {
+                            BlockPos pos = entity.getBlockPos();
+
+                            if (isValidHole(pos, true) && isValidHole(pos.up(), false)) {
+                                int air = 0;
+                                int surr = 0;
+
+                                for (CardinalDirection cardinal : CardinalDirection.values()) {
+                                    Direction direction = cardinal.toDirection();
+
+                                    if (ignoreDoubles.get() && isValidHole(pos.offset(direction), true) && isValidHole(pos.offset(direction).up(), false)) {
+                                        int surrounded = 0;
+
+                                        for (CardinalDirection dir : CardinalDirection.values()) {
+                                            if (mc.world.getBlockState(pos.offset(direction).offset(dir.toDirection())).getBlock().getBlastResistance() >= 600.0F) {
+                                                surrounded++;
+                                            }
+                                        }
+
+                                        if (surrounded == 3) {
+                                            air++;
+                                        } else {
+                                            air = 0;
+                                        }
+                                    } else if (mc.world.getBlockState(pos.offset(direction)).getBlock().getBlastResistance() >= 600.0F) {
+                                        surr++;
+                                    }
+                                }
+
+                                valid = ignoreDoubles.get() ? (air != 1 || surr < 3) && (air != 0 || surr < 4) : surr < 4;
+                            }
+                        }
+
+                        if (valid) {
+                            moving = true;
+                            break;
+                        }
                     }
                 } else {
                     prevPositions.remove(id);
@@ -2219,107 +2172,6 @@ public class BedBomb extends Module {
             }
 
             if (sortMode.get() == SortMode.HighestDistance) Collections.reverse(targets);
-
-            // Auto Bed City
-
-            if (autoCity.get() && (forceCity.get().isPressed() || automatic.get())) {
-                if (canBreak(breakingPos)) {
-                    state = State.Citing;
-
-                    if (instaMine.get() && (instaTicks >= instaTickDelay.get() || instaTickDelay.get() == 0)) {
-                        ItemStack stack = mc.player.getMainHandStack();
-                        float hardness = mc.world.getBlockState(breakingPos).getHardness(mc.world, breakingPos);
-
-                        if (stack != null && stack.getItem() instanceof ToolItem && mc.world.getBlockState(breakingPos).getHardness(mc.world, breakingPos) > 0
-                            && ((hardness / stack.getItem().getMiningSpeedMultiplier(mc.player.getMainHandStack(), mc.world.getBlockState(breakingPos))) <= maxHardness.get()
-                            || hardness <= maxHardness.get())) {
-
-                            instaTicks = 0;
-
-                            if (rotate.get()) {
-                                Rotations.rotate(Rotations.getYaw(breakingPos), Rotations.getPitch(breakingPos), () -> mc.getNetworkHandler().sendPacket(new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.STOP_DESTROY_BLOCK, breakingPos, getClosestDirection(breakingPos).get(0))));
-                            } else {
-                                mc.getNetworkHandler().sendPacket(new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.STOP_DESTROY_BLOCK, breakingPos, getClosestDirection(breakingPos).get(0)));
-                            }
-
-                            swingHand(Hand.MAIN_HAND);
-                        }
-                    } else {
-                        BlockUtils.breakBlock(breakingPos, renderSwing.get());
-                    }
-                } else {
-                    breakingPos = null;
-
-                    state = State.Idling;
-                }
-
-                // Getting best Block
-
-                if (cityDelay.get() == 0 || cityTicks >= cityDelay.get()) {
-                    boolean shouldCity = false;
-
-                    if (breakingPos != null) {
-                        for (CardinalDirection dir : CardinalDirection.values()) {
-                            for (PlayerEntity target : targets) {
-                                if (breakingPos.down().equals(target.getBlockPos().up())
-                                    || breakingPos.offset(dir.toDirection()).equals(target.getBlockPos())
-                                    || breakingPos.offset(dir.toDirection()).equals(target.getBlockPos().up())) {
-                                    shouldCity = true;
-                                }
-                            }
-                        }
-                    } else {
-                        shouldCity = true;
-                    }
-
-                    if (shouldCity && (breakingPos == null
-                        || canPlace(breakingPos, Blocks.RED_BED.getDefaultState(), true)
-                        || VectorUtils.distance(mc.player.getPos(), Vec3d.ofCenter(breakingPos)) > cityRange.get())) {
-
-                        cityTicks = 0;
-
-                        // Collection Blocks
-
-                        List<BlockPos> positions = new ArrayList<>();
-
-                        for (PlayerEntity target : targets) {
-                            positions.add(target.getBlockPos());
-                            positions.add(target.getBlockPos().up());
-                            positions.add(target.getBlockPos().up(2));
-
-                            for (CardinalDirection dir : CardinalDirection.values()) {
-                                positions.add(target.getBlockPos().offset(dir.toDirection()));
-                                positions.add(target.getBlockPos().offset(dir.toDirection()).up());
-                            }
-                        }
-
-                        positions.removeIf(pos -> VectorUtils.distance(mc.player.getPos(), Vec3d.ofCenter(pos)) > cityRange.get());
-
-                        if (cityScanMode.get() == CityScanMode.Closest) positions.sort(Comparator.comparingDouble(pos -> VectorUtils.distance(mc.player.getPos(), Vec3d.ofCenter(pos))));
-                        if (cityScanMode.get() == CityScanMode.Random) Collections.shuffle(positions);
-
-                        for (BlockPos pos : positions) {
-                            if (VectorUtils.distance(mc.player.getPos(), Vec3d.ofCenter(pos)) <= horizontalPlaceRange.get()
-                                && VectorUtils.distanceY(mc.player.getPos(), Vec3d.ofCenter(pos)) <= verticalPlaceRange.get()
-                                && mc.world.getBlockState(pos).getMaterial().isReplaceable()) {
-                                shouldCity = false;
-                            }
-                        }
-
-                        // Evaluating Blocks
-
-                        if (shouldCity) {
-                            for (BlockPos pos : positions) {
-                                if (canBreak(pos)) {
-                                    breakingPos = pos;
-                                    citing = true;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
 
             // Calculating
 
@@ -2344,13 +2196,41 @@ public class BedBomb extends Module {
                 if (!bed.isOffhand()) bed = new FindItemResult(-1);
             }
 
+            // Recalc / Passive Mode
+
+            boolean recalc = placeType.get() == PlaceType.Active || placePos == null || placeDir == null;
+
+            if (placeType.get() != PlaceType.Active && placePos != null && placeDir != null) {
+                Pair<BlockPos, BlockPos> pos = new Pair<>(placePos, placePos.offset(placeDir));
+
+                if (recalcTicks >= recalcDelay.get()) {
+                    recalc = true;
+                } else if (recalcOnTooFar.get() && !targets.isEmpty()
+                    && (VectorUtils.distanceXZ(mc.player.getPos(), Vec3d.ofCenter(placePos)) >= horizontalPlaceRange.get()
+                    || VectorUtils.distanceY(mc.player.getY(), placePos.getY() + 0.5) >= verticalPlaceRange.get())) {
+                    recalc = false;
+                } else if (recalcOnVisibility.get() && !isVisibleToTargets(placePos.offset(placeDir), pos)) {
+                    recalc = false;
+                } else if (recalcOnDamge.get()
+                    && (bedDamage(mc.player, placePos.offset(placeDir), pos, false) > maxSelfDamage.get()
+                    || (checkFriends.get() && !checkDamageToFriends(placePos.offset(placeDir), pos))
+                    || getDamageToTargets(placePos.offset(placeDir), pos, true) < minTargetDamage.get())) {
+
+                    recalc = false;
+                }
+            }
+
+            if (recalc) {
+                placeDir = null;
+                placePos = null;
+            }
+
+            // Place Calculations
+
             if ((placeTicks >= (speedPlaceKey.get().isPressed() ? speedPlaceDelay.get() : (moving ? movingPlaceDelay.get() : placeDelay.get()))
                 || (speedPlaceKey.get().isPressed() ? speedPlaceDelay.get() : (moving ? movingPlaceDelay.get() : placeDelay.get())) == 0)
-                && (!pausePlacingOnCity.get() || pausePlacingOnCity.get() && !citing)
-                && bedCount(0, 35) > 0 && bed.found()
+                && bedCount(0, 35) > 0 && bed.found() && recalc
                 && placeMode.get() != PlaceMode.None) {
-
-                state = State.Placing;
 
                 List<BlockPos> positions = new ArrayList<>();
 
@@ -2815,28 +2695,12 @@ public class BedBomb extends Module {
                 }
 
                 if (placePos != null && placeDir != null) {
-                    if (renderType.get() != RenderType.None) {
-                        boolean shouldRender = true;
-
-                        if (renderOnlyOnce.get()) {
-                            for (RenderBlock block : new ArrayList<>(renderBlocks)) {
-                                if (block.pos.equals(placePos) && block.ticks < (renderTicks.get() * (ticksLeftPercent.get() / 100))) {
-                                    shouldRender = false;
-                                    break;
-                                }
-                            }
-                        }
-
-                        if (!renderOnlyOnce.get() || renderOnlyOnce.get() && shouldRender) renderBlocks.add(renderBlockPool.get().set(placePos, placeDir));
-                    }
-
+                    addRenderBlock(placePos, placeDir);
                     place(placePos, placeDir, bed);
 
                     if ((speedBreakKey.get().isPressed() ? speedBreakDelay.get() : (moving ? movingBreakDelay.get() : breakDelay.get())) == 0) breakPos = placePos;
                     if (resetDelayOnPlace.get()) breakTicks = 0;
 
-                    placeDir = null;
-                    placePos = null;
                     placeTicks = 0;
 
                     if (breakDelay.get() != 0) return;
@@ -2847,10 +2711,7 @@ public class BedBomb extends Module {
 
             if (breakMode.get() != BreakMode.None
                 && (breakTicks >= (speedBreakKey.get().isPressed() ? speedBreakDelay.get() : (moving ? movingBreakDelay.get() : breakDelay.get()))
-                || (speedBreakKey.get().isPressed() ? speedBreakDelay.get() : (moving ? movingBreakDelay.get() : breakDelay.get())) == 0)
-                && (!pauseBreakingOnCity.get() || pauseBreakingOnCity.get() && !citing)) {
-
-                state = State.Breaking;
+                || (speedBreakKey.get().isPressed() ? speedBreakDelay.get() : (moving ? movingBreakDelay.get() : breakDelay.get())) == 0)) {
 
                 // Break Calculation
 
@@ -2972,8 +2833,6 @@ public class BedBomb extends Module {
                     breakPos = null;
                     breakTicks = 0;
 
-                    state = State.Idling;
-
                     if (resetDelayOnBreak.get()) placeTicks = 0;
                 }
             }
@@ -3013,28 +2872,12 @@ public class BedBomb extends Module {
                 }
 
                 if (placePos != null && placeDir != null) {
-                    if (renderType.get() != RenderType.None) {
-                        boolean shouldRender = true;
-
-                        if (renderOnlyOnce.get()) {
-                            for (RenderBlock block : new ArrayList<>(renderBlocks)) {
-                                if (block.pos.equals(placePos) && block.ticks < (renderTicks.get() * (ticksLeftPercent.get() / 100))) {
-                                    shouldRender = false;
-                                    break;
-                                }
-                            }
-                        }
-
-                        if (!renderOnlyOnce.get() || renderOnlyOnce.get() && shouldRender) renderBlocks.add(renderBlockPool.get().set(placePos, placeDir));
-                    }
-
+                    addRenderBlock(placePos, placeDir);
                     place(placePos, placeDir, bed);
 
                     if (breakDelay.get() == 0) breakPos = placePos;
                     if (resetDelayOnPlace.get()) breakTicks = 0;
 
-                    placeDir = null;
-                    placePos = null;
                     placeTicks = 0;
                 }
             }
@@ -3050,28 +2893,12 @@ public class BedBomb extends Module {
         // Actual Placement
 
         if (shouldPlace() && bed.found() && placePos != null && placeDir != null && placeTicking.get() == PlaceTicking.Bypass) {
-            if (renderType.get() != RenderType.None) {
-                boolean shouldRender = true;
-
-                if (renderOnlyOnce.get()) {
-                    for (RenderBlock block : new ArrayList<>(renderBlocks)) {
-                        if (block.pos.equals(placePos) && block.ticks < (renderTicks.get() * (ticksLeftPercent.get() / 100))) {
-                            shouldRender = false;
-                            break;
-                        }
-                    }
-                }
-
-                if (!renderOnlyOnce.get() || renderOnlyOnce.get() && shouldRender) renderBlocks.add(renderBlockPool.get().set(placePos, placeDir));
-            }
-
+            addRenderBlock(placePos, placeDir);
             place(placePos, placeDir, bed);
 
             if (breakDelay.get() == 0) breakPos = placePos;
             if (resetDelayOnPlace.get()) breakTicks = 0;
 
-            placeDir = null;
-            placePos = null;
             placeTicks = 0;
         }
     }
@@ -3092,6 +2919,28 @@ public class BedBomb extends Module {
 
             mc.setScreen(null);
             event.cancel();
+        }
+    }
+
+    // Movement Predict
+
+    @EventHandler
+    private void onReceivePacket(PacketEvent.Receive event) {
+        if (event.packet instanceof EntityPositionS2CPacket packet && packet.getId() >= 0 && predictMode.get() == PredictMode.Packet) {
+            int id = packet.getId();
+            Entity entity = mc.world.getEntityById(id);
+
+            if (entity instanceof PlayerEntity && VectorUtils.distance(mc.player.getPos(), entity.getPos()) <= predictRange.get()) {
+                Vec3d relative = new Vec3d(entity.getX() - packet.getX(), entity.getY() - packet.getY(), entity.getZ() - packet.getZ());
+
+                if (!mc.world.getBlockCollisions(entity, entity.getBoundingBox().offset(relative)).iterator().hasNext()) {
+                    if (!predictedResults.containsKey(id)) {
+                        predictedResults.put(id, relative);
+                    } else {
+                        predictedResults.replace(id, relative);
+                    }
+                }
+            }
         }
     }
 
@@ -3285,8 +3134,22 @@ public class BedBomb extends Module {
             recipes = new ArrayList<>();
 
             for (RecipeResultCollection collection : container.findAll(smartPrioritization.get() ? "bed" : "")) {
-                recipes.addAll(((RecipeResultCollectionAccessor) collection).getRecipes());
+                recipes.addAll(collection.getAllRecipes());
             }
+        }
+    }
+
+    private void resetSilentHandler() {
+        if (mc != null && mc.world != null && mc.player != null && mc.getNetworkHandler() != null
+            && (silentHandler != null
+            || mc.player.currentScreenHandler != null && mc.player.currentScreenHandler != mc.player.playerScreenHandler
+            && mc.player.currentScreenHandler instanceof CraftingScreenHandler)) {
+
+            mc.getNetworkHandler().sendPacket(new CloseHandledScreenC2SPacket(silentCraft.get() && silentHandler != null ? silentHandler.syncId : mc.player.currentScreenHandler.syncId));
+            mc.player.currentScreenHandler = mc.player.playerScreenHandler;
+            mc.setScreen(null);
+
+            silentHandler = null;
         }
     }
 
@@ -3302,11 +3165,51 @@ public class BedBomb extends Module {
         }
     }
 
+    private void swapTo(int slot) {
+        if (slot >= 0 && slot <= 8) {
+            mc.getNetworkHandler().sendPacket(new UpdateSelectedSlotC2SPacket(slot));
+            mc.player.getInventory().selectedSlot = slot;
+            ((IClientPlayerInteractionManager) mc.interactionManager).syncSelected();
+        }
+    }
+
+    private void addRenderBlock(BlockPos pos, Direction dir) {
+        if (renderType.get() != RenderType.None) {
+            int block = -1;
+
+            if (growIfAlreadyExist.get()) {
+                for (int i = 0; i < renderBlocks.size(); i++) {
+                    if (renderBlocks.get(i).getPos().equals(pos)) {
+                        block = i;
+                        break;
+                    }
+                }
+            }
+
+            if (block < 0) {
+                renderBlocks.add(renderBlockPool.get().set(pos, dir));
+            } else if (growIfAlreadyExist.get()) {
+                renderBlocks.get(block).setGrowTicks(growTicks.get());
+                if (!keepColor.get()) renderBlocks.get(block).updateColor();
+            }
+        }
+    }
+
     private boolean shouldPause() {
         if (killAuraPause.get() && Modules.get() != null && Modules.get().isActive(KillAura.class)) return true;
         if (crystalAuraPause.get() && Modules.get() != null && Modules.get().isActive(CrystalAura.class)) return true;
         if (eatPause.get() && (mc.player.isUsingItem() && (mc.player.getMainHandStack().getItem().isFood() || mc.player.getOffHandStack().getItem().isFood()))) return true;
         return drinkPause.get() && (mc.player.isUsingItem() && (mc.player.getMainHandStack().getItem() instanceof PotionItem || mc.player.getOffHandStack().getItem() instanceof PotionItem));
+    }
+
+    private boolean isValidHole(BlockPos pos, boolean checkDown) {
+        return mc.world.getBlockState(pos).getBlock() != Blocks.COBWEB
+            && mc.world.getBlockState(pos).getBlock() != Blocks.POWDER_SNOW
+            && (!checkDown || (mc.world.getBlockState(pos.down()).getBlock().getBlastResistance() >= 600.0F
+            && mc.world.getBlockState(pos.down()).getCollisionShape(mc.world, pos.down()) != null
+            && !mc.world.getBlockState(pos.down()).getCollisionShape(mc.world, pos.down()).isEmpty()))
+            && (mc.world.getBlockState(pos).getCollisionShape(mc.world, pos) == null
+            || mc.world.getBlockState(pos).getCollisionShape(mc.world, pos).isEmpty());
     }
 
     private boolean isValidUnthreaded(BlockPos pos) {
@@ -3344,13 +3247,6 @@ public class BedBomb extends Module {
         }
 
         return i == 4;
-    }
-
-    private boolean canBreak(BlockPos pos) {
-        return pos != null && !mc.world.getBlockState(pos).isAir() &&
-            VectorUtils.distance(mc.player.getPos(), Vec3d.ofCenter(pos)) <= cityRange.get()
-            && mc.world.getBlockState(pos).getHardness(mc.world, pos) > 0
-            && !mc.world.getBlockState(pos).getOutlineShape(mc.world, pos).isEmpty();
     }
 
     private boolean shouldPlace() {
@@ -3415,6 +3311,7 @@ public class BedBomb extends Module {
                         if (head != null && foot != null
                             && canDealDamageToTargets(pos)
                             && isVisibleToTargets(head, bed)) {
+
                             double damage = getDamageToTargets(head, bed, false);
 
                             if (damage < minTargetDamage.get()) {
@@ -3471,21 +3368,6 @@ public class BedBomb extends Module {
 
         directions.sort(Comparator.comparingDouble(dir -> VectorUtils.distance(mc.player.getPos(), Vec3d.ofCenter(pos.offset(dir)))));
         return directions.get(0);
-    }
-
-    private List<Direction> getClosestDirection(BlockPos pos) {
-        List<Direction> directions = new ArrayList<>();
-
-        for (Direction dir : Direction.values()) {
-            if (dir != null && mc.world.getBlockState(pos.offset(dir)).getMaterial().isReplaceable()) {
-                directions.add(dir);
-            }
-        }
-
-        if (directions.isEmpty()) directions.addAll(List.of(Direction.values()));
-
-        directions.sort(Comparator.comparingDouble(dir -> dir != null ? VectorUtils.distance(mc.player.getPos(), Vec3d.of(pos.offset(dir))) : VectorUtils.distance(mc.player.getPos(), Vec3d.of(pos))));
-        return directions;
     }
 
     // Damage Calculation
@@ -3565,10 +3447,12 @@ public class BedBomb extends Module {
                 PlayerEntity target = targets.get(i);
 
                 if ((!smartDelay.get() || target.hurtTime <= 0) && target != mc.player && Friends.get().isFriend(target) && VectorUtils.distance(Vec3d.ofCenter(pos), target.getPos()) < 11) {
-                    if (bedDamage(target, pos, bed, true) >= getTotalHealth(target)) return false;
+                    double damage = bedDamage(target, pos, bed, true);
+                    if (damage >= maxFriendDamage.get() || damage >= getTotalHealth(target)) return false;
                 }
             }
         }
+
         return true;
     }
 
@@ -3634,7 +3518,7 @@ public class BedBomb extends Module {
     private double getExposure(Vec3d source, Entity entity, RaycastContext context, Pair<BlockPos, BlockPos> bed, boolean ignoreTerrain) {
         Box box = entity.getBoundingBox();
 
-        if (predictMovement.get() && predictedResults.containsKey(entity.getId())) {
+        if (predictMode.get() != PredictMode.None && predictedResults.containsKey(entity.getId())) {
             box = box.offset(predictedResults.get(entity.getId()));
         }
 
@@ -3769,9 +3653,9 @@ public class BedBomb extends Module {
 
     private void place(BlockPos pos, Direction dir, Hand hand, int slot) {
         if ((slot >= 0 && slot <= 8 || slot == 45) && pos != null) {
-            Vec3d hitPos = getHitPos(pos);
             Direction side = getSide(pos);
             BlockPos neighbour = getNeighbourPos(pos);
+            Vec3d hitPos = getHitPos(pos, side);
 
             boolean sneak = !mc.player.isSneaking() && VectorUtils.isClickable(mc.world.getBlockState(neighbour).getBlock());
 
@@ -3795,76 +3679,82 @@ public class BedBomb extends Module {
             if (pitchMode.get() == PitchMode.Down) pitch = -90.0F;
             if (pitchMode.get() == PitchMode.Custom) pitch = customPitch.get().floatValue();
 
-            switch (rotateMode.get()) {
-                case Normal -> {
-                    Rotations.rotate(yaw, pitch, 500, () -> {
+            if (dir != null && ignoreRotationWhenDone.get() && mc.player.getHorizontalFacing().equals(dir)) {
+                int prevSlot = -1;
+                if (mc.player.getInventory().selectedSlot != slot) {
+                    prevSlot = mc.player.getInventory().selectedSlot;
+
+                    swapTo(slot);
+                }
+
+                place(new BlockHitResult(hitPos, side, neighbour, false), hand, packetPlace.get(), sneak);
+
+                if (prevSlot != -1 && swapBack.get()) {
+                    swapTo(prevSlot);
+                }
+            } else {
+                switch (rotateMode.get()) {
+                    case Normal -> {
+                        Rotations.rotate(yaw, pitch, 500, () -> {
+                            int prevSlot = -1;
+                            if (mc.player.getInventory().selectedSlot != slot) {
+                                prevSlot = mc.player.getInventory().selectedSlot;
+
+                                swapTo(slot);
+                            }
+
+                            place(new BlockHitResult(hitPos, side, neighbour, false), hand, packetPlace.get(), sneak);
+
+                            if (prevSlot != -1 && swapBack.get()) {
+                                swapTo(prevSlot);
+                            }
+                        });
+                    }
+
+                    case Packet -> {
+                        float prevYaw = mc.player.getYaw();
+                        float prevPitch = mc.player.getPitch();
+
                         int prevSlot = -1;
                         if (mc.player.getInventory().selectedSlot != slot) {
                             prevSlot = mc.player.getInventory().selectedSlot;
-                            mc.getNetworkHandler().sendPacket(new UpdateSelectedSlotC2SPacket(slot));
-                            mc.player.getInventory().selectedSlot = slot;
-                            ((IClientPlayerInteractionManager) mc.interactionManager).syncSelected();
+
+                            swapTo(slot);
                         }
+
+                        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.LookAndOnGround(yaw, pitch, mc.player.isOnGround()));
+                        place(new BlockHitResult(hitPos, side, neighbour, false), hand, packetPlace.get(), sneak);
+                        if (rotateBack.get()) mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.LookAndOnGround(prevYaw, prevPitch, mc.player.isOnGround()));
+
+                        if (prevSlot != -1 && swapBack.get()) {
+                            swapTo(prevSlot);
+                        }
+                    }
+
+                    case Set -> {
+                        float prevYaw = mc.player.getYaw();
+                        float prevPitch = mc.player.getPitch();
+
+                        int prevSlot = -1;
+                        if (mc.player.getInventory().selectedSlot != slot) {
+                            prevSlot = mc.player.getInventory().selectedSlot;
+
+                            swapTo(slot);
+                        }
+
+                        mc.player.setYaw(yaw);
+                        mc.player.setPitch(pitch);
 
                         place(new BlockHitResult(hitPos, side, neighbour, false), hand, packetPlace.get(), sneak);
 
-                        if (prevSlot != -1 && swapBack.get()) {
-                            mc.getNetworkHandler().sendPacket(new UpdateSelectedSlotC2SPacket(prevSlot));
-                            mc.player.getInventory().selectedSlot = prevSlot;
-                            ((IClientPlayerInteractionManager) mc.interactionManager).syncSelected();
+                        if (rotateBack.get()) {
+                            mc.player.setYaw(prevYaw);
+                            mc.player.setPitch(prevPitch);
                         }
-                    });
-                }
 
-                case Packet -> {
-                    float prevYaw = mc.player.getYaw();
-                    float prevPitch = mc.player.getPitch();
-
-                    int prevSlot = -1;
-                    if (mc.player.getInventory().selectedSlot != slot) {
-                        prevSlot = mc.player.getInventory().selectedSlot;
-                        mc.getNetworkHandler().sendPacket(new UpdateSelectedSlotC2SPacket(slot));
-                        mc.player.getInventory().selectedSlot = slot;
-                        ((IClientPlayerInteractionManager) mc.interactionManager).syncSelected();
-                    }
-
-                    mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.LookAndOnGround(yaw, pitch, mc.player.isOnGround()));
-                    place(new BlockHitResult(hitPos, side, neighbour, false), hand, packetPlace.get(), sneak);
-                    if (rotateBack.get()) mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.LookAndOnGround(prevYaw, prevPitch, mc.player.isOnGround()));
-
-                    if (prevSlot != -1 && swapBack.get()) {
-                        mc.getNetworkHandler().sendPacket(new UpdateSelectedSlotC2SPacket(prevSlot));
-                        mc.player.getInventory().selectedSlot = prevSlot;
-                        ((IClientPlayerInteractionManager) mc.interactionManager).syncSelected();
-                    }
-                }
-
-                case Set -> {
-                    float prevYaw = mc.player.getYaw();
-                    float prevPitch = mc.player.getPitch();
-
-                    int prevSlot = -1;
-                    if (mc.player.getInventory().selectedSlot != slot) {
-                        prevSlot = mc.player.getInventory().selectedSlot;
-                        mc.getNetworkHandler().sendPacket(new UpdateSelectedSlotC2SPacket(slot));
-                        mc.player.getInventory().selectedSlot = slot;
-                        ((IClientPlayerInteractionManager) mc.interactionManager).syncSelected();
-                    }
-
-                    mc.player.setYaw(yaw);
-                    mc.player.setPitch(pitch);
-
-                    place(new BlockHitResult(hitPos, side, neighbour, false), hand, packetPlace.get(), sneak);
-
-                    if (rotateBack.get()) {
-                        mc.player.setYaw(prevYaw);
-                        mc.player.setPitch(prevPitch);
-                    }
-
-                    if (prevSlot != -1 && swapBack.get()) {
-                        mc.getNetworkHandler().sendPacket(new UpdateSelectedSlotC2SPacket(prevSlot));
-                        mc.player.getInventory().selectedSlot = prevSlot;
-                        ((IClientPlayerInteractionManager) mc.interactionManager).syncSelected();
+                        if (prevSlot != -1 && swapBack.get()) {
+                            swapTo(prevSlot);
+                        }
                     }
                 }
             }
@@ -3907,8 +3797,8 @@ public class BedBomb extends Module {
     }
 
     private BlockPos getNeighbourPos(BlockPos pos) {
-        Direction side = getPlaceSide(pos);
         BlockPos neighbour;
+        Direction side = getPlaceSide(pos);
 
         if (side == null) {
             neighbour = pos;
@@ -3919,30 +3809,56 @@ public class BedBomb extends Module {
         return neighbour;
     }
 
-    private Vec3d getHitPos(BlockPos pos) {
-        Direction side = getPlaceSide(pos);
+    private Vec3d getHitPos(BlockPos pos, Direction side) {
         Vec3d hitPos = new Vec3d(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
 
         if (side != null) {
-            side = side.getOpposite();
+            Direction opposite = side.getOpposite();
 
-            if (!placeBypass.get()) {
+            if (!placeRangeBypass.get()) {
                 hitPos = hitPos.add(
-                    side.getOffsetX() == 0 ? 0 : (side.getOffsetX() > 0 ? 0.5 : -0.5),
-                    side.getOffsetY() == 0 ? 0 : (side.getOffsetY() > 0 ? 0.5 : -0.5),
-                    side.getOffsetZ() == 0 ? 0 : (side.getOffsetZ() > 0 ? 0.5 : -0.5)
+                    opposite.getOffsetX() == 0 ? 0 : (opposite.getOffsetX() > 0 ? 0.5 : -0.5),
+                    opposite.getOffsetY() == 0 ? 0 : (opposite.getOffsetY() > 0 ? 0.5 : -0.5),
+                    opposite.getOffsetZ() == 0 ? 0 : (opposite.getOffsetZ() > 0 ? 0.5 : -0.5)
                 );
             }
-        }
 
-        if (placeBypass.get()) {
-            Vec3d target = mc.player.getEyePos();
+            if (placeRangeBypass.get()) {
+                Vec3d target = mc.player.getEyePos();
+                VoxelShape shape = mc.world.getBlockState(pos).getOutlineShape(mc.world, pos);
 
-            double x = MathHelper.clamp(target.getX(), pos.getX(), pos.getX() + 1);
-            double y = MathHelper.clamp(target.getY(), pos.getY(), pos.getY() + 1);
-            double z = MathHelper.clamp(target.getZ(), pos.getZ(), pos.getZ() + 1);
+                if (shape != null && !shape.isEmpty()) {
+                    Box box = new Box(
+                        pos.getX() + (opposite == Direction.EAST ? shape.getMax(Direction.Axis.X) : shape.getMin(Direction.Axis.X)),
+                        pos.getY() + (opposite == Direction.UP ? shape.getMax(Direction.Axis.Y) : shape.getMin(Direction.Axis.Y)),
+                        pos.getZ() + (opposite == Direction.SOUTH ? shape.getMax(Direction.Axis.Z) : shape.getMin(Direction.Axis.Z)),
+                        pos.getX() + (opposite != Direction.WEST ? shape.getMax(Direction.Axis.X) : shape.getMin(Direction.Axis.X)),
+                        pos.getY() + (opposite != Direction.DOWN ? shape.getMax(Direction.Axis.Y) : shape.getMin(Direction.Axis.Y)),
+                        pos.getZ() + (opposite != Direction.NORTH ? shape.getMax(Direction.Axis.Z) : shape.getMin(Direction.Axis.Z))
+                    );
 
-            hitPos = new Vec3d(x, y, z);
+                    double x = MathHelper.clamp(target.getX(), box.minX, box.maxX);
+                    double y = MathHelper.clamp(target.getY(), box.minY, box.maxY);
+                    double z = MathHelper.clamp(target.getZ(), box.minZ, box.maxZ);
+
+                    hitPos = new Vec3d(x, y, z);
+                } else {
+                    Box box = new Box(
+                        pos.getX() + (opposite == Direction.EAST ? 1.0 : 0.0),
+                        pos.getY() + (opposite == Direction.UP ? 1.0 : 0.0),
+                        pos.getZ() + (opposite == Direction.SOUTH ? 1.0 : 0.0),
+                        pos.getX() + (opposite != Direction.WEST ? 1.0 : 0.0),
+                        pos.getY() + (opposite != Direction.DOWN ? 1.0 : 0.0),
+                        pos.getZ() + (opposite != Direction.NORTH ? 1.0 : 0.0)
+                    );
+
+                    double x = MathHelper.clamp(target.getX(), box.minX, box.maxX);
+                    double y = MathHelper.clamp(target.getY(), box.minY, box.maxY);
+                    double z = MathHelper.clamp(target.getZ(), box.minZ, box.maxZ);
+
+                    hitPos = new Vec3d(x, y, z);
+                }
+            }
         }
 
         return hitPos;
@@ -3960,7 +3876,7 @@ public class BedBomb extends Module {
         for (Direction side : Direction.values()) {
             BlockState state = mc.world.getBlockState(pos.offset(side));
 
-            if (!state.getMaterial().isReplaceable() && !VectorUtils.isClickable(mc.world.getBlockState(pos).getBlock()) && state.getFluidState().isEmpty()) {
+            if (!state.getMaterial().isReplaceable() && state.getFluidState().isEmpty()) {
                 sides.add(side.getOpposite());
             }
         }
@@ -3985,21 +3901,21 @@ public class BedBomb extends Module {
 
     private void breakBed(BlockPos pos) {
         if (pos != null) {
-            Vec3d vec = Vec3d.ofCenter(pos);
+            Vec3d vec = new Vec3d(pos.getX() + 0.5, pos.getY() + 0.3, pos.getZ() + 0.5);
             VoxelShape shape = mc.world.getBlockState(pos).getCollisionShape(mc.world, pos);
 
-            if (placeBypass.get() && shape != null && !shape.isEmpty()) {
+            if (breakRangeBypass.get() && shape != null && !shape.isEmpty()) {
                 Vec3d[] closest = new Vec3d[1];
-                Vec3d target = mc.player.getEyePos();
+                Vec3d eyes = mc.player.getEyePos();
 
                 shape = shape.offset(pos.getX(), pos.getY(), pos.getZ());
 
                 shape.forEachBox((minX, minY, minZ, maxX, maxY, maxZ) -> {
-                    double cX = MathHelper.clamp(target.getX(), minX, maxX);
-                    double cY = MathHelper.clamp(target.getY(), minY, maxY);
-                    double cZ = MathHelper.clamp(target.getZ(), minZ, maxZ);
+                    double cX = MathHelper.clamp(eyes.getX(), minX, maxX);
+                    double cY = MathHelper.clamp(eyes.getY(), minY, maxY);
+                    double cZ = MathHelper.clamp(eyes.getZ(), minZ, maxZ);
 
-                    if (closest[0] == null || target.squaredDistanceTo(cX, cY, cZ) < target.squaredDistanceTo(closest[0])) {
+                    if (closest[0] == null || eyes.squaredDistanceTo(cX, cY, cZ) < eyes.squaredDistanceTo(closest[0])) {
                         closest[0] = new Vec3d(cX, cY, cZ);
                     }
                 });
@@ -4026,7 +3942,7 @@ public class BedBomb extends Module {
         swingHand(hand);
 
         if (wasSneaking && updateSneaking.get()) {
-            mc.player.setSneaking(true);
+            mc.player.setSneaking(!packetSneak.get());
             mc.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(mc.player, ClientCommandC2SPacket.Mode.PRESS_SHIFT_KEY));
         }
     }
@@ -4092,13 +4008,7 @@ public class BedBomb extends Module {
         add(Items.OAK_PLANKS);
     }};
 
-    private enum State {
-        Breaking,
-        Placing,
-        Crafting,
-        Citing,
-        Idling
-    }
+    // Enums
 
     public enum BreakHandMode {
         MainHand,
@@ -4149,9 +4059,21 @@ public class BedBomb extends Module {
         Packet
     }
 
+    public enum PredictMode {
+        None,
+        Average,
+        Packet
+    }
+
     public enum SwapMode {
         Pickup,
         Swap
+    }
+
+    public enum PlaceType {
+        Active,
+        Passive,
+        Recalc
     }
 
     public enum PlaceTicking {
@@ -4202,10 +4124,11 @@ public class BedBomb extends Module {
     // Render Block
 
     private class RenderBlock {
-        public BlockPos.Mutable pos = new BlockPos.Mutable();
-        public Direction dir;
-        public int ticks;
-        public double offset;
+        private BlockPos pos;
+        private Direction dir;
+        private int ticks;
+        private int growTicks;
+        private double offset;
 
         private Color sidesTop;
         private Color sidesBottom;
@@ -4213,56 +4136,76 @@ public class BedBomb extends Module {
         private Color linesBottom;
 
         public RenderBlock set(BlockPos position, Direction direction) {
-            if (pos == null || direction == null) return new RenderBlock();
-            pos.set(position);
-            dir = direction;
-            ticks = renderTicks.get();
-            offset = 1;
+            this.pos = position;
+            this.dir = direction;
 
-            sidesTop = new Color(sideColorTop.get());
-            sidesBottom = new Color(sideColorBottom.get());
-            linesTop = new Color(lineColorTop.get());
-            linesBottom = new Color(lineColorBottom.get());
+            this.ticks = renderTicks.get();
+            this.growTicks = 0;
+            this.offset = 1;
+
+            this.sidesTop = new Color(sideColorTop.get());
+            this.sidesBottom = new Color(sideColorBottom.get());
+            this.linesTop = new Color(lineColorTop.get());
+            this.linesBottom = new Color(lineColorBottom.get());
 
             return this;
         }
 
         public void tick() {
-            ticks--;
-            if (shrink.get() && offset >= 0 && renderTicks.get() - ticks >= shrinkTicks.get()) offset -= shrinkSpeed.get() / 100;
+            if (this.growTicks > 0) {
+                if (ticks < renderTicks.get()) ticks++;
+                growTicks--;
+            } else {
+                this.ticks--;
+            }
+        }
+
+        public void setGrowTicks(int growTicks) {
+            this.growTicks = growTicks;
+        }
+
+        public void updateColor() {
+            this.sidesTop = new Color(sideColorTop.get());
+            this.sidesBottom = new Color(sideColorBottom.get());
+            this.linesTop = new Color(lineColorTop.get());
+            this.linesBottom = new Color(lineColorBottom.get());
+        }
+
+        public BlockPos getPos() {
+            return pos;
         }
 
         public void render(Render3DEvent event, ShapeMode shapeMode) {
-            if (sidesTop == null || sidesBottom == null || linesTop == null || linesBottom == null || pos == null) return;
+            if (this.sidesTop == null || this.sidesBottom == null || this.linesTop == null || this.linesBottom == null || this.dir == null) return;
 
-            int preSideTopA = sidesTop.a;
-            int preSideBottomA = sidesBottom.a;
-            int preLineTopA = linesTop.a;
-            int preLineBottomA = linesBottom.a;
+            int preSideTopA = this.sidesTop.a;
+            int preSideBottomA = this.sidesBottom.a;
+            int preLineTopA = this.linesTop.a;
+            int preLineBottomA = this.linesBottom.a;
 
-            sidesTop.a *= (double) ticks / 8;
-            sidesBottom.a *= (double) ticks / 8;
-            linesTop.a *= (double) ticks / 8;
-            linesBottom.a *= (double) ticks / 8;
+            this.sidesTop.a *= (double) this.ticks / 8;
+            this.sidesBottom.a *= (double) this.ticks / 8;
+            this.linesTop.a *= (double) this.ticks / 8;
+            this.linesBottom.a *= (double) this.ticks / 8;
 
-            double x = pos.getX() + (shrink.get() ? 0.5 - offset / 2 : 0);
-            double y = pos.getY() + (shrink.get() ? 0.5 - offset / 2 : 0);
-            double z = pos.getZ() + (shrink.get() ? 0.5 - offset / 2 : 0);
+            double x = pos.getX();
+            double y = pos.getY();
+            double z = pos.getZ();
 
-            double px3 = feetLength.get() / 10 * (shrink.get() ? offset : 1);
-            double px8 = bedHeight.get() / 10 * (shrink.get() ? offset : 1);
+            double px3 = feetLength.get() / 10;
+            double px8 = bedHeight.get() / 10;
 
-            double px16 = 1 * (shrink.get() ? offset : 1);
-            double px32 = 2 * (shrink.get() ? offset : 1);
+            double px16 = 1;
+            double px32 = 2;
 
             if (renderType.get() == RenderType.Advanced) {
-                if (dir == Direction.NORTH) z -= 1;
-                else if (dir == Direction.WEST) x -= 1;
+                if (this.dir == Direction.NORTH) z -= 1;
+                else if (this.dir == Direction.WEST) x -= 1;
 
                 // Lines
 
                 if (shapeMode.lines()) {
-                    if (dir == Direction.NORTH || dir == Direction.SOUTH) {
+                    if (this.dir == Direction.NORTH || this.dir == Direction.SOUTH) {
                         // Edges
 
                         renderEdgeLines(x, y, z, px3, 1, event);
@@ -4330,7 +4273,7 @@ public class BedBomb extends Module {
                 // Sides
 
                 if (shapeMode.sides()) {
-                    if (dir == Direction.NORTH || dir == Direction.SOUTH) {
+                    if (this.dir == Direction.NORTH || this.dir == Direction.SOUTH) {
                         // Horizontal
 
                         // Bottom
@@ -4413,7 +4356,7 @@ public class BedBomb extends Module {
                     }
                 }
             } else if (renderType.get() == RenderType.Normal) {
-                switch (dir) {
+                switch (this.dir) {
                     case NORTH -> event.renderer.box(x, y, z - 1, x + px16, y + px8, z + px32 - 1, sidesBottom, linesBottom, shapeMode, 0);
                     case SOUTH -> event.renderer.box(x, y, z - px16 + 1, x + px16, y + px8, z + px16 + 1, sidesBottom, linesBottom, shapeMode, 0);
                     case EAST -> event.renderer.box(x - px16 + 1, y, z, x + px16 + 1, y + px8, z + px16, sidesBottom, linesBottom, shapeMode, 0);
@@ -4423,10 +4366,10 @@ public class BedBomb extends Module {
 
             // Resetting the Colors
 
-            sidesTop.a = preSideTopA;
-            sidesBottom.a = preSideBottomA;
-            linesTop.a = preLineTopA;
-            linesBottom.a = preLineBottomA;
+            this.sidesTop.a = preSideTopA;
+            this.sidesBottom.a = preSideBottomA;
+            this.linesTop.a = preLineTopA;
+            this.linesBottom.a = preLineBottomA;
         }
 
         // Render Utils
