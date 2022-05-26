@@ -41,6 +41,10 @@ dependencies {
     library "meteordevelopment:discord-ipc:${project.discordrpc_version}"
 }
 
+loom {
+    accessWidenerPath = file("src/main/resources/vector-addon.accesswidener")
+}
+
 jar {
     manifest {
         attributes("Main-Class": "cally72jhb.addon.Main")
