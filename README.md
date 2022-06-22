@@ -62,6 +62,6 @@ Welcomer            || Sends a custom message when a player joins or leaves the 
 .mute     || Mutes players client-side
 .stats    || Shows your current stats for yourself or others
 .target   || Target players to prioritise them in combat modules
-.trashcan || Allows your to silently destroy any item in your hand without dropping it
+.trashcan || Allows you to silently destroy any item in your hand without dropping it
 .uuid     || Tells you a players uuid
 </pre>
