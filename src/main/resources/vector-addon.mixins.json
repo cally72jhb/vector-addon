@@ -1,21 +1,11 @@
 {
   "required": true,
+  "minVersion": "0.8",
   "package": "cally72jhb.addon.mixin",
-  "compatibilityLevel": "JAVA_16",
+  "compatibilityLevel": "JAVA_17",
   "client": [
-    "BlockColorsMixin",
-    "BlockModelRendererMixin",
-    "EmitterParticleMixin",
-    "EntityMixin",
-    "FluidRendererMixin",
     "GameRendererMixin",
-    "LeavesBlockMixin",
-    "NamespaceResourceManagerMixin",
-    "ParticleMixin",
-    "ReloadableResourceManagerImplMixin",
-    "TotemParticleMixin",
-    "WorldBorderMixin",
-    "WorldRendererMixin"
+    "SharedConstantsMixin"
   ],
   "injectors": {
     "defaultRequire": 1
