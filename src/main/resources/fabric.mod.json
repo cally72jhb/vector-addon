@@ -25,7 +25,7 @@
   ],
   "accessWidener": "vector-addon.accesswidener",
   "custom": {
-    "meteor-client:color": "66,135,245"
+    "meteor-client:color": "140,245,165"
   },
   "depends": {
     "java": ">=16",
