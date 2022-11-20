@@ -16,6 +16,8 @@ import net.minecraft.util.shape.VoxelShapes;
 public class EntityPhase extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
 
+    // General
+
     private final Setting<Double> speed = sgGeneral.add(new DoubleSetting.Builder()
             .name("speed")
             .description("Horizontal speed in blocks per second.")
@@ -42,34 +44,42 @@ public class EntityPhase extends Module {
             .build()
     );
 
+    // Constructor
+
     public EntityPhase() {
         super(Categories.Movement, "entity-phase", "Allows you to phase with any entity.");
     }
+
+    // Collision Shape Event
 
     @EventHandler
     private void onCollisionShape(CollisionShapeEvent event) {
         event.shape = VoxelShapes.empty();
     }
 
+    // Living Entity Move Event
+
     @EventHandler
     private void onLivingEntityMove(LivingEntityMoveEvent event) {
-        if (event.entity.getPrimaryPassenger() != mc.player) return;
+        if (event.entity.getPrimaryPassenger() == mc.player) {
+            event.entity.setYaw(mc.player.getYaw());
 
-        // Update Yaw
-        event.entity.setYaw(mc.player.getYaw());
+            // Horizontal Movement
 
-        // Horizontal movement
-        Vec3d vel = PlayerUtils.getHorizontalVelocity(speed.get());
-        double velX = vel.getX();
-        double velY = 0;
-        double velZ = vel.getZ();
+            Vec3d vel = PlayerUtils.getHorizontalVelocity(speed.get());
+            double velX = vel.getX();
+            double velY = 0;
+            double velZ = vel.getZ();
 
-        // Vertical movement
-        if (mc.options.jumpKey.isPressed()) velY += verticalSpeed.get() / 20;
-        if (mc.options.sprintKey.isPressed()) velY -= verticalSpeed.get() / 20;
-        else velY -= fallSpeed.get() / 20;
+            // Vertical Movement
 
-        // Apply velocity
-        ((IVec3d) event.entity.getVelocity()).set(velX, velY, velZ);
+            if (mc.options.jumpKey.isPressed()) velY += verticalSpeed.get() / 20;
+            if (mc.options.sprintKey.isPressed()) velY -= verticalSpeed.get() / 20;
+            else velY -= fallSpeed.get() / 20;
+
+            // Apply Velocity
+
+            ((IVec3d) event.entity.getVelocity()).set(velX, velY, velZ);
+        }
     }
 }

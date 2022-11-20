@@ -1,6 +1,7 @@
 package cally72jhb.addon.modules.combat;
 
 import cally72jhb.addon.utils.Utils;
+import meteordevelopment.meteorclient.events.game.GameLeftEvent;
 import meteordevelopment.meteorclient.events.meteor.KeyEvent;
 import meteordevelopment.meteorclient.events.packets.PacketEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
@@ -102,21 +103,13 @@ public class SurroundPlus extends Module {
             .build()
     );
 
-    private final Setting<StabilizeType> stabilizeType = sgPlace.add(new EnumSetting.Builder<StabilizeType>()
-            .name("stabilize-type")
-            .description("Stabilizes the block placements for a high ping.")
-            .defaultValue(StabilizeType.Wait)
-            .build()
-    );
-
     private final Setting<Integer> replaceDelay = sgPlace.add(new IntSetting.Builder()
             .name("replace-delay")
             .description("How many ticks to wait till trying to replace a block failing to place.")
             .defaultValue(2)
-            .min(1)
+            .min(0)
             .sliderMin(0)
             .sliderMax(4)
-            .visible(() -> stabilizeType.get() == StabilizeType.Wait)
             .build()
     );
 
@@ -177,6 +170,31 @@ public class SurroundPlus extends Module {
             .build()
     );
 
+    private final Setting<Integer> attackDelay = sgCrystal.add(new IntSetting.Builder()
+            .name("attack-delay")
+            .description("How long to wait before breaking another crystal.")
+            .defaultValue(5)
+            .min(0)
+            .sliderMin(0)
+            .sliderMax(10)
+            .build()
+    );
+
+    private final Setting<CrystalReplaceMode> crystalReplaceMode = sgCrystal.add(new EnumSetting.Builder<CrystalReplaceMode>()
+            .name("crystal-replace-mode")
+            .description("Replaces obsidian right where the crystal was broken.")
+            .defaultValue(CrystalReplaceMode.None)
+            .build()
+    );
+
+    private final Setting<Boolean> keepPositions = sgCrystal.add(new BoolSetting.Builder()
+            .name("keep-positions")
+            .description("Keeps replacing obsidian at the positions crystals were placed.")
+            .defaultValue(false)
+            .visible(() -> crystalReplaceMode.get() == CrystalReplaceMode.Normal)
+            .build()
+    );
+
     // Other
 
     private final Setting<Keybind> doubleKeybind = sgOther.add(new KeybindSetting.Builder()
@@ -213,17 +231,25 @@ public class SurroundPlus extends Module {
         super(Categories.Combat, "surround-plus", "Surrounds you in blocks to prevent you from taking explosion damage.");
     }
 
+    private List<BlockPos> crystals;
     private HashMap<BlockPos, Integer> places;
 
     private boolean stepWasActive;
     private boolean doubleHeight;
 
+    private int timer;
+
+    // Overrides
+
     @Override
     public void onActivate() {
+        crystals = new ArrayList<>();
         places = new HashMap<>();
 
         stepWasActive = Modules.get().isActive(Step.class);
         doubleHeight = false;
+
+        timer = 0;
 
         // Centering
 
@@ -269,6 +295,13 @@ public class SurroundPlus extends Module {
         }
     }
 
+    // Game Left Event
+
+    @EventHandler
+    private void onGameLeft(GameLeftEvent event) {
+        toggle();
+    }
+
     // Packet Event
 
     @EventHandler
@@ -307,6 +340,18 @@ public class SurroundPlus extends Module {
         if (mc.player.prevY + 0.015 < mc.player.getY() && disableOnYChange.get()) {
             this.toggle();
             return;
+        }
+
+        // Timers
+
+        if (timer <= attackDelay.get()) timer++;
+
+        for (BlockPos pos : new HashSet<>(places.keySet())) {
+            if (places.get(pos) >= replaceDelay.get()) {
+                places.remove(pos);
+            } else {
+                places.replace(pos, places.get(pos) + 1);
+            }
         }
 
         // Disabling Step
@@ -358,8 +403,15 @@ public class SurroundPlus extends Module {
 
         if (crystalBreakMode.get() == CrystalBreakMode.Both || crystalBreakMode.get() == CrystalBreakMode.Normal) {
             for (EndCrystalEntity crystal : getCrystalsAroundSurround()) {
-                mc.player.networkHandler.sendPacket(PlayerInteractEntityC2SPacket.attack(crystal, mc.player.isSneaking()));
-                swingHand(Hand.MAIN_HAND);
+                if (timer >= attackDelay.get()) {
+                    BlockPos pos = crystal.getBlockPos();
+                    if (crystalReplaceMode.get() != CrystalReplaceMode.None && canPlace(pos, block.getDefaultState(), mc.world.getBlockState(pos))) crystals.add(pos);
+                    mc.player.networkHandler.sendPacket(PlayerInteractEntityC2SPacket.attack(crystal, mc.player.isSneaking()));
+                    swingHand(Hand.MAIN_HAND);
+                    timer = 0;
+                } else {
+                    break;
+                }
             }
         }
 
@@ -405,6 +457,16 @@ public class SurroundPlus extends Module {
                 }
             }
 
+            if (crystalReplaceMode.get() == CrystalReplaceMode.Normal) {
+                for (BlockPos pos : new ArrayList<>(crystals)) {
+                    if (mc.world.getBlockState(pos).getBlock().getBlastResistance() < 600.0F && canPlace(pos, block.getDefaultState(), mc.world.getBlockState(pos))) {
+                        positions.add(pos);
+
+                        if (!keepPositions.get()) crystals.remove(pos);
+                    }
+                }
+            }
+
             if (!positions.isEmpty()) {
                 int prevSlot = -1;
                 if (mc.player.getInventory().selectedSlot != slot && slot != 45) {
@@ -416,10 +478,10 @@ public class SurroundPlus extends Module {
                 int blocks = 0;
 
                 for (BlockPos pos : positions) {
-                    if (blocks < blocksPerTick.get() && (stabilizeType.get() == StabilizeType.None || !places.containsKey(pos))) {
+                    if (blocks < blocksPerTick.get() && (replaceDelay.get() == 0 || !places.containsKey(pos))) {
                         place(pos, slot);
 
-                        if (stabilizeType.get() != StabilizeType.None) {
+                        if (replaceDelay.get() > 0) {
                             places.put(pos, 0);
                         }
 
@@ -429,14 +491,6 @@ public class SurroundPlus extends Module {
 
                 if (prevSlot != -1 && swapBack.get()) {
                     swapTo(prevSlot);
-                }
-            }
-
-            for (BlockPos pos : new HashSet<>(places.keySet())) {
-                if (places.get(pos) >= replaceDelay.get()) {
-                    places.remove(pos);
-                } else {
-                    places.replace(pos, places.get(pos) + 1);
                 }
             }
         }
@@ -449,14 +503,14 @@ public class SurroundPlus extends Module {
     private void place(BlockPos pos, int slot) {
         if (pos != null && (slot >= 0 && slot <= 8 || slot == 45)) {
             if (slot == 45) {
-                place(pos, Hand.OFF_HAND);
+                place(pos, Hand.OFF_HAND, slot);
             } else {
-                place(pos, Hand.MAIN_HAND);
+                place(pos, Hand.MAIN_HAND, slot);
             }
         }
     }
 
-    private void place(BlockPos pos, Hand hand) {
+    private void place(BlockPos pos, Hand hand, int slot) {
         Direction side = getSide(pos);
         BlockPos neighbour = getNeighbourPos(pos);
         Vec3d hitPos = getHitPos(pos, side);
@@ -465,8 +519,27 @@ public class SurroundPlus extends Module {
 
         if (crystalBreakMode.get() == CrystalBreakMode.Both || crystalBreakMode.get() == CrystalBreakMode.Quick) {
             for (EndCrystalEntity crystal : getCrystalsAroundBlock(pos)) {
-                mc.player.networkHandler.sendPacket(PlayerInteractEntityC2SPacket.attack(crystal, mc.player.isSneaking()));
-                swingHand(Hand.MAIN_HAND);
+                if (timer >= attackDelay.get()) {
+                    BlockPos position = crystal.getBlockPos();
+                    if (crystalReplaceMode.get() != CrystalReplaceMode.None && canPlace(position, Blocks.OBSIDIAN.getDefaultState(), mc.world.getBlockState(position))) crystals.add(position);
+                    mc.player.networkHandler.sendPacket(PlayerInteractEntityC2SPacket.attack(crystal, mc.player.isSneaking()));
+                    swingHand(Hand.MAIN_HAND);
+                    timer = 0;
+                } else {
+                    break;
+                }
+            }
+
+            if (crystalReplaceMode.get() == CrystalReplaceMode.Bypass) {
+                for (BlockPos position : crystals) {
+                    if (replaceDelay.get() == 0 || !places.containsKey(position)) {
+                        place(position, slot);
+
+                        if (replaceDelay.get() > 0) {
+                            places.put(position, 0);
+                        }
+                    }
+                }
             }
         }
 
@@ -844,5 +917,11 @@ public class SurroundPlus extends Module {
         Quick,
         Normal,
         Both
+    }
+
+    public enum CrystalReplaceMode {
+        None,
+        Bypass,
+        Normal
     }
 }

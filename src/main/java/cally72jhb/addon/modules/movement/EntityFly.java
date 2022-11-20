@@ -14,6 +14,8 @@ import net.minecraft.util.math.Vec3d;
 public class EntityFly extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
 
+    // General
+
     private final Setting<Double> speed = sgGeneral.add(new DoubleSetting.Builder()
             .name("speed")
             .description("Horizontal speed in blocks per second.")
@@ -40,29 +42,35 @@ public class EntityFly extends Module {
             .build()
     );
 
+    // Constructor
+
     public EntityFly() {
         super(Categories.Movement, "entity-fly", "Allows you to fly with any entity.");
     }
 
+    // Living Entity Move Event
+
     @EventHandler
     private void onLivingEntityMove(LivingEntityMoveEvent event) {
-        if (event.entity.getPrimaryPassenger() != mc.player) return;
+        if (event.entity.getPrimaryPassenger() == mc.player) {
+            event.entity.setYaw(mc.player.getYaw());
 
-        // Update Yaw
-        event.entity.setYaw(mc.player.getYaw());
+            // Horizontal Movement
 
-        // Horizontal Movement
-        Vec3d vel = PlayerUtils.getHorizontalVelocity(speed.get());
-        double velX = vel.getX();
-        double velY = 0;
-        double velZ = vel.getZ();
+            Vec3d vel = PlayerUtils.getHorizontalVelocity(speed.get());
+            double velX = vel.getX();
+            double velY = 0;
+            double velZ = vel.getZ();
 
-        // Vertical Movement
-        if (mc.options.jumpKey.isPressed()) velY += verticalSpeed.get() / 20;
-        if (mc.options.sprintKey.isPressed()) velY -= verticalSpeed.get() / 20;
-        else velY -= fallSpeed.get() / 20;
+            // Vertical Movement
 
-        // Apply Velocity
-        ((IVec3d) event.entity.getVelocity()).set(velX, velY, velZ);
+            if (mc.options.jumpKey.isPressed()) velY += verticalSpeed.get() / 20;
+            if (mc.options.sprintKey.isPressed()) velY -= verticalSpeed.get() / 20;
+            else velY -= fallSpeed.get() / 20;
+
+            // Apply Velocity
+
+            ((IVec3d) event.entity.getVelocity()).set(velX, velY, velZ);
+        }
     }
 }

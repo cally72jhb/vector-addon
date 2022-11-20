@@ -4,10 +4,7 @@ import cally72jhb.addon.commands.commands.*;
 import cally72jhb.addon.modules.combat.PacketHoleFill;
 import cally72jhb.addon.modules.combat.SurroundPlus;
 import cally72jhb.addon.modules.misc.*;
-import cally72jhb.addon.modules.movement.EntityFly;
-import cally72jhb.addon.modules.movement.EntityPhase;
-import cally72jhb.addon.modules.movement.PacketFly;
-import cally72jhb.addon.modules.movement.RubberbandFly;
+import cally72jhb.addon.modules.movement.*;
 import cally72jhb.addon.modules.player.NoSwing;
 import cally72jhb.addon.modules.player.PortalGodMode;
 import cally72jhb.addon.modules.render.HoleRenderer;
@@ -37,7 +34,9 @@ public class VectorAddon extends MeteorAddon {
 
         // Misc
 
+        Modules.get().add(new AntiScreen());
         Modules.get().add(new NoCollision());
+        Modules.get().add(new NoWorldBorder());
         Modules.get().add(new PacketPlace());
         Modules.get().add(new Paragraph());
         Modules.get().add(new PingSpoof());
@@ -45,8 +44,12 @@ public class VectorAddon extends MeteorAddon {
 
         // Movement
 
+        Modules.get().add(new EdgeJump());
         Modules.get().add(new EntityFly());
         Modules.get().add(new EntityPhase());
+        Modules.get().add(new Fly());
+        Modules.get().add(new NoFallPlus());
+        Modules.get().add(new PacketDigits());
         Modules.get().add(new PacketFly());
         Modules.get().add(new RubberbandFly());
 
@@ -64,6 +67,7 @@ public class VectorAddon extends MeteorAddon {
 
         Commands.get().add(new CenterCommand());
         Commands.get().add(new DesyncCommand());
+        Commands.get().add(new ItemCommand());
         Commands.get().add(new PlayerHeadCommand());
         Commands.get().add(new ShaderCommand());
         Commands.get().add(new TeleportCommand());

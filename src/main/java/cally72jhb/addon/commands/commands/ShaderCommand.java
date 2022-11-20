@@ -32,14 +32,20 @@ public class ShaderCommand extends Command {
 
                 Identifier shaderID = new Identifier(String.format("shaders/post/%s.json", name));
 
-                try {
-                    this.shader = new ShaderEffect(mc.getTextureManager(), mc.getResourceManager(), mc.getFramebuffer(), shaderID);
-
-                    info("Successfully changed shader effect");
-                } catch (IOException exception) {
+                if (name.equals("phosphor") || name.equals("outline")) {
+                    mc.gameRenderer.loadShader(shaderID);
                     this.shader = null;
+                } else {
+                    try {
+                        mc.gameRenderer.getShader().close();
+                        this.shader = new ShaderEffect(mc.getTextureManager(), mc.getResourceManager(), mc.getFramebuffer(), shaderID);
 
-                    info("Failed to create shader effect");
+                        info("Successfully changed shader effect");
+                    } catch (IOException exception) {
+                        this.shader = null;
+
+                        info("Failed to create shader effect");
+                    }
                 }
 
                 return SINGLE_SUCCESS;
@@ -48,6 +54,7 @@ public class ShaderCommand extends Command {
 
         builder.then(literal("none").executes(context -> {
             this.shader = null;
+            mc.gameRenderer.getShader().close();
 
             info("Successfully reset shader effect");
 
@@ -56,6 +63,7 @@ public class ShaderCommand extends Command {
 
         builder.then(literal("reset").executes(context -> {
             this.shader = null;
+            mc.gameRenderer.getShader().close();
 
             info("Successfully reset shader effect");
 
@@ -64,6 +72,7 @@ public class ShaderCommand extends Command {
 
         builder.executes(context -> {
             this.shader = null;
+            mc.gameRenderer.getShader().close();
 
             info("Successfully reset shader effect");
 

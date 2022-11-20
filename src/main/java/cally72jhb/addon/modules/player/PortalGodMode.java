@@ -10,30 +10,34 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PortalGodMode extends Module {
+    private List<TeleportConfirmC2SPacket> packets;
+
+    // Constructor
+
     public PortalGodMode() {
         super(Categories.Misc, "portal-god-mode", "Exploits some bugs to make you invincible after you left a portal.");
     }
 
-    private List<TeleportConfirmC2SPacket> packets;
+    // Overrides
 
     @Override
     public void onActivate() {
-        packets = new ArrayList<>();
+        this.packets = new ArrayList<>();
     }
 
     @Override
     public void onDeactivate() {
-        if (!packets.isEmpty()) {
-            for (TeleportConfirmC2SPacket packet : packets) {
-                mc.getNetworkHandler().sendPacket(packet);
-            }
+        if (!this.packets.isEmpty()) {
+            mc.getNetworkHandler().sendPacket(this.packets.get(this.packets.size() - 1));
         }
     }
+
+    // Packet Event
 
     @EventHandler
     private void onPacketSend(PacketEvent.Send event) {
         if (event.packet instanceof TeleportConfirmC2SPacket packet) {
-            packets.add(packet);
+            this.packets.add(packet);
             event.setCancelled(true);
         }
     }

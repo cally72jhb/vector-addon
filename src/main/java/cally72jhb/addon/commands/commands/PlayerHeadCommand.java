@@ -25,7 +25,7 @@ public class PlayerHeadCommand extends Command {
     private final static SimpleCommandExceptionType NO_CREATIVE = new SimpleCommandExceptionType(Text.literal("You must be in creative mode to use this."));
 
     public PlayerHeadCommand() {
-        super("Gives you an player-head in creative.", "player-head", "head", "skull");
+        super("player-head", "Gives you an player-head in creative.", "head", "skull");
     }
 
     @Override

@@ -48,20 +48,14 @@ import java.util.function.Predicate;
 public class PacketHoleFill extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
     private final SettingGroup sgAdvanced = settings.createGroup("Advanced");
+    private final SettingGroup sgSneak = settings.createGroup("Advanced");
     private final SettingGroup sgPause = settings.createGroup("Pause");
     private final SettingGroup sgRender = settings.createGroup("Render");
 
     private final Setting<List<Block>> blocks = sgGeneral.add(new BlockListSetting.Builder()
             .name("blocks")
             .description("The blocks to fill the holes with.")
-            .defaultValue(new ArrayList<>() {{
-                add(Blocks.ANCIENT_DEBRIS);
-                add(Blocks.CRYING_OBSIDIAN);
-                add(Blocks.ENDER_CHEST);
-                add(Blocks.NETHERITE_BLOCK);
-                add(Blocks.OBSIDIAN);
-                add(Blocks.RESPAWN_ANCHOR);
-            }})
+            .defaultValue(List.of(Blocks.OBSIDIAN, Blocks.CRYING_OBSIDIAN, Blocks.ANCIENT_DEBRIS, Blocks.NETHERITE_BLOCK, Blocks.ENDER_CHEST, Blocks.RESPAWN_ANCHOR, Blocks.ENCHANTING_TABLE, Blocks.ANVIL, Blocks.CHIPPED_ANVIL, Blocks.DAMAGED_ANVIL))
             .build()
     );
 
@@ -167,19 +161,30 @@ public class PacketHoleFill extends Module {
 
     private final Setting<Boolean> placeRangeBypass = sgGeneral.add(new BoolSetting.Builder()
             .name("place-range-bypass")
-            .description("Interacts at the closest possible position to allow a maximal place range.")
+            .description("Interacts at the closest possible position to allow maximum place range.")
             .defaultValue(true)
             .build()
     );
 
-    private final Setting<Boolean> sneakRangeBypass = sgGeneral.add(new BoolSetting.Builder()
+
+    // Sneak
+
+
+    private final Setting<Boolean> sneakRangeBypass = sgSneak.add(new BoolSetting.Builder()
             .name("sneak-range-bypass")
             .description("Sneaks to lower your eye position to allow a little more vertical range.")
             .defaultValue(true)
             .build()
     );
 
-    private final Setting<Double> sneakActivationWindow = sgGeneral.add(new DoubleSetting.Builder()
+    private final Setting<Boolean> bypassOnlyOnGround = sgSneak.add(new BoolSetting.Builder()
+            .name("bypass-only-on-ground")
+            .description("Only does the bypass when you're on ground.")
+            .defaultValue(true)
+            .build()
+    );
+
+    private final Setting<Double> sneakActivationWindow = sgSneak.add(new DoubleSetting.Builder()
             .name("sneak-activation-window")
             .description("From what range on to start sneaking when placing blocks.")
             .defaultValue(2.75)
@@ -204,7 +209,7 @@ public class PacketHoleFill extends Module {
 
     private final Setting<Boolean> ignoreSelfInHole = sgAdvanced.add(new BoolSetting.Builder()
             .name("ignore-self-in-hole")
-            .description("Ignores the holes around you when your in a safe-hole.")
+            .description("Ignores the holes around you when you're in a safe-hole.")
             .defaultValue(true)
             .visible(ignoreCloseHoles::get)
             .build()
@@ -418,9 +423,13 @@ public class PacketHoleFill extends Module {
 
     private boolean shouldUnsneak;
 
+    // Constructor
+
     public PacketHoleFill() {
         super(Categories.Combat, "packet-hole-fill", "Fills safe holes with obsidian using packets.");
     }
+
+    // Overrides
 
     @Override
     public void onActivate() {
@@ -439,6 +448,8 @@ public class PacketHoleFill extends Module {
             renderBlocks.clear();
         }
     }
+
+    // Main Tick Event
 
     @EventHandler
     private void onPreTick(TickEvent.Pre event) {
@@ -731,7 +742,7 @@ public class PacketHoleFill extends Module {
                 Direction side = getSide(pos);
                 BlockPos neighbour = getNeighbourPos(pos);
 
-                boolean shouldSneak = !mc.player.isSneaking() && sneakRangeBypass.get() && mc.player.getEyeY() > hitPos.getY() + sneakActivationWindow.get();
+                boolean shouldSneak = !mc.player.isSneaking() && sneakRangeBypass.get() && mc.player.getEyeY() > hitPos.getY() + sneakActivationWindow.get() && (!bypassOnlyOnGround.get() || mc.player.isOnGround());
 
                 if (shouldSneak) {
                     mc.player.setSneaking(true);
@@ -910,10 +921,19 @@ public class PacketHoleFill extends Module {
             Color prevLinesTop = linesTop.copy();
             Color prevLinesBottom = linesBottom.copy();
 
+            // Color Fading
+
             sidesTop.a *= (double) ticks / 8;
             sidesBottom.a *= (double) ticks / 8;
             linesTop.a *= (double) ticks / 8;
             linesBottom.a *= (double) ticks / 8;
+
+            sidesTop = sidesTop.a > sidesColorTop.get().a ? sidesColorTop.get() : sidesTop;
+            sidesBottom = sidesBottom.a > sidesColorBottom.get().a ? sidesColorBottom.get() : sidesBottom;
+            linesTop = linesTop.a > linesColorTop.get().a ? linesColorTop.get() : linesTop;
+            linesBottom = linesBottom.a > linesColorBottom.get().a ? linesColorBottom.get() : linesBottom;
+
+            // Main Rendering
 
             int x = pos.getX();
             int y = pos.getY();

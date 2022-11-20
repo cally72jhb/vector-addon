@@ -7,6 +7,7 @@ import meteordevelopment.meteorclient.renderer.ShapeMode;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
+import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.meteorclient.utils.misc.Pool;
 import meteordevelopment.meteorclient.utils.render.color.Color;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
@@ -26,59 +27,63 @@ public class HoleRenderer extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
     private final SettingGroup sgRender = settings.createGroup("Render");
 
+
+    // General
+
+
     private final Setting<Double> horizontalDistance = sgGeneral.add(new DoubleSetting.Builder()
-        .name("horizontal-distance")
-        .description("The horizontal radius around you in which holes are rendered.")
-        .defaultValue(15)
-        .sliderMin(10)
-        .sliderMax(20)
-        .min(0)
-        .build()
+            .name("horizontal-distance")
+            .description("The horizontal radius around you in which holes are rendered.")
+            .defaultValue(15)
+            .sliderMin(10)
+            .sliderMax(20)
+            .min(0)
+            .build()
     );
 
     private final Setting<Double> verticalDistance = sgGeneral.add(new DoubleSetting.Builder()
-        .name("vertical-distance")
-        .description("The vertical radius around you in which holes are rendered.")
-        .defaultValue(10)
-        .sliderMin(8)
-        .sliderMax(15)
-        .min(0)
-        .build()
+            .name("vertical-distance")
+            .description("The vertical radius around you in which holes are rendered.")
+            .defaultValue(10)
+            .sliderMin(8)
+            .sliderMax(15)
+            .min(0)
+            .build()
     );
 
     private final Setting<UpdateHoles> updateHoles = sgGeneral.add(new EnumSetting.Builder<UpdateHoles>()
-        .name("update-holes")
-        .description("When to update the holes to check if they are still valid.")
-        .defaultValue(UpdateHoles.Render)
-        .build()
+            .name("update-holes")
+            .description("When to update the holes to check if they are still valid.")
+            .defaultValue(UpdateHoles.Render)
+            .build()
     );
 
     private final Setting<Boolean> allowHalf = sgGeneral.add(new BoolSetting.Builder()
-        .name("allow-half")
-        .description("Renders holes which are hard to get inside.")
-        .defaultValue(false)
-        .build()
+            .name("allow-half")
+            .description("Renders holes which are hard to get inside.")
+            .defaultValue(false)
+            .build()
     );
 
     private final Setting<Boolean> webs = sgGeneral.add(new BoolSetting.Builder()
-        .name("webs")
-        .description("Whether to show holes that have webs inside of them.")
-        .defaultValue(false)
-        .build()
+            .name("webs")
+            .description("Whether to show holes that have webs inside of them.")
+            .defaultValue(false)
+            .build()
     );
 
     private final Setting<Boolean> ignoreOwn = sgGeneral.add(new BoolSetting.Builder()
-        .name("ignore-own")
-        .description("Ignores the hole you are sitting in.")
-        .defaultValue(false)
-        .build()
+            .name("ignore-own")
+            .description("Ignores the hole you are sitting in.")
+            .defaultValue(false)
+            .build()
     );
 
     private final Setting<Boolean> ignoreBurrow = sgGeneral.add(new BoolSetting.Builder()
-        .name("ignore-burrow")
-        .description("Ignores your burrow block.")
-        .defaultValue(true)
-        .build()
+            .name("ignore-burrow")
+            .description("Ignores your burrow block.")
+            .defaultValue(true)
+            .build()
     );
 
 
@@ -86,168 +91,180 @@ public class HoleRenderer extends Module {
 
 
     private final Setting<Boolean> render = sgRender.add(new BoolSetting.Builder()
-        .name("render")
-        .description("Renders the blocks being placed.")
-        .defaultValue(true)
-        .build()
+            .name("render")
+            .description("Renders the blocks being placed.")
+            .defaultValue(true)
+            .build()
     );
 
     private final Setting<Boolean> fadeIn = sgRender.add(new BoolSetting.Builder()
-        .name("fade-in")
-        .description("Fades in the hole when rendering a new one.")
-        .defaultValue(true)
-        .visible(render::get)
-        .build()
+            .name("fade-in")
+            .description("Fades in the hole when rendering a new one.")
+            .defaultValue(true)
+            .visible(render::get)
+            .build()
     );
 
     private final Setting<Boolean> fadeOut = sgRender.add(new BoolSetting.Builder()
-        .name("fade-out")
-        .description("Fades out the hole when removing it.")
-        .defaultValue(true)
-        .visible(render::get)
-        .build()
+            .name("fade-out")
+            .description("Fades out the hole when removing it.")
+            .defaultValue(true)
+            .visible(render::get)
+            .build()
     );
 
     private final Setting<Integer> renderTicks = sgRender.add(new IntSetting.Builder()
-        .name("ticks")
-        .description("How many ticks it should take for a block to disappear.")
-        .defaultValue(10)
-        .min(1)
-        .sliderMin(1)
-        .sliderMax(15)
-        .visible(render::get)
-        .noSlider()
-        .build()
+            .name("ticks")
+            .description("How many ticks it should take for a block to disappear.")
+            .defaultValue(10)
+            .min(1)
+            .sliderMin(1)
+            .sliderMax(15)
+            .visible(render::get)
+            .noSlider()
+            .build()
     );
 
     private final Setting<ShapeMode> shapeMode = sgRender.add(new EnumSetting.Builder<ShapeMode>()
-        .name("shape-mode")
-        .description("How the shapes are rendered.")
-        .defaultValue(ShapeMode.Both)
-        .visible(render::get)
-        .build()
+            .name("shape-mode")
+            .description("How the shapes are rendered.")
+            .defaultValue(ShapeMode.Both)
+            .visible(render::get)
+            .build()
     );
 
     private final Setting<Double> renderHeight = sgRender.add(new DoubleSetting.Builder()
-        .name("height")
-        .description("The height of rendering.")
-        .defaultValue(0.75)
-        .min(0)
-        .sliderMin(0.15)
-        .sliderMax(1)
-        .visible(render::get)
-        .build()
+            .name("height")
+            .description("The height of rendering.")
+            .defaultValue(0.75)
+            .min(0)
+            .sliderMin(0.15)
+            .sliderMax(1)
+            .visible(render::get)
+            .build()
     );
 
     private final Setting<Double> shrinkSpeed = sgRender.add(new DoubleSetting.Builder()
-        .name("shrink-speed")
-        .description("How fast the hole shrinks per tick.")
-        .defaultValue(0.1)
-        .min(0)
-        .sliderMin(0)
-        .sliderMax(0.25)
-        .visible(render::get)
-        .build()
+            .name("shrink-speed")
+            .description("How fast the hole shrinks per tick.")
+            .defaultValue(0.1)
+            .min(0)
+            .sliderMin(0)
+            .sliderMax(0.25)
+            .visible(render::get)
+            .build()
     );
 
     private final Setting<Boolean> topQuad = sgRender.add(new BoolSetting.Builder()
-        .name("top-quad")
-        .description("Whether to render a quad at the top of the hole.")
-        .defaultValue(false)
-        .visible(render::get)
-        .build()
+            .name("top-quad")
+            .description("Whether to render a quad at the top of the hole.")
+            .defaultValue(false)
+            .visible(render::get)
+            .build()
     );
 
     private final Setting<Boolean> bottomQuad = sgRender.add(new BoolSetting.Builder()
-        .name("bottom-quad")
-        .description("Whether to render a quad at the bottom of the hole.")
-        .defaultValue(true)
-        .visible(render::get)
-        .build()
+            .name("bottom-quad")
+            .description("Whether to render a quad at the bottom of the hole.")
+            .defaultValue(true)
+            .visible(render::get)
+            .build()
     );
 
     private final Setting<SettingColor> bedrockSidesTop = sgRender.add(new ColorSetting.Builder()
-        .name("bedrock-sides-top")
-        .description("The top side color for holes that are completely bedrock.")
-        .defaultValue(new SettingColor(100, 255, 0, 0))
-        .build()
+            .name("bedrock-sides-top")
+            .description("The top side color for holes that are completely bedrock.")
+            .defaultValue(new SettingColor(100, 255, 0, 0))
+            .onChanged(changed -> updateAll())
+            .build()
     );
 
     private final Setting<SettingColor> bedrockSidesBottom = sgRender.add(new ColorSetting.Builder()
-        .name("bedrock-sides-bottom")
-        .description("The bottom side color for holes that are completely bedrock.")
-        .defaultValue(new SettingColor(100, 255, 0, 25))
-        .build()
+            .name("bedrock-sides-bottom")
+            .description("The bottom side color for holes that are completely bedrock.")
+            .defaultValue(new SettingColor(100, 255, 0, 25))
+            .onChanged(changed -> updateAll())
+            .build()
     );
 
     private final Setting<SettingColor> bedrockLinesTop = sgRender.add(new ColorSetting.Builder()
-        .name("bedrock-lines-top")
-        .description("The top line color for holes that are completely bedrock.")
-        .defaultValue(new SettingColor(100, 255, 0, 0))
-        .build()
+            .name("bedrock-lines-top")
+            .description("The top line color for holes that are completely bedrock.")
+            .defaultValue(new SettingColor(100, 255, 0, 0))
+            .onChanged(changed -> updateAll())
+            .build()
     );
 
     private final Setting<SettingColor> bedrockLinesBottom = sgRender.add(new ColorSetting.Builder()
-        .name("bedrock-lines-bottom")
-        .description("The bottom line color for holes that are completely bedrock.")
-        .defaultValue(new SettingColor(100, 255, 0, 200))
-        .build()
+            .name("bedrock-lines-bottom")
+            .description("The bottom line color for holes that are completely bedrock.")
+            .defaultValue(new SettingColor(100, 255, 0, 200))
+            .onChanged(changed -> updateAll())
+            .build()
     );
 
     private final Setting<SettingColor> obsidianSidesTop = sgRender.add(new ColorSetting.Builder()
-        .name("obsidian-sides-top")
-        .description("The top side color for holes that are completely obsidian.")
-        .defaultValue(new SettingColor(255, 0, 0, 0))
-        .build()
+            .name("obsidian-sides-top")
+            .description("The top side color for holes that are completely obsidian.")
+            .defaultValue(new SettingColor(255, 0, 0, 0))
+            .onChanged(changed -> updateAll())
+            .build()
     );
 
     private final Setting<SettingColor> obsidianSidesBottom = sgRender.add(new ColorSetting.Builder()
-        .name("obsidian-sides-bottom")
-        .description("The bottom side color for holes that are completely obsidian.")
-        .defaultValue(new SettingColor(255, 0, 0, 25))
-        .build()
+            .name("obsidian-sides-bottom")
+            .description("The bottom side color for holes that are completely obsidian.")
+            .defaultValue(new SettingColor(255, 0, 0, 25))
+            .onChanged(changed -> updateAll())
+            .build()
     );
 
     private final Setting<SettingColor> obsidianLinesTop = sgRender.add(new ColorSetting.Builder()
-        .name("obsidian-lines-top")
-        .description("The top line color for holes that are completely obsidian.")
-        .defaultValue(new SettingColor(255, 0, 0, 0))
-        .build()
+            .name("obsidian-lines-top")
+            .description("The top line color for holes that are completely obsidian.")
+            .defaultValue(new SettingColor(255, 0, 0, 0))
+            .onChanged(changed -> updateAll())
+            .build()
     );
 
     private final Setting<SettingColor> obsidianLinesBottom = sgRender.add(new ColorSetting.Builder()
-        .name("obsidian-lines-bottom")
-        .description("The bottom line color for holes that are completely obsidian.")
-        .defaultValue(new SettingColor(255, 0, 0, 200))
-        .build()
+            .name("obsidian-lines-bottom")
+            .description("The bottom line color for holes that are completely obsidian.")
+            .defaultValue(new SettingColor(255, 0, 0, 200))
+            .onChanged(changed -> updateAll())
+            .build()
     );
 
     private final Setting<SettingColor> mixedSidesTop = sgRender.add(new ColorSetting.Builder()
-        .name("mixed-sides-top")
-        .description("The top side color for holes that have mixed bedrock and obsidian.")
-        .defaultValue(new SettingColor(255, 127, 0, 0))
-        .build()
+            .name("mixed-sides-top")
+            .description("The top side color for holes that have mixed bedrock and obsidian.")
+            .defaultValue(new SettingColor(255, 127, 0, 0))
+            .onChanged(changed -> updateAll())
+            .build()
     );
 
     private final Setting<SettingColor> mixedSidesBottom = sgRender.add(new ColorSetting.Builder()
-        .name("mixed-sides-bottom")
-        .description("The bottom side color for holes that have mixed bedrock and obsidian.")
-        .defaultValue(new SettingColor(255, 127, 0, 25))
-        .build()
+            .name("mixed-sides-bottom")
+            .description("The bottom side color for holes that have mixed bedrock and obsidian.")
+            .defaultValue(new SettingColor(255, 127, 0, 25))
+            .onChanged(changed -> updateAll())
+            .build()
     );
 
     private final Setting<SettingColor> mixedLinesTop = sgRender.add(new ColorSetting.Builder()
-        .name("mixed-lines-top")
-        .description("The top line color for holes that have mixed bedrock and obsidian.")
-        .defaultValue(new SettingColor(255, 127, 0, 0))
-        .build()
+            .name("mixed-lines-top")
+            .description("The top line color for holes that have mixed bedrock and obsidian.")
+            .defaultValue(new SettingColor(255, 127, 0, 0))
+            .onChanged(changed -> updateAll())
+            .build()
     );
 
     private final Setting<SettingColor> mixedLinesBottom = sgRender.add(new ColorSetting.Builder()
-        .name("mixed-lines-bottom")
-        .description("The bottom line color for holes that have mixed bedrock and obsidian.")
-        .defaultValue(new SettingColor(255, 127, 0, 200))
-        .build()
+            .name("mixed-lines-bottom")
+            .description("The bottom line color for holes that have mixed bedrock and obsidian.")
+            .defaultValue(new SettingColor(255, 127, 0, 200))
+            .onChanged(changed -> updateAll())
+            .build()
     );
 
     // Constructor
@@ -256,8 +273,12 @@ public class HoleRenderer extends Module {
         super(Categories.Misc, "hole-renderer", "Renders close safe-holes.");
     }
 
+    // Variables
+
     private final Pool<RenderBlock> renderBlockPool = new Pool<>(RenderBlock::new);
     private final List<RenderBlock> renderBlocks = new ArrayList<>();
+
+    // Overrides
 
     @Override
     public void onActivate() {
@@ -287,6 +308,8 @@ public class HoleRenderer extends Module {
 
         int horizontal = (int) Math.floor(horizontalDistance.get());
         int vertical = (int) Math.floor(verticalDistance.get());
+
+        // Calculating Holes Around Player
 
         for (int x = pX - horizontal; x <= pX + horizontal; x++) {
             for (int z = pZ - horizontal; z <= pZ + horizontal; z++) {
@@ -366,13 +389,15 @@ public class HoleRenderer extends Module {
             }
         }
 
+        // Evaluating Collected Holes
+
         if (!holes.isEmpty()) {
             holes.sort(Comparator.comparingDouble(hole -> Utils.distance(mc.player.getPos(), Vec3d.ofCenter(hole.pos1))));
 
             for (Hole hole : holes) {
                 if (hole.isDouble()) {
                     if (ignoreOwn.get() && (mc.player.getBlockPos().equals(hole.pos1) || mc.player.getBlockPos().equals(hole.pos2))
-                        || ignoreBurrow.get() && (mc.player.getBlockPos().up().equals(hole.pos1) || mc.player.getBlockPos().up().equals(hole.pos2))) {
+                            || ignoreBurrow.get() && (mc.player.getBlockPos().up().equals(hole.pos1) || mc.player.getBlockPos().up().equals(hole.pos2))) {
 
                         for (RenderBlock block : renderBlocks) {
                             if (hole.pos1.equals(block.pos) || hole.pos2.equals(block.pos)) {
@@ -381,8 +406,8 @@ public class HoleRenderer extends Module {
                         }
                     } else {
                         if (canRender(hole.pos1)
-                            && Utils.distanceXZ(mc.player.getPos(), Vec3d.ofCenter(hole.pos1)) <= horizontalDistance.get()
-                            && Utils.distanceY(mc.player.getY(), hole.pos1.getY() + 0.5) <= verticalDistance.get()) {
+                                && Utils.distanceXZ(mc.player.getPos(), Vec3d.ofCenter(hole.pos1)) <= horizontalDistance.get()
+                                && Utils.distanceY(mc.player.getY(), hole.pos1.getY() + 0.5) <= verticalDistance.get()) {
 
                             renderBlocks.add(renderBlockPool.get().set(hole.type, hole.pos1, Dir.get(hole.direction)));
                         } else {
@@ -394,8 +419,8 @@ public class HoleRenderer extends Module {
                         }
 
                         if (canRender(hole.pos2)
-                            && Utils.distanceXZ(mc.player.getPos(), Vec3d.ofCenter(hole.pos2)) <= horizontalDistance.get()
-                            && Utils.distanceY(mc.player.getY(), hole.pos2.getY() + 0.5) <= verticalDistance.get()) {
+                                && Utils.distanceXZ(mc.player.getPos(), Vec3d.ofCenter(hole.pos2)) <= horizontalDistance.get()
+                                && Utils.distanceY(mc.player.getY(), hole.pos2.getY() + 0.5) <= verticalDistance.get()) {
 
                             renderBlocks.add(renderBlockPool.get().set(hole.type, hole.pos2, Dir.get(hole.direction.getOpposite())));
                         } else {
@@ -414,8 +439,8 @@ public class HoleRenderer extends Module {
                             }
                         }
                     } else if (canRender(hole.pos1)
-                        && Utils.distanceXZ(mc.player.getPos(), Vec3d.ofCenter(hole.pos1)) <= horizontalDistance.get()
-                        && Utils.distanceY(mc.player.getY(), hole.pos1.getY() + 0.5) <= verticalDistance.get()) {
+                            && Utils.distanceXZ(mc.player.getPos(), Vec3d.ofCenter(hole.pos1)) <= horizontalDistance.get()
+                            && Utils.distanceY(mc.player.getY(), hole.pos1.getY() + 0.5) <= verticalDistance.get()) {
 
                         renderBlocks.add(renderBlockPool.get().set(hole.type, hole.pos1, 0));
                     } else {
@@ -430,13 +455,13 @@ public class HoleRenderer extends Module {
         }
     }
 
-    // Ticking fade animation
+    // Ticking Fade Animation
 
     @EventHandler
     private void onPostTick(TickEvent.Post event) {
         renderBlocks.forEach(RenderBlock::tick);
         renderBlocks.removeIf(block -> block.ticks <= 0);
-        if (updateHoles.get() == UpdateHoles.Tick) renderBlocks.removeIf(block -> !block.isValid());
+        if (updateHoles.get() == UpdateHoles.Tick) renderBlocks.removeIf(RenderBlock::isInvalid);
     }
 
     // Rendering
@@ -444,7 +469,7 @@ public class HoleRenderer extends Module {
     @EventHandler
     private void onRender3D(Render3DEvent event) {
         if (!renderBlocks.isEmpty()) {
-            if (updateHoles.get() == UpdateHoles.Render) renderBlocks.removeIf(block -> !block.isValid());
+            if (updateHoles.get() == UpdateHoles.Render) renderBlocks.removeIf(RenderBlock::isInvalid);
             renderBlocks.sort(Comparator.comparingInt(block -> -block.ticks));
             renderBlocks.forEach(block -> block.render(event, shapeMode.get()));
         }
@@ -454,12 +479,18 @@ public class HoleRenderer extends Module {
 
     private boolean isValidHole(BlockPos pos, boolean checkDown) {
         return mc.world.getBlockState(pos).getMaterial().isReplaceable()
-            && (mc.world.getBlockState(pos).getBlock() != Blocks.COBWEB || webs.get())
-            && (!checkDown || (mc.world.getBlockState(pos.down()).getBlock().getBlastResistance() >= 600.0F
-            && mc.world.getBlockState(pos.down()).getCollisionShape(mc.world, pos.down()) != null
-            && !mc.world.getBlockState(pos.down()).getCollisionShape(mc.world, pos.down()).isEmpty()))
-            && (mc.world.getBlockState(pos).getCollisionShape(mc.world, pos) == null
-            || mc.world.getBlockState(pos).getCollisionShape(mc.world, pos).isEmpty());
+                && (mc.world.getBlockState(pos).getBlock() != Blocks.COBWEB || webs.get())
+                && (!checkDown || (mc.world.getBlockState(pos.down()).getBlock().getBlastResistance() >= 600.0F
+                && mc.world.getBlockState(pos.down()).getCollisionShape(mc.world, pos.down()) != null
+                && !mc.world.getBlockState(pos.down()).getCollisionShape(mc.world, pos.down()).isEmpty()))
+                && (mc.world.getBlockState(pos).getCollisionShape(mc.world, pos) == null
+                || mc.world.getBlockState(pos).getCollisionShape(mc.world, pos).isEmpty());
+    }
+
+    private void updateAll() {
+        for (RenderBlock block : renderBlocks) {
+            block.update(block.type, block.exclude);
+        }
     }
 
     private boolean canRender(BlockPos pos) {
@@ -524,7 +555,7 @@ public class HoleRenderer extends Module {
 
     // Hole
 
-    private class Hole {
+    private static class Hole {
         public HoleType type;
         public BlockPos pos1;
         public BlockPos pos2;
@@ -546,11 +577,17 @@ public class HoleRenderer extends Module {
 
     public class RenderBlock {
         public BlockPos.Mutable pos = new BlockPos.Mutable();
+        public HoleType type;
         public int exclude;
         public int ticks;
 
         private double height;
         private boolean valid;
+
+        private Color constSidesTop;
+        private Color constSidesBottom;
+        private Color constLinesTop;
+        private Color constLinesBottom;
 
         private Color sidesTop;
         private Color sidesBottom;
@@ -559,15 +596,11 @@ public class HoleRenderer extends Module {
 
         public RenderBlock set(HoleType type, BlockPos pos, int exclude) {
             this.pos.set(pos);
-            this.exclude = exclude;
             this.ticks = fadeIn.get() ? 1 : renderTicks.get();
 
             this.valid = true;
 
-            this.sidesTop = new Color(type == HoleType.Bedrock ? bedrockSidesTop.get() : type == HoleType.Obsidian ? obsidianSidesTop.get() : mixedSidesTop.get());
-            this.sidesBottom = new Color(type == HoleType.Bedrock ? bedrockSidesBottom.get() : type == HoleType.Obsidian ? obsidianSidesBottom.get() : mixedSidesBottom.get());
-            this.linesTop = new Color(type == HoleType.Bedrock ? bedrockLinesTop.get() : type == HoleType.Obsidian ? obsidianLinesTop.get() : mixedLinesTop.get());
-            this.linesBottom = new Color(type == HoleType.Bedrock ? bedrockLinesBottom.get() : type == HoleType.Obsidian ? obsidianLinesBottom.get() : mixedLinesBottom.get());
+            this.update(type, exclude);
 
             this.height = renderHeight.get();
 
@@ -576,9 +609,9 @@ public class HoleRenderer extends Module {
 
         public void tick() {
             if (Utils.distanceXZ(mc.player.getPos(), Vec3d.ofCenter(pos)) > horizontalDistance.get()
-                || Utils.distanceY(mc.player.getY(), pos.getY() + 0.5) > verticalDistance.get()
-                || !isHole(pos.mutableCopy())
-                || !valid) {
+                    || Utils.distanceY(mc.player.getY(), pos.getY() + 0.5) > verticalDistance.get()
+                    || !isHole(pos.mutableCopy())
+                    || !valid) {
 
                 if (fadeOut.get()) {
                     ticks--;
@@ -597,22 +630,24 @@ public class HoleRenderer extends Module {
 
         public void update(HoleType type, int exclude) {
             this.exclude = exclude;
+            this.type = type;
 
-            this.sidesTop = new Color(type == HoleType.Bedrock ? bedrockSidesTop.get() : type == HoleType.Obsidian ? obsidianSidesTop.get() : mixedSidesTop.get());
-            this.sidesBottom = new Color(type == HoleType.Bedrock ? bedrockSidesBottom.get() : type == HoleType.Obsidian ? obsidianSidesBottom.get() : mixedSidesBottom.get());
-            this.linesTop = new Color(type == HoleType.Bedrock ? bedrockLinesTop.get() : type == HoleType.Obsidian ? obsidianLinesTop.get() : mixedLinesTop.get());
-            this.linesBottom = new Color(type == HoleType.Bedrock ? bedrockLinesBottom.get() : type == HoleType.Obsidian ? obsidianLinesBottom.get() : mixedLinesBottom.get());
+            this.constSidesTop = new Color(type == HoleType.Bedrock ? bedrockSidesTop.get() : type == HoleType.Obsidian ? obsidianSidesTop.get() : mixedSidesTop.get());
+            this.constSidesBottom = new Color(type == HoleType.Bedrock ? bedrockSidesBottom.get() : type == HoleType.Obsidian ? obsidianSidesBottom.get() : mixedSidesBottom.get());
+            this.constLinesTop = new Color(type == HoleType.Bedrock ? bedrockLinesTop.get() : type == HoleType.Obsidian ? obsidianLinesTop.get() : mixedLinesTop.get());
+            this.constLinesBottom = new Color(type == HoleType.Bedrock ? bedrockLinesBottom.get() : type == HoleType.Obsidian ? obsidianLinesBottom.get() : mixedLinesBottom.get());
+
+            this.sidesTop = this.constSidesTop;
+            this.sidesBottom = this.constSidesBottom;
+            this.linesTop = this.constLinesTop;
+            this.linesBottom = this.constLinesBottom;
         }
 
-        public boolean isValid() {
-            if (!fadeOut.get()
-                && (Utils.distanceXZ(mc.player.getPos(), Vec3d.ofCenter(pos)) > horizontalDistance.get()
-                || Utils.distanceY(mc.player.getY(), pos.getY() + 0.5) > verticalDistance.get())
-                || !fadeOut.get() && (!isHole(pos.mutableCopy()) || !valid)) {
-                return false;
-            }
-
-            return true;
+        public boolean isInvalid() {
+            return (!fadeOut.get()
+                    && (Utils.distanceXZ(mc.player.getPos(), Vec3d.ofCenter(pos)) > horizontalDistance.get()
+                    || Utils.distanceY(mc.player.getY(), pos.getY() + 0.5) > verticalDistance.get()))
+                    || (!fadeOut.get() && (!isHole(pos.mutableCopy()) || !valid));
         }
 
         public void invalidate() {
@@ -625,10 +660,19 @@ public class HoleRenderer extends Module {
             Color prevLinesTop = linesTop.copy();
             Color prevLinesBottom = linesBottom.copy();
 
+            // Color Fading
+
             sidesTop.a *= (double) ticks / 8;
             sidesBottom.a *= (double) ticks / 8;
             linesTop.a *= (double) ticks / 8;
             linesBottom.a *= (double) ticks / 8;
+
+            sidesTop = sidesTop.a > constSidesTop.a ? constSidesTop : sidesTop;
+            sidesBottom = sidesBottom.a > constSidesBottom.a ? constSidesBottom : sidesBottom;
+            linesTop = linesTop.a > constLinesTop.a ? constLinesTop : linesTop;
+            linesBottom = linesBottom.a > constLinesBottom.a ? constLinesBottom : linesBottom;
+
+            // Main Rendering
 
             int x = pos.getX();
             int y = pos.getY();

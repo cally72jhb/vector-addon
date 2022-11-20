@@ -4,8 +4,12 @@
   "package": "cally72jhb.addon.mixin",
   "compatibilityLevel": "JAVA_17",
   "client": [
+    "ClientConnectionMixin",
+    "ClientPlayNetworkHandlerMixin",
     "GameRendererMixin",
-    "SharedConstantsMixin"
+    "PlayerEntityMixin",
+    "SharedConstantsMixin",
+    "WorldBorderMixin"
   ],
   "injectors": {
     "defaultRequire": 1

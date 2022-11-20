@@ -75,7 +75,7 @@ public class RubberbandFly extends Module {
             .description("How high to rubberband you.")
             .defaultValue(69420)
             .sliderMin(5)
-            .sliderMax(50)
+            .sliderMax(70000)
             .visible(() -> boundsType.get() == BoundsType.Bypass || boundsType.get() == BoundsType.Alternative || boundsType.get() == BoundsType.Up || boundsType.get() == BoundsType.Down)
             .build()
     );
@@ -496,7 +496,7 @@ public class RubberbandFly extends Module {
         packets = new ArrayList<>();
         tpPackets = new ArrayList<>();
 
-        if (antiFallMode.get() != AntiFallMode.None && mc != null && mc.world != null && mc.getNetworkHandler() != null && !doesCollide(mc.player.getBoundingBox().offset(0, -0.001, 0))) {
+        if (antiFallMode.get() != AntiFallMode.None && mc != null && mc.world != null && mc.getNetworkHandler() != null && (antiFallMode.get() == AntiFallMode.UpPlus || !doesCollide(mc.player.getBoundingBox().offset(0, -0.001, 0)))) {
             double factor = ((double) Math.round(verticalClipDistance.get() * 1000) / 1000) * (antiFallMode.get() == AntiFallMode.Down ? 1 : -1);
 
             if (!doesCollide(mc.player.getBoundingBox().offset(0, -factor + (antiFallMode.get() == AntiFallMode.Down ? 0.001 : -0.001), 0))) {
@@ -1066,7 +1066,8 @@ public class RubberbandFly extends Module {
     public enum AntiFallMode {
         None,
         Up,
-        Down
+        Down,
+        UpPlus
     }
 
     public enum IdleMode {

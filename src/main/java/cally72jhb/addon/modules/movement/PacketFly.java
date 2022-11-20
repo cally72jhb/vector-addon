@@ -208,19 +208,28 @@ public class PacketFly extends Module {
             .build()
     );
 
-    private final Setting<Boolean> multiAxis = sgFlight.add(new BoolSetting.Builder()
-            .name("multi-axis")
-            .description("Allows for multi-axis flight.")
-            .defaultValue(true)
+    private final Setting<MultiAxisMode> multiAxisMode = sgFlight.add(new EnumSetting.Builder<MultiAxisMode>()
+            .name("multi-axis-mode")
+            .description("How to bypass the servers anti-cheat.")
+            .defaultValue(MultiAxisMode.None)
             .build()
     );
 
-    private final Setting<Double> speed = sgFlight.add(new DoubleSetting.Builder()
+    private final Setting<Double> factor = sgFlight.add(new DoubleSetting.Builder()
             .name("factor")
             .description("Your flight factor.")
             .defaultValue(5)
             .min(0)
             .visible(() -> type.get() == Type.FACTOR || type.get() == Type.DESYNC)
+            .build()
+    );
+
+    private final Setting<Integer> speed = sgFlight.add(new IntSetting.Builder()
+            .name("speed")
+            .description("How often to repeat the bypass.")
+            .defaultValue(1)
+            .min(1)
+            .visible(() -> type.get() != Type.FACTOR && type.get() != Type.DESYNC)
             .build()
     );
 
@@ -320,14 +329,14 @@ public class PacketFly extends Module {
     private final Setting<AntiKick> antiKick = sgAntiKick.add(new EnumSetting.Builder<AntiKick>()
             .name("anti-kick")
             .description("What anti-kick mode to use to prevent you from being kicked by the server.")
-            .defaultValue(AntiKick.NORMAL)
+            .defaultValue(AntiKick.Normal)
             .build()
     );
 
     private final Setting<Limit> limit = sgAntiKick.add(new EnumSetting.Builder<Limit>()
             .name("limit")
             .description("How to limit the flight to prevent you from getting kicked.")
-            .defaultValue(Limit.STRICT)
+            .defaultValue(Limit.Strict)
             .build()
     );
 
@@ -494,16 +503,16 @@ public class PacketFly extends Module {
 
         // Vertical Movement
 
-        if (mc.options.jumpKey.isPressed() && (horizontalTicks < 1 || (multiAxis.get() && phasing))) {
-            if (ticksExisted % (type.get() == Type.SETBACK || type.get() == Type.SLOW || limit.get() == Limit.STRICT ? 10 : 20) == 0) {
-                speedY = (antiKick.get() != AntiKick.NONE && onGround()) ? -0.032 : 0.062;
+        if (mc.options.jumpKey.isPressed() && (horizontalTicks < 1 || ((multiAxisMode.get() == MultiAxisMode.OnPhase && phasing) || multiAxisMode.get() == MultiAxisMode.Always))) {
+            if (ticksExisted % (type.get() == Type.SETBACK || type.get() == Type.SLOW || limit.get() == Limit.Strict ? 10 : 20) == 0) {
+                speedY = (antiKick.get() != AntiKick.None && onGround()) ? -0.032 : 0.062;
             } else {
                 speedY = 0.062;
             }
 
             antiKickTicks = 0;
             verticalTicks = 5;
-        } else if (mc.options.sneakKey.isPressed() && (horizontalTicks < 1 || (multiAxis.get() && phasing))) {
+        } else if (mc.options.sneakKey.isPressed() && (horizontalTicks < 1 || ((multiAxisMode.get() == MultiAxisMode.OnPhase && phasing) || multiAxisMode.get() == MultiAxisMode.Always))) {
             speedY = -0.062;
             antiKickTicks = 0;
             verticalTicks = 5;
@@ -511,11 +520,11 @@ public class PacketFly extends Module {
 
         // Horizontal Movement & Anti Kick
 
-        if ((multiAxis.get() && phasing) || !(mc.options.sneakKey.isPressed() && mc.options.jumpKey.isPressed())) {
+        if (((multiAxisMode.get() == MultiAxisMode.OnPhase && phasing) || multiAxisMode.get() == MultiAxisMode.Always) || !(mc.options.sneakKey.isPressed() && mc.options.jumpKey.isPressed())) {
             if (isPlayerMoving()) {
-                double[] dir = directionSpeed((((phasing && phase.get()) || ncp.get()) ? (phaseNoSlow.get() ? (multiAxis.get() ? 0.0465 : 0.062) : 0.031) : 0.26) * speed.get());
+                double[] dir = directionSpeed((((phasing && phase.get()) || ncp.get()) ? (phaseNoSlow.get() ? (multiAxisMode.get() != MultiAxisMode.None ? 0.0465 : 0.062) : 0.031) : 0.26) * factor.get());
 
-                if ((dir[0] != 0 || dir[1] != 0) && (verticalTicks < 1 || (multiAxis.get() && phasing))) {
+                if ((dir[0] != 0 || dir[1] != 0) && (verticalTicks < 1 || ((multiAxisMode.get() == MultiAxisMode.OnPhase && phasing) || multiAxisMode.get() == MultiAxisMode.Always))) {
                     speedX = dir[0];
                     speedZ = dir[1];
 
@@ -523,14 +532,14 @@ public class PacketFly extends Module {
                 }
             }
 
-            if (antiKick.get() != AntiKick.NONE && onGround() && ((limit.get() == Limit.NONE) || limitTicks != 0)) {
+            if (antiKick.get() != AntiKick.None && onGround() && ((limit.get() == Limit.None) || limitTicks != 0)) {
                 if (antiKickTicks < (bypass.get() && !bind.get() ? 1 : 3)) {
                     antiKickTicks++;
                 } else {
                     antiKickTicks = 0;
 
-                    if ((antiKick.get() != AntiKick.LIMITED && onGround()) || !phasing) {
-                        speedY = (antiKick.get() == AntiKick.STRICT && onGround()) ? -0.08 : -0.04;
+                    if ((antiKick.get() != AntiKick.Limited && onGround()) || !phasing) {
+                        speedY = (antiKick.get() == AntiKick.Strict && onGround()) ? -0.08 : -0.04;
                     }
                 }
             }
@@ -540,7 +549,7 @@ public class PacketFly extends Module {
             speedY /= 2.5;
         }
 
-        if (limit.get() != Limit.NONE) {
+        if (limit.get() != Limit.None) {
             if (limitTicks == 0) {
                 speedX = 0;
                 speedY = 0;
@@ -563,33 +572,45 @@ public class PacketFly extends Module {
         switch (type.get()) {
             case FAST -> {
                 if (!isMoving()) break;
-                mc.player.setVelocity(speedX, speedY, speedZ);
-                sendPackets(speedX, speedY, speedZ, bounds, true, false);
+
+                for (int i = 1; i < speed.get() + 1; i++) {
+                    mc.player.setVelocity(speedX, speedY, speedZ);
+                    sendPackets(speedX * i, speedY * i, speedZ * i, bounds, true, false);
+                }
             }
 
             case SLOW -> {
                 if (!isMoving()) break;
-                sendPackets(speedX, speedY, speedZ, bounds, true, false);
+
+                for (int i = 1; i < speed.get() + 1; i++) {
+                    sendPackets(speedX * i, speedY * i, speedZ * i, bounds, true, false);
+                }
             }
 
             case SETBACK -> {
                 if (!isMoving()) break;
-                mc.player.setVelocity(speedX, speedY, speedZ);
-                sendPackets(speedX, speedY, speedZ, bounds, false, false);
+
+                for (int i = 1; i < speed.get() + 1; i++) {
+                    mc.player.setVelocity(speedX, speedY, speedZ);
+                    sendPackets(speedX * i, speedY * i, speedZ * i, bounds, false, false);
+                }
             }
 
             case VECTOR -> {
                 if (!isMoving()) break;
-                mc.player.setVelocity(speedX, speedY, speedZ);
-                sendPackets(speedX, speedY, speedZ, bounds, true, true);
+
+                for (int i = 1; i < speed.get() + 1; i++) {
+                    mc.player.setVelocity(speedX, speedY, speedZ);
+                    sendPackets(speedX * i, speedY * i, speedZ * i, bounds, true, true);
+                }
             }
 
             case FACTOR, DESYNC -> {
-                int factorInt = (int) Math.floor(speed.get().floatValue());
+                int factorInt = (int) Math.floor(factor.get().floatValue());
 
                 factorCounter++;
 
-                if (factorCounter > (int) (20D / ((speed.get().floatValue() - (double) factorInt) * 20D))) {
+                if (factorCounter > (int) (20D / ((factor.get().floatValue() - (double) factorInt) * 20D))) {
                     factorInt += 1;
                     factorCounter = 0;
                 }
@@ -608,14 +629,14 @@ public class PacketFly extends Module {
         verticalTicks--;
         horizontalTicks--;
 
-        if (constrict.get() && ((limit.get() == Limit.NONE) || limitTicks > 1)) {
+        if (constrict.get() && ((limit.get() == Limit.None) || limitTicks > 1)) {
             mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(mc.player.getX(), mc.player.getY(), mc.player.getZ(), false));
         }
 
         limitTicks++;
         jitterTicks++;
 
-        if (limitTicks > ((limit.get() == Limit.STRICT) ? (limitStrict ? 1 : 2) : 3)) {
+        if (limitTicks > ((limit.get() == Limit.Strict) ? (limitStrict ? 1 : 2) : 3)) {
             limitTicks = 0;
             limitStrict = !limitStrict;
         }
@@ -683,7 +704,7 @@ public class PacketFly extends Module {
     }
 
     @EventHandler
-    public void onSend(PacketEvent.Send event) {
+    public void onSendPacket(PacketEvent.Send event) {
         if (event.packet instanceof PlayerMoveC2SPacket && !(event.packet instanceof PlayerMoveC2SPacket.PositionAndOnGround)) {
             event.cancel();
         }
@@ -728,7 +749,7 @@ public class PacketFly extends Module {
 
         // Limiting
 
-        if ((limit.get() != Limit.NONE) && limitTicks == 0) return;
+        if ((limit.get() != Limit.None) && limitTicks == 0) return;
 
         // Bounds Packet
 
@@ -1016,6 +1037,12 @@ public class PacketFly extends Module {
         VECTOR
     }
 
+    public enum MultiAxisMode {
+        None,
+        OnPhase,
+        Always
+    }
+
     public enum AntiFallMode {
         None,
         Up,
@@ -1024,16 +1051,16 @@ public class PacketFly extends Module {
     }
 
     public enum AntiKick {
-        NONE,
-        NORMAL,
-        LIMITED,
-        STRICT
+        None,
+        Normal,
+        Limited,
+        Strict
     }
 
     public enum Limit {
-        NONE,
-        STRONG,
-        STRICT
+        None,
+        Strict,
+        Strong
     }
 
     // Classes

@@ -23,22 +23,24 @@ import java.util.List;
 public class ItemRelease extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
 
+    // General
+
     private final Setting<List<Item>> items = sgGeneral.add(new ItemListSetting.Builder()
-        .name("items")
-        .description("The items allowed to be released.")
-        .defaultValue(getDefaultItems())
-        .filter(this::itemFilter)
-        .build()
+            .name("items")
+            .description("The items allowed to be released.")
+            .defaultValue(getDefaultItems())
+            .filter(this::itemFilter)
+            .build()
     );
 
     private final Setting<Integer> delay = sgGeneral.add(new IntSetting.Builder()
-        .name("delay")
-        .description("How long to wait before releasing the item.")
-        .defaultValue(10)
-        .min(1)
-        .sliderMin(1)
-        .sliderMax(25)
-        .build()
+            .name("delay")
+            .description("How long to wait before releasing the item.")
+            .defaultValue(10)
+            .min(1)
+            .sliderMin(1)
+            .sliderMax(25)
+            .build()
     );
 
     // Constructor

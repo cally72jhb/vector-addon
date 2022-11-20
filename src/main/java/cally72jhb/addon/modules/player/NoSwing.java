@@ -14,6 +14,8 @@ import net.minecraft.network.packet.s2c.play.EntityAnimationS2CPacket;
 public class NoSwing extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
 
+    // General
+
     private final Setting<Boolean> clientSide = sgGeneral.add(new BoolSetting.Builder()
         .name("client-side")
         .description("Removes the hand swing animation only for you.")
@@ -34,7 +36,7 @@ public class NoSwing extends Module {
         super(Categories.Misc, "no-swing", "Removes the hand swing animation client-side.");
     }
 
-    // Listeners
+    // Receive Packet Event
 
     @EventHandler
     private void onReceivePacket(PacketEvent.Receive event) {
@@ -46,12 +48,16 @@ public class NoSwing extends Module {
         }
     }
 
+    // Send Packet Event
+
     @EventHandler
     private void onSendPacket(PacketEvent.Send event) {
         if (event.packet instanceof HandSwingC2SPacket && !clientSide.get()) {
             event.cancel();
         }
     }
+
+    // Post Tick Event
 
     @EventHandler
     private void onPostTick(TickEvent.Post event) {
