@@ -28,7 +28,6 @@ public class VectorAddon extends MeteorAddon {
         // Initialisation
 
         ExecutorTask.init();
-        Modules.registerCategory(CATEGORY);
 
         // Combat
 
@@ -77,6 +76,11 @@ public class VectorAddon extends MeteorAddon {
         // Done Initializing
 
         LOG.info("Done Initializing Vector Addon...");
+    }
+
+    @Override
+    public void onRegisterCategories() {
+        Modules.registerCategory(CATEGORY);
     }
 
     public String getPackage() {

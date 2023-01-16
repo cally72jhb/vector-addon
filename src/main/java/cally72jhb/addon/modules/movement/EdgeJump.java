@@ -1,5 +1,6 @@
 package cally72jhb.addon.modules.movement;
 
+import cally72jhb.addon.VectorAddon;
 import cally72jhb.addon.events.JumpEvent;
 import com.google.common.collect.Streams;
 import meteordevelopment.meteorclient.events.world.TickEvent;
@@ -7,7 +8,6 @@ import meteordevelopment.meteorclient.settings.DoubleSetting;
 import meteordevelopment.meteorclient.settings.EnumSetting;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
-import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
 import meteordevelopment.orbit.EventPriority;
@@ -55,7 +55,7 @@ public class EdgeJump extends Module {
     // Constructor
 
     public EdgeJump() {
-        super(Categories.Movement, "edge-jump", "Automatically jumps at the edges of blocks.");
+        super(VectorAddon.CATEGORY, "edge-jump", "Automatically jumps at the edges of blocks.");
     }
 
     // Overrides

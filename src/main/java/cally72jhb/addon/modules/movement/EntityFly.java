@@ -1,11 +1,11 @@
 package cally72jhb.addon.modules.movement;
 
+import cally72jhb.addon.VectorAddon;
 import meteordevelopment.meteorclient.events.entity.LivingEntityMoveEvent;
 import meteordevelopment.meteorclient.mixininterface.IVec3d;
 import meteordevelopment.meteorclient.settings.DoubleSetting;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
-import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.player.PlayerUtils;
 import meteordevelopment.orbit.EventHandler;
@@ -45,7 +45,7 @@ public class EntityFly extends Module {
     // Constructor
 
     public EntityFly() {
-        super(Categories.Movement, "entity-fly", "Allows you to fly with any entity.");
+        super(VectorAddon.CATEGORY, "entity-fly", "Allows you to fly with any entity.");
     }
 
     // Living Entity Move Event

@@ -1,5 +1,6 @@
 package cally72jhb.addon.modules.movement;
 
+import cally72jhb.addon.VectorAddon;
 import meteordevelopment.meteorclient.events.entity.player.PlayerMoveEvent;
 import meteordevelopment.meteorclient.events.packets.PacketEvent;
 import meteordevelopment.meteorclient.events.world.CollisionShapeEvent;
@@ -7,7 +8,6 @@ import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.mixin.PlayerPositionLookS2CPacketAccessor;
 import meteordevelopment.meteorclient.mixininterface.IVec3d;
 import meteordevelopment.meteorclient.settings.*;
-import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.network.packet.c2s.play.ClientCommandC2SPacket;
@@ -474,7 +474,7 @@ public class RubberbandFly extends Module {
     private List<TeleportConfirmC2SPacket> tpPackets;
 
     public RubberbandFly() {
-        super(Categories.Movement, "rubberband-fly", "Fly with rubberbanding.");
+        super(VectorAddon.CATEGORY, "rubberband-fly", "Fly with rubberbanding.");
     }
 
     @Override

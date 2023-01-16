@@ -1,5 +1,6 @@
 package cally72jhb.addon.modules.movement;
 
+import cally72jhb.addon.VectorAddon;
 import meteordevelopment.meteorclient.events.entity.player.PlayerMoveEvent;
 import meteordevelopment.meteorclient.events.packets.PacketEvent;
 import meteordevelopment.meteorclient.events.world.CollisionShapeEvent;
@@ -7,7 +8,6 @@ import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.mixin.PlayerPositionLookS2CPacketAccessor;
 import meteordevelopment.meteorclient.mixininterface.IVec3d;
 import meteordevelopment.meteorclient.settings.*;
-import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.network.packet.c2s.play.ClientCommandC2SPacket;
@@ -393,7 +393,7 @@ public class PacketFly extends Module {
     // Constructor
 
     public PacketFly() {
-        super(Categories.Movement, "packet-fly", "Bypasses the servers anti-cheat to allow you to fly.");
+        super(VectorAddon.CATEGORY, "packet-fly", "Bypasses the servers anti-cheat to allow you to fly.");
     }
 
     // Activation

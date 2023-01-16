@@ -1,5 +1,6 @@
 package cally72jhb.addon.modules.combat;
 
+import cally72jhb.addon.VectorAddon;
 import cally72jhb.addon.utils.Utils;
 import meteordevelopment.meteorclient.events.render.Render3DEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
@@ -7,7 +8,6 @@ import meteordevelopment.meteorclient.mixininterface.IClientPlayerInteractionMan
 import meteordevelopment.meteorclient.renderer.ShapeMode;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.friends.Friends;
-import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.entity.fakeplayer.FakePlayerEntity;
 import meteordevelopment.meteorclient.utils.misc.Pool;
@@ -426,7 +426,7 @@ public class PacketHoleFill extends Module {
     // Constructor
 
     public PacketHoleFill() {
-        super(Categories.Combat, "packet-hole-fill", "Fills safe holes with obsidian using packets.");
+        super(VectorAddon.CATEGORY, "packet-hole-fill", "Fills safe holes with obsidian using packets.");
     }
 
     // Overrides

@@ -1,5 +1,6 @@
 package cally72jhb.addon.modules.combat;
 
+import cally72jhb.addon.VectorAddon;
 import cally72jhb.addon.utils.Utils;
 import meteordevelopment.meteorclient.events.game.GameLeftEvent;
 import meteordevelopment.meteorclient.events.meteor.KeyEvent;
@@ -7,7 +8,6 @@ import meteordevelopment.meteorclient.events.packets.PacketEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.mixininterface.IClientPlayerInteractionManager;
 import meteordevelopment.meteorclient.settings.*;
-import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.meteorclient.systems.modules.movement.Step;
@@ -228,7 +228,7 @@ public class SurroundPlus extends Module {
     // Constructor
 
     public SurroundPlus() {
-        super(Categories.Combat, "surround-plus", "Surrounds you in blocks to prevent you from taking explosion damage.");
+        super(VectorAddon.CATEGORY, "surround-plus", "Surrounds you in blocks to prevent you from taking explosion damage.");
     }
 
     private List<BlockPos> crystals;

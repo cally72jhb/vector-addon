@@ -1,10 +1,10 @@
 package cally72jhb.addon.modules.movement;
 
+import cally72jhb.addon.VectorAddon;
 import meteordevelopment.meteorclient.settings.BoolSetting;
 import meteordevelopment.meteorclient.settings.IntSetting;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
-import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
 
 public class PacketDigits extends Module {
@@ -37,7 +37,7 @@ public class PacketDigits extends Module {
     // Constructor
 
     public PacketDigits() {
-        super(Categories.Movement, "packet-digits", "Removes digits from your movement packets to make them smaller.");
+        super(VectorAddon.CATEGORY, "packet-digits", "Removes digits from your movement packets to make them smaller.");
     }
 
     // Getter
