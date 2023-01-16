@@ -1,13 +1,12 @@
 package cally72jhb.addon.modules.render;
 
+import cally72jhb.addon.VectorAddon;
 import cally72jhb.addon.utils.Utils;
 import meteordevelopment.meteorclient.events.render.Render3DEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.renderer.ShapeMode;
 import meteordevelopment.meteorclient.settings.*;
-import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
-import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.meteorclient.utils.misc.Pool;
 import meteordevelopment.meteorclient.utils.render.color.Color;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
@@ -270,7 +269,7 @@ public class HoleRenderer extends Module {
     // Constructor
 
     public HoleRenderer() {
-        super(Categories.Misc, "hole-renderer", "Renders close safe-holes.");
+        super(VectorAddon.CATEGORY, "hole-renderer", "Renders close safe-holes.");
     }
 
     // Variables

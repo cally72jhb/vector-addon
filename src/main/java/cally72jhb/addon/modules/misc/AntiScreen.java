@@ -1,9 +1,9 @@
 package cally72jhb.addon.modules.misc;
 
+import cally72jhb.addon.VectorAddon;
 import meteordevelopment.meteorclient.settings.BoolSetting;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
-import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
 
 public class AntiScreen extends Module {
@@ -28,7 +28,7 @@ public class AntiScreen extends Module {
     // Constructor
 
     public AntiScreen() {
-        super(Categories.Misc, "anti-screen", "Removes certain screens in the game.");
+        super(VectorAddon.CATEGORY, "anti-screen", "Removes certain screens in the game.");
     }
 
     // Getter

@@ -1,9 +1,9 @@
 package cally72jhb.addon.modules.player;
 
+import cally72jhb.addon.VectorAddon;
 import meteordevelopment.meteorclient.events.meteor.MouseScrollEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.mixininterface.IClientPlayerInteractionManager;
-import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
 
@@ -11,7 +11,7 @@ public class InventoryScroll extends Module {
     private boolean open;
 
     public InventoryScroll() {
-        super(Categories.Misc, "inventory-scroll", "Allows you to scroll in your hotbar while having a screen opened.");
+        super(VectorAddon.CATEGORY, "inventory-scroll", "Allows you to scroll in your hotbar while having a screen opened.");
     }
 
     @Override

@@ -1,5 +1,6 @@
 package cally72jhb.addon.modules.misc;
 
+import cally72jhb.addon.VectorAddon;
 import meteordevelopment.meteorclient.events.packets.PacketEvent;
 import meteordevelopment.meteorclient.gui.GuiTheme;
 import meteordevelopment.meteorclient.gui.widgets.WWidget;
@@ -8,15 +9,14 @@ import meteordevelopment.meteorclient.gui.widgets.input.WTextBox;
 import meteordevelopment.meteorclient.gui.widgets.pressable.WButton;
 import meteordevelopment.meteorclient.gui.widgets.pressable.WMinus;
 import meteordevelopment.meteorclient.gui.widgets.pressable.WPlus;
-import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
+import meteordevelopment.meteorclient.utils.player.ChatUtils;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtString;
 import net.minecraft.network.packet.c2s.play.ChatMessageC2SPacket;
-import net.minecraft.text.Text;
 import oshi.util.tuples.Pair;
 
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ public class Placeholders extends Module {
     private boolean cancel;
 
     public Placeholders() {
-        super(Categories.Misc, "placeholders", "Replaces chat messages with your own custom placeholders.");
+        super(VectorAddon.CATEGORY, "placeholders", "Replaces chat messages with your own custom placeholders.");
     }
 
     @Override
@@ -41,7 +41,7 @@ public class Placeholders extends Module {
             for (Pair<String, String> placeholder : placeholders) {
                 if (placeholder != null && placeholder.getA() != null && packet.chatMessage().contains(placeholder.getA())) {
                     cancel = true;
-                    mc.player.sendChatMessage(packet.chatMessage().replaceAll(placeholder.getA(), placeholder.getB()), Text.of(packet.chatMessage().replaceAll(placeholder.getA(), placeholder.getB())));
+                    ChatUtils.sendPlayerMsg(packet.chatMessage().replaceAll(placeholder.getA(), placeholder.getB()));
                     cancel = false;
 
                     event.cancel();
@@ -68,7 +68,7 @@ public class Placeholders extends Module {
                 int messageI = i;
 
                 if (placeholders.get(i) != null && placeholders.get(i).getA() != null && placeholders.get(i).getB() != null
-                    && !placeholders.get(i).getA().isEmpty() && !placeholders.get(i).getB().isEmpty()) {
+                        && !placeholders.get(i).getA().isEmpty() && !placeholders.get(i).getB().isEmpty()) {
 
                     String messageA = placeholders.get(i).getA();
                     String messageB = placeholders.get(i).getB();

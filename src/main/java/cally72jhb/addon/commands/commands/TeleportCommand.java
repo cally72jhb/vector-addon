@@ -15,7 +15,7 @@ import static com.mojang.brigadier.Command.SINGLE_SUCCESS;
 
 public class TeleportCommand extends Command {
     public TeleportCommand() {
-        super("teleport", "Allows to teleport small distances.", "tp");
+        super("teleport-advanced", "Allows to teleport small distances.");
     }
 
     @Override

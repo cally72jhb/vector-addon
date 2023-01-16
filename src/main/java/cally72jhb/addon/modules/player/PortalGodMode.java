@@ -1,7 +1,7 @@
 package cally72jhb.addon.modules.player;
 
+import cally72jhb.addon.VectorAddon;
 import meteordevelopment.meteorclient.events.packets.PacketEvent;
-import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.network.packet.c2s.play.TeleportConfirmC2SPacket;
@@ -15,7 +15,7 @@ public class PortalGodMode extends Module {
     // Constructor
 
     public PortalGodMode() {
-        super(Categories.Misc, "portal-god-mode", "Exploits some bugs to make you invincible after you left a portal.");
+        super(VectorAddon.CATEGORY, "portal-god-mode", "Exploits some bugs to make you invincible after you left a portal.");
     }
 
     // Overrides

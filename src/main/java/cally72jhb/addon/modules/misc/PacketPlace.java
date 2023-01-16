@@ -1,11 +1,11 @@
 package cally72jhb.addon.modules.misc;
 
+import cally72jhb.addon.VectorAddon;
 import meteordevelopment.meteorclient.events.entity.player.InteractBlockEvent;
 import meteordevelopment.meteorclient.settings.BoolSetting;
 import meteordevelopment.meteorclient.settings.ModuleListSetting;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
-import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.meteorclient.systems.modules.combat.Burrow;
@@ -55,7 +55,7 @@ public class PacketPlace extends Module {
     // Constructor
 
     public PacketPlace() {
-        super(Categories.Misc, "packet-place", "Place blocks with packets to prevent desync from the server.");
+        super(VectorAddon.CATEGORY, "packet-place", "Place blocks with packets to prevent desync from the server.");
     }
 
     // Listeners
@@ -91,7 +91,7 @@ public class PacketPlace extends Module {
     }
 
     private boolean isClickable(Block block) {
-        return block instanceof CraftingTableBlock || block instanceof AnvilBlock || block instanceof AbstractButtonBlock || block instanceof AbstractPressurePlateBlock || block instanceof BlockWithEntity || block instanceof BedBlock || block instanceof FenceGateBlock || block instanceof DoorBlock || block instanceof NoteBlock || block instanceof TrapdoorBlock;
+        return block instanceof CraftingTableBlock || block instanceof AnvilBlock || block instanceof ButtonBlock || block instanceof AbstractPressurePlateBlock || block instanceof BlockWithEntity || block instanceof BedBlock || block instanceof FenceGateBlock || block instanceof DoorBlock || block instanceof NoteBlock || block instanceof TrapdoorBlock;
     }
 
     // Placing

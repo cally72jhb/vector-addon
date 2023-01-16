@@ -7,9 +7,7 @@
     "ClientConnectionMixin",
     "ClientPlayNetworkHandlerMixin",
     "GameRendererMixin",
-    "PlayerEntityMixin",
-    "SharedConstantsMixin",
-    "WorldBorderMixin"
+    "PlayerEntityMixin"
   ],
   "injectors": {
     "defaultRequire": 1

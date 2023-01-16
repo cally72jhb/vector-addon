@@ -1,12 +1,12 @@
 package cally72jhb.addon.modules.movement;
 
+import cally72jhb.addon.VectorAddon;
 import meteordevelopment.meteorclient.events.entity.LivingEntityMoveEvent;
 import meteordevelopment.meteorclient.events.world.CollisionShapeEvent;
 import meteordevelopment.meteorclient.mixininterface.IVec3d;
 import meteordevelopment.meteorclient.settings.DoubleSetting;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
-import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.player.PlayerUtils;
 import meteordevelopment.orbit.EventHandler;
@@ -47,7 +47,7 @@ public class EntityPhase extends Module {
     // Constructor
 
     public EntityPhase() {
-        super(Categories.Movement, "entity-phase", "Allows you to phase with any entity.");
+        super(VectorAddon.CATEGORY, "entity-phase", "Allows you to phase with any entity.");
     }
 
     // Collision Shape Event

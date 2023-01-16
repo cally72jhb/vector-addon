@@ -1,11 +1,11 @@
 package cally72jhb.addon.modules.player;
 
+import cally72jhb.addon.VectorAddon;
 import meteordevelopment.meteorclient.events.packets.PacketEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.BoolSetting;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
-import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
@@ -33,7 +33,7 @@ public class NoSwing extends Module {
     // Constructor
 
     public NoSwing() {
-        super(Categories.Misc, "no-swing", "Removes the hand swing animation client-side.");
+        super(VectorAddon.CATEGORY, "no-swing", "Removes the hand swing animation client-side.");
     }
 
     // Receive Packet Event

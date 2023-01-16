@@ -1,11 +1,11 @@
 package cally72jhb.addon.modules.misc;
 
+import cally72jhb.addon.VectorAddon;
 import meteordevelopment.meteorclient.events.packets.PacketEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.IntSetting;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
-import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.client.network.PlayerListEntry;
@@ -30,7 +30,7 @@ public class PingSpoof extends Module {
     // Constructor
 
     public PingSpoof() {
-        super(Categories.Misc, "ping-spoof", "Modify your ping.");
+        super(VectorAddon.CATEGORY, "ping-spoof", "Modify your ping.");
     }
 
     private long id;

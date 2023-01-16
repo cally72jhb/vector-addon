@@ -8,16 +8,18 @@ import cally72jhb.addon.modules.movement.*;
 import cally72jhb.addon.modules.player.NoSwing;
 import cally72jhb.addon.modules.player.PortalGodMode;
 import cally72jhb.addon.modules.render.HoleRenderer;
-import cally72jhb.addon.modules.render.SkeletonESP;
 import cally72jhb.addon.utils.ExecutorTask;
 import meteordevelopment.meteorclient.addons.MeteorAddon;
 import meteordevelopment.meteorclient.systems.commands.Commands;
+import meteordevelopment.meteorclient.systems.modules.Category;
 import meteordevelopment.meteorclient.systems.modules.Modules;
+import net.minecraft.item.Items;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class VectorAddon extends MeteorAddon {
     public static final Logger LOG = LoggerFactory.getLogger("vector-addon");
+    public static final Category CATEGORY = new Category("Vector", Items.EMERALD_ORE.getDefaultStack());
 
     @Override
     public void onInitialize() {
@@ -26,6 +28,7 @@ public class VectorAddon extends MeteorAddon {
         // Initialisation
 
         ExecutorTask.init();
+        Modules.registerCategory(CATEGORY);
 
         // Combat
 
@@ -36,9 +39,7 @@ public class VectorAddon extends MeteorAddon {
 
         Modules.get().add(new AntiScreen());
         Modules.get().add(new NoCollision());
-        Modules.get().add(new NoWorldBorder());
         Modules.get().add(new PacketPlace());
-        Modules.get().add(new Paragraph());
         Modules.get().add(new PingSpoof());
         Modules.get().add(new Placeholders());
 
@@ -61,7 +62,6 @@ public class VectorAddon extends MeteorAddon {
         // Render
 
         Modules.get().add(new HoleRenderer());
-        Modules.get().add(new SkeletonESP());
 
         // Commands
 

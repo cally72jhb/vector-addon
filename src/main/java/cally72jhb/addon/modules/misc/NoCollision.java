@@ -1,8 +1,8 @@
 package cally72jhb.addon.modules.misc;
 
+import cally72jhb.addon.VectorAddon;
 import meteordevelopment.meteorclient.events.world.CollisionShapeEvent;
 import meteordevelopment.meteorclient.settings.*;
-import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
 import meteordevelopment.orbit.EventPriority;
@@ -40,7 +40,7 @@ public class NoCollision extends Module {
     // Constructor
 
     public NoCollision() {
-        super(Categories.Misc, "no-collision", "Removes block and world border collision client-side.");
+        super(VectorAddon.CATEGORY, "no-collision", "Removes block and world border collision client-side.");
     }
 
     // Canceling Collision

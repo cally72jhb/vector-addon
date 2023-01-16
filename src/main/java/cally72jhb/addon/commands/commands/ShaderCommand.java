@@ -2,7 +2,7 @@ package cally72jhb.addon.commands.commands;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import meteordevelopment.meteorclient.systems.commands.Command;
-import net.minecraft.client.gl.ShaderEffect;
+import net.minecraft.client.gl.PostEffectProcessor;
 import net.minecraft.command.CommandSource;
 import net.minecraft.util.Identifier;
 
@@ -12,7 +12,7 @@ import java.util.Arrays;
 import static com.mojang.brigadier.Command.SINGLE_SUCCESS;
 
 public class ShaderCommand extends Command {
-    private ShaderEffect shader;
+    private PostEffectProcessor shader;
 
     public ShaderCommand() {
         super("shader", "Changes your client-side shader.");
@@ -33,12 +33,12 @@ public class ShaderCommand extends Command {
                 Identifier shaderID = new Identifier(String.format("shaders/post/%s.json", name));
 
                 if (name.equals("phosphor") || name.equals("outline")) {
-                    mc.gameRenderer.loadShader(shaderID);
+                    mc.gameRenderer.loadPostProcessor(shaderID);
                     this.shader = null;
                 } else {
                     try {
-                        mc.gameRenderer.getShader().close();
-                        this.shader = new ShaderEffect(mc.getTextureManager(), mc.getResourceManager(), mc.getFramebuffer(), shaderID);
+                        mc.gameRenderer.getPostProcessor().close();
+                        this.shader = new PostEffectProcessor(mc.getTextureManager(), mc.getResourceManager(), mc.getFramebuffer(), shaderID);
 
                         info("Successfully changed shader effect");
                     } catch (IOException exception) {
@@ -54,7 +54,7 @@ public class ShaderCommand extends Command {
 
         builder.then(literal("none").executes(context -> {
             this.shader = null;
-            mc.gameRenderer.getShader().close();
+            mc.gameRenderer.getPostProcessor().close();
 
             info("Successfully reset shader effect");
 
@@ -63,7 +63,7 @@ public class ShaderCommand extends Command {
 
         builder.then(literal("reset").executes(context -> {
             this.shader = null;
-            mc.gameRenderer.getShader().close();
+            mc.gameRenderer.getPostProcessor().close();
 
             info("Successfully reset shader effect");
 
@@ -72,7 +72,7 @@ public class ShaderCommand extends Command {
 
         builder.executes(context -> {
             this.shader = null;
-            mc.gameRenderer.getShader().close();
+            mc.gameRenderer.getPostProcessor().close();
 
             info("Successfully reset shader effect");
 
@@ -82,7 +82,7 @@ public class ShaderCommand extends Command {
 
     // Utils
 
-    public ShaderEffect getShader() {
+    public PostEffectProcessor getShader() {
         return this.shader;
     }
 

@@ -1,21 +1,21 @@
 package cally72jhb.addon.modules.player;
 
+import cally72jhb.addon.VectorAddon;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.IntSetting;
 import meteordevelopment.meteorclient.settings.ItemListSetting;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
-import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerInteractItemC2SPacket;
+import net.minecraft.registry.Registries;
 import net.minecraft.util.UseAction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
-import net.minecraft.util.registry.Registry;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +46,7 @@ public class ItemRelease extends Module {
     // Constructor
 
     public ItemRelease() {
-        super(Categories.Misc, "item-release", "Releases certain usable items after a set delay.");
+        super(VectorAddon.CATEGORY, "item-release", "Releases certain usable items after a set delay.");
     }
 
     // Listeners
@@ -77,7 +77,7 @@ public class ItemRelease extends Module {
 
     private List<Item> getDefaultItems() {
         List<Item> items = new ArrayList<>();
-        for (Item item : Registry.ITEM) if (itemFilter(item)) items.add(item);
+        for (Item item : Registries.ITEM) if (itemFilter(item)) items.add(item);
 
         return items;
     }
