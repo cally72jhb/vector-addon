@@ -15,7 +15,7 @@ public class ShaderCommand extends Command {
     private PostEffectProcessor shader;
 
     public ShaderCommand() {
-        super("shader", "Changes your client-side shader.");
+        super("shader", "Changes your client-side shader. No argument to reset.");
     }
 
     @Override
@@ -37,7 +37,7 @@ public class ShaderCommand extends Command {
                     this.shader = null;
                 } else {
                     try {
-                        mc.gameRenderer.getPostProcessor().close();
+                        if (mc.gameRenderer.getPostProcessor() != null) mc.gameRenderer.getPostProcessor().close();
                         this.shader = new PostEffectProcessor(mc.getTextureManager(), mc.getResourceManager(), mc.getFramebuffer(), shaderID);
 
                         info("Successfully changed shader effect");
@@ -52,27 +52,9 @@ public class ShaderCommand extends Command {
             }));
         }
 
-        builder.then(literal("none").executes(context -> {
-            this.shader = null;
-            mc.gameRenderer.getPostProcessor().close();
-
-            info("Successfully reset shader effect");
-
-            return SINGLE_SUCCESS;
-        }));
-
-        builder.then(literal("reset").executes(context -> {
-            this.shader = null;
-            mc.gameRenderer.getPostProcessor().close();
-
-            info("Successfully reset shader effect");
-
-            return SINGLE_SUCCESS;
-        }));
-
         builder.executes(context -> {
             this.shader = null;
-            mc.gameRenderer.getPostProcessor().close();
+            if (mc.gameRenderer.getPostProcessor() != null) mc.gameRenderer.getPostProcessor().close();
 
             info("Successfully reset shader effect");
 
