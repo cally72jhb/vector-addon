@@ -51,14 +51,6 @@ public class PacketFly extends Module {
             .visible(() -> boundsType.get() == BoundsType.Small || boundsType.get() == BoundsType.Infinitive)
             .build()
     );
-
-    private final Setting<BoundsUpdateMode> boundsUpdateMode = sgBounds.add(new EnumSetting.Builder<BoundsUpdateMode>()
-            .name("bounds-mode")
-            .description("How to update the bounds normal position.")
-            .defaultValue(BoundsUpdateMode.Passive)
-            .build()
-    );
-
     private final Setting<CustomMode> customMode = sgBounds.add(new EnumSetting.Builder<CustomMode>()
             .name("bounds-mode")
             .description("How the positions are merged with your position.")
@@ -66,7 +58,6 @@ public class PacketFly extends Module {
             .visible(() -> boundsType.get() == BoundsType.Custom || boundsType.get() == BoundsType.Random)
             .build()
     );
-
     private final Setting<Double> ceilRadius = sgBounds.add(new DoubleSetting.Builder()
             .name("ceil-radius")
             .description("The ceil's radius.")
@@ -76,7 +67,6 @@ public class PacketFly extends Module {
             .visible(() -> boundsType.get() == BoundsType.Ceil)
             .build()
     );
-
     private final Setting<Double> bypassHeight = sgBounds.add(new DoubleSetting.Builder()
             .name("bypass-height")
             .description("How high to rubberband you.")
@@ -86,7 +76,6 @@ public class PacketFly extends Module {
             .visible(() -> boundsType.get() == BoundsType.Bypass || boundsType.get() == BoundsType.Alternative || boundsType.get() == BoundsType.Up || boundsType.get() == BoundsType.Down)
             .build()
     );
-
     private final Setting<Integer> digits = sgBounds.add(new IntSetting.Builder()
             .name("digits")
             .description("The number digits of the small bounds.")
@@ -96,7 +85,6 @@ public class PacketFly extends Module {
             .visible(() -> boundsType.get() == BoundsType.Small)
             .build()
     );
-
     private final Setting<Double> customX = sgBounds.add(new DoubleSetting.Builder()
             .name("custom-x")
             .description("The custom x factor.")
@@ -106,7 +94,6 @@ public class PacketFly extends Module {
             .visible(() -> boundsType.get() == BoundsType.Custom)
             .build()
     );
-
     private final Setting<Double> customY = sgBounds.add(new DoubleSetting.Builder()
             .name("custom-y")
             .description("The custom y factor.")
@@ -116,7 +103,6 @@ public class PacketFly extends Module {
             .visible(() -> boundsType.get() == BoundsType.Custom)
             .build()
     );
-
     private final Setting<Double> customZ = sgBounds.add(new DoubleSetting.Builder()
             .name("custom-z")
             .description("The custom z factor.")
@@ -126,7 +112,6 @@ public class PacketFly extends Module {
             .visible(() -> boundsType.get() == BoundsType.Custom)
             .build()
     );
-
     private final Setting<Double> randomMinX = sgBounds.add(new DoubleSetting.Builder()
             .name("random-min-x")
             .description("The minimum x.")
@@ -136,7 +121,6 @@ public class PacketFly extends Module {
             .visible(() -> boundsType.get() == BoundsType.Random)
             .build()
     );
-
     private final Setting<Double> randomMinY = sgBounds.add(new DoubleSetting.Builder()
             .name("random-min-y")
             .description("The minimum y.")
@@ -146,7 +130,6 @@ public class PacketFly extends Module {
             .visible(() -> boundsType.get() == BoundsType.Random)
             .build()
     );
-
     private final Setting<Double> randomMinZ = sgBounds.add(new DoubleSetting.Builder()
             .name("random-min-z")
             .description("The minimum z.")
@@ -156,7 +139,6 @@ public class PacketFly extends Module {
             .visible(() -> boundsType.get() == BoundsType.Random)
             .build()
     );
-
     private final Setting<Double> randomMaxX = sgBounds.add(new DoubleSetting.Builder()
             .name("random-max-x")
             .description("The maximum x.")
@@ -167,7 +149,6 @@ public class PacketFly extends Module {
             .visible(() -> boundsType.get() == BoundsType.Random)
             .build()
     );
-
     private final Setting<Double> randomMaxY = sgBounds.add(new DoubleSetting.Builder()
             .name("random-max-y")
             .description("The maximum y.")
@@ -178,7 +159,6 @@ public class PacketFly extends Module {
             .visible(() -> boundsType.get() == BoundsType.Random)
             .build()
     );
-
     private final Setting<Double> randomMaxZ = sgBounds.add(new DoubleSetting.Builder()
             .name("random-max-z")
             .description("The maximum z.")
@@ -189,7 +169,12 @@ public class PacketFly extends Module {
             .visible(() -> boundsType.get() == BoundsType.Random)
             .build()
     );
-
+    private final Setting<BoundsUpdateMode> boundsUpdateMode = sgBounds.add(new EnumSetting.Builder<BoundsUpdateMode>()
+            .name("bounds-mode")
+            .description("How to update the bounds normal position.")
+            .defaultValue(BoundsUpdateMode.Passive)
+            .build()
+    );
     private final Setting<Boolean> boundsOnGround = sgBounds.add(new BoolSetting.Builder()
             .name("bounds-on-ground")
             .description("Whether or not to send onground or offground bounds.")
@@ -207,14 +192,6 @@ public class PacketFly extends Module {
             .defaultValue(Type.FACTOR)
             .build()
     );
-
-    private final Setting<MultiAxisMode> multiAxisMode = sgFlight.add(new EnumSetting.Builder<MultiAxisMode>()
-            .name("multi-axis-mode")
-            .description("How to bypass the servers anti-cheat.")
-            .defaultValue(MultiAxisMode.None)
-            .build()
-    );
-
     private final Setting<Double> factor = sgFlight.add(new DoubleSetting.Builder()
             .name("factor")
             .description("Your flight factor.")
@@ -223,7 +200,6 @@ public class PacketFly extends Module {
             .visible(() -> type.get() == Type.FACTOR || type.get() == Type.DESYNC)
             .build()
     );
-
     private final Setting<Integer> speed = sgFlight.add(new IntSetting.Builder()
             .name("speed")
             .description("How often to repeat the bypass.")
@@ -232,7 +208,12 @@ public class PacketFly extends Module {
             .visible(() -> type.get() != Type.FACTOR && type.get() != Type.DESYNC)
             .build()
     );
-
+    private final Setting<MultiAxisMode> multiAxisMode = sgFlight.add(new EnumSetting.Builder<MultiAxisMode>()
+            .name("multi-axis-mode")
+            .description("How to bypass the servers anti-cheat.")
+            .defaultValue(MultiAxisMode.None)
+            .build()
+    );
     private final Setting<Boolean> phase = sgFlight.add(new BoolSetting.Builder()
             .name("phase")
             .description("Tries to phase when on older versions.")
@@ -362,33 +343,24 @@ public class PacketFly extends Module {
     );
 
     // Variables
-
+    private final Random random = new Random();
     private int antiKickTicks;
     private int verticalTicks;
     private int horizontalTicks;
-
     private boolean oddJitter;
     private boolean limitStrict;
     private int limitTicks;
     private int jitterTicks;
-
     private int factorCounter;
-
     private double speedX;
     private double speedY;
     private double speedZ;
-
     private int ticksExisted;
-
     private boolean updated;
-
     private int teleportID;
     private Vec3d teleportPos;
-
     private List<PlayerMoveC2SPacket> packets;
     private Map<Integer, TimedVec3d> teleports;
-
-    private final Random random = new Random();
 
     // Constructor
 
@@ -444,7 +416,8 @@ public class PacketFly extends Module {
     @Override
     public void onDeactivate() {
         if (sprint.get() && mc.getNetworkHandler() != null) {
-            if (!mc.player.isSprinting()) mc.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(mc.player, ClientCommandC2SPacket.Mode.STOP_SPRINTING));
+            if (!mc.player.isSprinting())
+                mc.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(mc.player, ClientCommandC2SPacket.Mode.STOP_SPRINTING));
 
             if (mc.player != null) mc.player.setSprinting(false);
         }
@@ -454,8 +427,10 @@ public class PacketFly extends Module {
         }
 
         if (teleportPos != null) {
-            if (teleportID >= 0 && mc.getNetworkHandler() != null) mc.getNetworkHandler().sendPacket(new TeleportConfirmC2SPacket(teleportID));
-            if (mc != null && mc.player != null) mc.player.updatePosition(teleportPos.getX(), teleportPos.getY(), teleportPos.getZ());
+            if (teleportID >= 0 && mc.getNetworkHandler() != null)
+                mc.getNetworkHandler().sendPacket(new TeleportConfirmC2SPacket(teleportID));
+            if (mc != null && mc.player != null)
+                mc.player.updatePosition(teleportPos.getX(), teleportPos.getY(), teleportPos.getZ());
 
             teleportID = -1;
             teleportPos = null;
@@ -840,7 +815,7 @@ public class PacketFly extends Module {
         double dx = forward * speed * cos + side * speed * sin;
         double dz = forward * speed * sin - side * speed * cos;
 
-        return new double[] { dx, dz };
+        return new double[]{dx, dz};
     }
 
     private Vec3d getBounds() {
@@ -880,7 +855,7 @@ public class PacketFly extends Module {
                     }
 
                     case Vertical -> {
-                        new Vec3d(x, y > 0 ? small : -small, z);
+                        return new Vec3d(x, y > 0 ? small : -small, z);
                     }
                 }
 

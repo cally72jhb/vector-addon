@@ -1,15 +1,16 @@
 package cally72jhb.addon.modules.misc;
 
 import cally72jhb.addon.VectorAddon;
+import meteordevelopment.meteorclient.events.packets.PacketEvent;
 import meteordevelopment.meteorclient.settings.BoolSetting;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.systems.modules.Module;
+import meteordevelopment.orbit.EventHandler;
+import net.minecraft.network.packet.s2c.play.GameStateChangeS2CPacket;
 
 public class AntiScreen extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
-
-    // General
 
     private final Setting<Boolean> endScreen = sgGeneral.add(new BoolSetting.Builder()
             .name("end-screen")
@@ -25,19 +26,16 @@ public class AntiScreen extends Module {
             .build()
     );
 
-    // Constructor
-
     public AntiScreen() {
         super(VectorAddon.CATEGORY, "anti-screen", "Removes certain screens in the game.");
     }
 
-    // Getter
-
-    public boolean cancelEndScreen() {
-        return this.endScreen.get();
-    }
-
-    public boolean cancelDemoScreen() {
-        return this.demoScreen.get();
+    @EventHandler
+    private void onRecv(PacketEvent.Receive event) {
+        if (event.packet instanceof GameStateChangeS2CPacket packet
+                && (packet.getReason() == GameStateChangeS2CPacket.DEMO_MESSAGE_SHOWN && packet.getValue() == 0.0F && demoScreen.get()
+                || packet.getReason() == GameStateChangeS2CPacket.GAME_WON && endScreen.get())) {
+            event.cancel();
+        }
     }
 }

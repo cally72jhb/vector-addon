@@ -17,17 +17,17 @@ public class NoSwing extends Module {
     // General
 
     private final Setting<Boolean> clientSide = sgGeneral.add(new BoolSetting.Builder()
-        .name("client-side")
-        .description("Removes the hand swing animation only for you.")
-        .defaultValue(true)
-        .build()
+            .name("client-side")
+            .description("Removes the hand swing animation only for you.")
+            .defaultValue(true)
+            .build()
     );
 
     private final Setting<Boolean> others = sgGeneral.add(new BoolSetting.Builder()
-        .name("others")
-        .description("Removes the hand swing animation of others.")
-        .defaultValue(false)
-        .build()
+            .name("others")
+            .description("Removes the hand swing animation of others.")
+            .defaultValue(false)
+            .build()
     );
 
     // Constructor
@@ -41,8 +41,8 @@ public class NoSwing extends Module {
     @EventHandler
     private void onReceivePacket(PacketEvent.Receive event) {
         if (event.packet instanceof EntityAnimationS2CPacket packet && others.get()
-            && (packet.getAnimationId() == EntityAnimationS2CPacket.SWING_MAIN_HAND
-            || packet.getAnimationId() == EntityAnimationS2CPacket.SWING_OFF_HAND)) {
+                && (packet.getAnimationId() == EntityAnimationS2CPacket.SWING_MAIN_HAND
+                || packet.getAnimationId() == EntityAnimationS2CPacket.SWING_OFF_HAND)) {
 
             event.cancel();
         }

@@ -1,5 +1,5 @@
 <div align="left">
-  
+
 # Vector Addon
 
 Vector is a powerful open-source addon for Meteor Client      <br/>

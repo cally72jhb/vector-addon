@@ -17,24 +17,24 @@ public class NoCollision extends Module {
     // General
 
     private final Setting<List<Block>> blocks = sgGeneral.add(new BlockListSetting.Builder()
-        .name("blocks")
-        .description("The blocks to fill the holes with.")
-        .defaultValue(List.of())
-        .build()
+            .name("blocks")
+            .description("The blocks to fill the holes with.")
+            .defaultValue(List.of())
+            .build()
     );
 
     private final Setting<ListMode> blockFilter = sgGeneral.add(new EnumSetting.Builder<ListMode>()
-        .name("block-filter")
-        .description("How to use the block list setting")
-        .defaultValue(ListMode.Whitelist)
-        .build()
+            .name("block-filter")
+            .description("How to use the block list setting")
+            .defaultValue(ListMode.Whitelist)
+            .build()
     );
 
     private final Setting<Boolean> borderCollision = sgGeneral.add(new BoolSetting.Builder()
-        .name("no-world-border-collision")
-        .description("Cancels the collision with the world border to allow you to walk through it.")
-        .defaultValue(true)
-        .build()
+            .name("no-world-border-collision")
+            .description("Cancels the collision with the world border to allow you to walk through it.")
+            .defaultValue(true)
+            .build()
     );
 
     // Constructor

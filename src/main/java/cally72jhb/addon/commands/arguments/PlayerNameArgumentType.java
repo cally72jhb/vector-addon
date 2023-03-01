@@ -25,7 +25,7 @@ public class PlayerNameArgumentType implements ArgumentType<String> {
                     .stream()
                     .map(PlayerEntity::getEntityName)
                     .collect(Collectors.toList()
-            );
+                    );
 
             EXAMPLES.addAll(mc.getNetworkHandler().getPlayerList()
                     .stream()
@@ -59,9 +59,9 @@ public class PlayerNameArgumentType implements ArgumentType<String> {
     public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> context, SuggestionsBuilder builder) {
         Collection<String> suggestions = new ArrayList<>(
                 mc.world.getPlayers()
-                .stream()
-                .map(PlayerEntity::getEntityName)
-                .toList()
+                        .stream()
+                        .map(PlayerEntity::getEntityName)
+                        .toList()
         );
 
         suggestions.addAll(mc.getNetworkHandler().getPlayerList()

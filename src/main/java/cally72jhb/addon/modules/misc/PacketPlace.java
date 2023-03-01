@@ -116,7 +116,8 @@ public class PacketPlace extends Module {
     }
 
     private boolean canPlace(BlockPos pos, BlockState state) {
-        if (pos == null || mc.world == null || !World.isValid(pos) || !mc.world.getBlockState(pos).getMaterial().isReplaceable()) return false;
+        if (pos == null || mc.world == null || !World.isValid(pos) || !mc.world.getBlockState(pos).getMaterial().isReplaceable())
+            return false;
         return mc.world.getWorldBorder().contains(pos) && mc.world.canPlace(state, pos, ShapeContext.absent());
     }
 }

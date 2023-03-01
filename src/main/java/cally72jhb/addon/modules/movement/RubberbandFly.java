@@ -453,23 +453,16 @@ public class RubberbandFly extends Module {
             .defaultValue(PosUpdateAction.AcceptRequired)
             .build()
     );
-
+    private final Random random = new Random();
     private int antiKickTicks;
     private int idleTicks;
     private int tpTicks;
-
     private int ticksExisted;
-
     private int teleportID;
     private Vec3d teleportPos;
-
     private Vec3d velocity;
-
     private boolean up;
     private boolean updated;
-
-    private final Random random = new Random();
-
     private List<PlayerMoveC2SPacket> packets;
     private List<TeleportConfirmC2SPacket> tpPackets;
 
@@ -509,7 +502,8 @@ public class RubberbandFly extends Module {
     @Override
     public void onDeactivate() {
         if (sprint.get() && mc.getNetworkHandler() != null) {
-            if (!mc.player.isSprinting()) mc.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(mc.player, ClientCommandC2SPacket.Mode.STOP_SPRINTING));
+            if (!mc.player.isSprinting())
+                mc.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(mc.player, ClientCommandC2SPacket.Mode.STOP_SPRINTING));
 
             if (mc.player != null) mc.player.setSprinting(false);
         }
@@ -520,7 +514,8 @@ public class RubberbandFly extends Module {
 
         if (teleportPos != null) {
             if (teleportID >= 0 && mc.getNetworkHandler() != null) sendTpPacket(teleportID);
-            if (mc != null && mc.player != null) mc.player.updatePosition(teleportPos.getX(), teleportPos.getY(), teleportPos.getZ());
+            if (mc != null && mc.player != null)
+                mc.player.updatePosition(teleportPos.getX(), teleportPos.getY(), teleportPos.getZ());
 
             teleportID = -1;
             teleportPos = null;
@@ -769,7 +764,8 @@ public class RubberbandFly extends Module {
             }
         }
 
-        if (updateVelocity.get()) velocity = new Vec3d(position.getX() - mc.player.getX(), position.getY() - mc.player.getY(), position.getZ() - mc.player.getZ()).multiply(velocityMultiplier.get());
+        if (updateVelocity.get())
+            velocity = new Vec3d(position.getX() - mc.player.getX(), position.getY() - mc.player.getY(), position.getZ() - mc.player.getZ()).multiply(velocityMultiplier.get());
 
         antiKickTicks++;
         idleTicks++;
@@ -902,7 +898,7 @@ public class RubberbandFly extends Module {
                     }
 
                     case Vertical -> {
-                        new Vec3d(x, y > 0 ? small : -small, z);
+                        return new Vec3d(x, y > 0 ? small : -small, z);
                     }
                 }
 

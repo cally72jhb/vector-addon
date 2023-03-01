@@ -48,7 +48,7 @@ public class Utils {
         double dx = forward * speed * cos + side * speed * sin;
         double dz = forward * speed * sin - side * speed * cos;
 
-        return new double[] { dx, dz };
+        return new double[]{dx, dz};
     }
 
     // Inventory

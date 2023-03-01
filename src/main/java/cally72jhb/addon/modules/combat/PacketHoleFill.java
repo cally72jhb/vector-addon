@@ -176,14 +176,6 @@ public class PacketHoleFill extends Module {
             .defaultValue(true)
             .build()
     );
-
-    private final Setting<Boolean> bypassOnlyOnGround = sgSneak.add(new BoolSetting.Builder()
-            .name("bypass-only-on-ground")
-            .description("Only does the bypass when you're on ground.")
-            .defaultValue(true)
-            .build()
-    );
-
     private final Setting<Double> sneakActivationWindow = sgSneak.add(new DoubleSetting.Builder()
             .name("sneak-activation-window")
             .description("From what range on to start sneaking when placing blocks.")
@@ -195,11 +187,15 @@ public class PacketHoleFill extends Module {
             .visible(sneakRangeBypass::get)
             .build()
     );
+    private final Setting<Boolean> bypassOnlyOnGround = sgSneak.add(new BoolSetting.Builder()
+            .name("bypass-only-on-ground")
+            .description("Only does the bypass when you're on ground.")
+            .defaultValue(true)
+            .build()
+    );
 
 
     // Advanced
-
-
     private final Setting<Boolean> ignoreCloseHoles = sgAdvanced.add(new BoolSetting.Builder()
             .name("ignore-close-holes")
             .description("Ignores holes which are close to you.")
@@ -594,7 +590,8 @@ public class PacketHoleFill extends Module {
                         if (hole.isDouble() && doubles.get() && fillBoth.get()) {
                             if (block < maxBlocksPerTick.get()) {
                                 place(hole.pos1, item, !rotated ? rotate.get() : false);
-                                if (!isRendered(hole.pos1)) renderBlocks.add(renderBlockPool.get().set(hole.pos1, Dir.get(hole.direction)));
+                                if (!isRendered(hole.pos1))
+                                    renderBlocks.add(renderBlockPool.get().set(hole.pos1, Dir.get(hole.direction)));
 
                                 rotated = true;
                                 block++;
@@ -602,7 +599,8 @@ public class PacketHoleFill extends Module {
 
                             if (block < maxBlocksPerTick.get()) {
                                 place(hole.pos2, item, !rotated ? rotate.get() : false);
-                                if (!isRendered(hole.pos2)) renderBlocks.add(renderBlockPool.get().set(hole.pos2, Dir.get(hole.direction.getOpposite())));
+                                if (!isRendered(hole.pos2))
+                                    renderBlocks.add(renderBlockPool.get().set(hole.pos2, Dir.get(hole.direction.getOpposite())));
 
                                 rotated = true;
                                 block++;
@@ -655,7 +653,8 @@ public class PacketHoleFill extends Module {
 
     private boolean shouldPause() {
         if (minePause.get() && mc.interactionManager.isBreakingBlock()) return true;
-        if (eatPause.get() && (mc.player.isUsingItem() && (mc.player.getMainHandStack().getItem().isFood() || mc.player.getOffHandStack().getItem().isFood()))) return true;
+        if (eatPause.get() && (mc.player.isUsingItem() && (mc.player.getMainHandStack().getItem().isFood() || mc.player.getOffHandStack().getItem().isFood())))
+            return true;
         return drinkPause.get() && (mc.player.isUsingItem() && (mc.player.getMainHandStack().getItem() instanceof PotionItem || mc.player.getOffHandStack().getItem() instanceof PotionItem));
     }
 
@@ -708,8 +707,10 @@ public class PacketHoleFill extends Module {
     // Finding Items
 
     private FindItemResult findInHotbar(Predicate<ItemStack> isGood) {
-        if (isGood.test(mc.player.getOffHandStack())) return new FindItemResult(45, mc.player.getOffHandStack().getCount());
-        if (isGood.test(mc.player.getMainHandStack())) return new FindItemResult(mc.player.getInventory().selectedSlot, mc.player.getMainHandStack().getCount());
+        if (isGood.test(mc.player.getOffHandStack()))
+            return new FindItemResult(45, mc.player.getOffHandStack().getCount());
+        if (isGood.test(mc.player.getMainHandStack()))
+            return new FindItemResult(mc.player.getInventory().selectedSlot, mc.player.getMainHandStack().getCount());
 
         int slot = -1, count = 0;
 
@@ -845,7 +846,8 @@ public class PacketHoleFill extends Module {
     }
 
     private boolean canPlace(BlockPos pos) {
-        if (pos == null || mc.world == null || mc.world.getBottomY() > pos.getY() || mc.world.getTopY() < pos.getY()) return false;
+        if (pos == null || mc.world == null || mc.world.getBottomY() > pos.getY() || mc.world.getTopY() < pos.getY())
+            return false;
         return mc.world.getBlockState(pos).getMaterial().isReplaceable() && mc.world.canPlace(Blocks.OBSIDIAN.getDefaultState(), pos, ShapeContext.absent());
     }
 
@@ -940,31 +942,44 @@ public class PacketHoleFill extends Module {
             int z = pos.getZ();
 
             if (shapeMode.lines()) {
-                if (Dir.isNot(exclude, Dir.WEST) && Dir.isNot(exclude, Dir.NORTH)) event.renderer.line(x, y, z, x, y + height, z, sidesBottom, sidesTop);
-                if (Dir.isNot(exclude, Dir.WEST) && Dir.isNot(exclude, Dir.SOUTH)) event.renderer.line(x, y, z + 1, x, y + height, z + 1, sidesBottom, sidesTop);
-                if (Dir.isNot(exclude, Dir.EAST) && Dir.isNot(exclude, Dir.NORTH)) event.renderer.line(x + 1, y, z, x + 1, y + height, z, sidesBottom, sidesTop);
-                if (Dir.isNot(exclude, Dir.EAST) && Dir.isNot(exclude, Dir.SOUTH)) event.renderer.line(x + 1, y, z + 1, x + 1, y + height, z + 1, sidesBottom, sidesTop);
+                if (Dir.isNot(exclude, Dir.WEST) && Dir.isNot(exclude, Dir.NORTH))
+                    event.renderer.line(x, y, z, x, y + height, z, sidesBottom, sidesTop);
+                if (Dir.isNot(exclude, Dir.WEST) && Dir.isNot(exclude, Dir.SOUTH))
+                    event.renderer.line(x, y, z + 1, x, y + height, z + 1, sidesBottom, sidesTop);
+                if (Dir.isNot(exclude, Dir.EAST) && Dir.isNot(exclude, Dir.NORTH))
+                    event.renderer.line(x + 1, y, z, x + 1, y + height, z, sidesBottom, sidesTop);
+                if (Dir.isNot(exclude, Dir.EAST) && Dir.isNot(exclude, Dir.SOUTH))
+                    event.renderer.line(x + 1, y, z + 1, x + 1, y + height, z + 1, sidesBottom, sidesTop);
 
                 if (Dir.isNot(exclude, Dir.NORTH)) event.renderer.line(x, y, z, x + 1, y, z, sidesBottom);
-                if (Dir.isNot(exclude, Dir.NORTH)) event.renderer.line(x, y + height, z, x + 1, y + height, z, sidesTop);
+                if (Dir.isNot(exclude, Dir.NORTH))
+                    event.renderer.line(x, y + height, z, x + 1, y + height, z, sidesTop);
                 if (Dir.isNot(exclude, Dir.SOUTH)) event.renderer.line(x, y, z + 1, x + 1, y, z + 1, sidesBottom);
-                if (Dir.isNot(exclude, Dir.SOUTH)) event.renderer.line(x, y + height, z + 1, x + 1, y + height, z + 1, sidesTop);
+                if (Dir.isNot(exclude, Dir.SOUTH))
+                    event.renderer.line(x, y + height, z + 1, x + 1, y + height, z + 1, sidesTop);
 
                 if (Dir.isNot(exclude, Dir.WEST)) event.renderer.line(x, y, z, x, y, z + 1, sidesBottom);
                 if (Dir.isNot(exclude, Dir.WEST)) event.renderer.line(x, y + height, z, x, y + height, z + 1, sidesTop);
                 if (Dir.isNot(exclude, Dir.EAST)) event.renderer.line(x + 1, y, z, x + 1, y, z + 1, sidesBottom);
-                if (Dir.isNot(exclude, Dir.EAST)) event.renderer.line(x + 1, y + height, z, x + 1, y + height, z + 1, sidesTop);
+                if (Dir.isNot(exclude, Dir.EAST))
+                    event.renderer.line(x + 1, y + height, z, x + 1, y + height, z + 1, sidesTop);
             }
 
             if (shapeMode.sides()) {
-                if (Dir.isNot(exclude, Dir.UP) && topQuad.get()) event.renderer.quad(x, y + height, z, x, y + height, z + 1, x + 1, y + height, z + 1, x + 1, y + height, z, linesTop);
-                if (Dir.isNot(exclude, Dir.DOWN) && bottomQuad.get()) event.renderer.quad(x, y, z, x, y, z + 1, x + 1, y, z + 1, x + 1, y, z, linesBottom);
+                if (Dir.isNot(exclude, Dir.UP) && topQuad.get())
+                    event.renderer.quad(x, y + height, z, x, y + height, z + 1, x + 1, y + height, z + 1, x + 1, y + height, z, linesTop);
+                if (Dir.isNot(exclude, Dir.DOWN) && bottomQuad.get())
+                    event.renderer.quad(x, y, z, x, y, z + 1, x + 1, y, z + 1, x + 1, y, z, linesBottom);
 
-                if (Dir.isNot(exclude, Dir.NORTH)) event.renderer.gradientQuadVertical(x, y, z, x + 1, y + height, z, linesTop, linesBottom);
-                if (Dir.isNot(exclude, Dir.SOUTH)) event.renderer.gradientQuadVertical(x, y, z + 1, x + 1, y + height, z + 1, linesTop, linesBottom);
+                if (Dir.isNot(exclude, Dir.NORTH))
+                    event.renderer.gradientQuadVertical(x, y, z, x + 1, y + height, z, linesTop, linesBottom);
+                if (Dir.isNot(exclude, Dir.SOUTH))
+                    event.renderer.gradientQuadVertical(x, y, z + 1, x + 1, y + height, z + 1, linesTop, linesBottom);
 
-                if (Dir.isNot(exclude, Dir.WEST)) event.renderer.gradientQuadVertical(x, y, z, x, y + height, z + 1, linesTop, linesBottom);
-                if (Dir.isNot(exclude, Dir.EAST)) event.renderer.gradientQuadVertical(x + 1, y, z, x + 1, y + height, z + 1, linesTop, linesBottom);
+                if (Dir.isNot(exclude, Dir.WEST))
+                    event.renderer.gradientQuadVertical(x, y, z, x, y + height, z + 1, linesTop, linesBottom);
+                if (Dir.isNot(exclude, Dir.EAST))
+                    event.renderer.gradientQuadVertical(x + 1, y, z, x + 1, y + height, z + 1, linesTop, linesBottom);
             }
 
             sidesTop = prevSidesTop.copy();

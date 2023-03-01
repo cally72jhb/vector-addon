@@ -2,18 +2,14 @@
   "schemaVersion": 1,
   "id": "vector-addon",
   "version": "${version}",
-
   "name": "Vector Addon",
   "description": "Vector is a powerful open-source addon for Meteor Client providing some combat and many utility modules.",
   "authors": [
     "cally72jhb"
   ],
   "contact": {
-
   },
-
   "license": "GPL-3.0",
-
   "environment": "client",
   "entrypoints": {
     "meteor": [
@@ -28,7 +24,7 @@
     "meteor-client:color": "140,245,165"
   },
   "depends": {
-    "java": ">=16",
+    "java": ">=17",
     "minecraft": "~${mc_version}",
     "meteor-client": "*"
   }

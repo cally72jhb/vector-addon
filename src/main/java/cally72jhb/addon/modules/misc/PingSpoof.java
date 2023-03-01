@@ -17,24 +17,22 @@ public class PingSpoof extends Module {
     // General
 
     private final Setting<Integer> ping = sgGeneral.add(new IntSetting.Builder()
-        .name("ping")
-        .description("The ping to set.")
-        .defaultValue(200)
-        .min(1)
-        .sliderMin(100)
-        .sliderMax(1000)
-        .noSlider()
-        .build()
+            .name("ping")
+            .description("The ping to set.")
+            .defaultValue(200)
+            .min(1)
+            .sliderMin(100)
+            .sliderMax(1000)
+            .noSlider()
+            .build()
     );
 
     // Constructor
-
+    private long id;
+    private long timer;
     public PingSpoof() {
         super(VectorAddon.CATEGORY, "ping-spoof", "Modify your ping.");
     }
-
-    private long id;
-    private long timer;
 
     @Override
     public void onActivate() {

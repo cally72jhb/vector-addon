@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 import static meteordevelopment.meteorclient.MeteorClient.mc;
 
 public class PlayerArgumentType implements ArgumentType<PlayerEntity> {
+    private static final DynamicCommandExceptionType NO_SUCH_PLAYER = new DynamicCommandExceptionType(object -> Text.literal("Player with name " + object + " doesn't exist."));
     private static Collection<String> EXAMPLES;
 
     static {
@@ -26,11 +27,9 @@ public class PlayerArgumentType implements ArgumentType<PlayerEntity> {
                     .stream()
                     .map(PlayerEntity::getEntityName)
                     .collect(Collectors.toList()
-            );
+                    );
         }
     }
-
-    private static final DynamicCommandExceptionType NO_SUCH_PLAYER = new DynamicCommandExceptionType(object -> Text.literal("Player with name " + object + " doesn't exist."));
 
     public static PlayerArgumentType player() {
         return new PlayerArgumentType();
