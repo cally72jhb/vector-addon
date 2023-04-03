@@ -21,15 +21,15 @@ your mods folder along with Meteor Client                     <br/>
 <pre>
 Entity Fly          || Allows to fly with any living rideable entity
 Entity Phase        || Allows you to phase with any entity
+Fly                 || An improved version of the Meteor "Flight"
 Hole Renderer       || Renders nearby safe-holes
 Inventory Scroll    || Allows you to scroll in your hotbar while having screens opened
-Item Release        || Automatically releases loaded items after a set delay
 No Collision        || Removes selected block or world border collisions client-side
+No Fall Plus        || An improved version of the Meteor "No Fall"
 No Swing            || Removes the hand-swinging animation client- and server-side
 Packet Fly          || Fly with packets on most servers
 Packet Place        || Place blocks with packets to bypass desyncing with the server
 Packet Hole Fill    || Fills nearby safe-holes with obsidian using packets
-Paragraph           || Allows you to use the paragraph symbol in chat and books
 Ping Spoof          || Spoofs your ping without changing any gameplay
 Placeholders        || Set custom placeholders to replace when sending messages
 Portal God Mode     || Gives you invincibility when leaving a portal
@@ -43,7 +43,6 @@ Surround Plus       || Surrounds you in inexplodable blocks to prevent much expl
 .center      || Centers you on the block
 .desync      || Desyncs the entity you're currently riding from the server
 .player-head || Gives you the head of a player in creative
-.shader      || Applies various shaders inbuilt shaders to the game
 .teleport    || Allows you to teleport to any location
 .trashcan    || Allows you to silently destroy any item in your hand without dropping it
 .uuid        || Tells you a players uuid
