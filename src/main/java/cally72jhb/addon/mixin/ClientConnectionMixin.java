@@ -9,8 +9,8 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.vehicle.BoatEntity;
 import net.minecraft.network.ClientConnection;
-import net.minecraft.network.Packet;
 import net.minecraft.network.PacketCallbacks;
+import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.network.packet.c2s.play.VehicleMoveC2SPacket;
 import org.jetbrains.annotations.Nullable;
@@ -31,7 +31,7 @@ public abstract class ClientConnectionMixin {
 
     @Shadow @Final private Queue<ClientConnection.QueuedPacket> packetQueue;
 
-    @Inject(method = "send(Lnet/minecraft/network/Packet;Lnet/minecraft/network/PacketCallbacks;)V", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "send(Lnet/minecraft/network/packet/Packet;Lnet/minecraft/network/PacketCallbacks;)V", at = @At("HEAD"), cancellable = true)
     private void onSend(Packet<?> packet, PacketCallbacks callbacks, CallbackInfo info) {
         PacketDigits digits = Modules.get().get(PacketDigits.class);
         NoFallPlus noFall = Modules.get().get(NoFallPlus.class);
@@ -39,9 +39,7 @@ public abstract class ClientConnectionMixin {
 
         if (mc != null && mc.player != null) {
             if (noFall.isActive()) {
-                if (packet instanceof PlayerMoveC2SPacket && ((IPlayerMoveC2SPacket) packet).getTag() != 1337
-                        && !mc.player.getAbilities().creativeMode
-                        && !mc.player.isFallFlying() && mc.player.getVelocity().getY() < 0.1) {
+                if (packet instanceof PlayerMoveC2SPacket && ((IPlayerMoveC2SPacket) packet).getTag() != 1337 && !mc.player.isFallFlying()) {
                     ((PlayerMoveC2SPacketAccessor) packet).setOnGround(true);
                 }
             }

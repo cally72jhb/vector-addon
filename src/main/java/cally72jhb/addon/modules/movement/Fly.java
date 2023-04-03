@@ -15,6 +15,8 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.shape.VoxelShapes;
 import net.minecraft.world.RaycastContext;
 
+import static meteordevelopment.meteorclient.MeteorClient.mc;
+
 public class Fly extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
     private final SettingGroup sgAntiKick = settings.createGroup("Anti Kick");
@@ -227,7 +229,7 @@ public class Fly extends Module {
 
     @EventHandler
     private void onFluidCollisionShape(CollisionShapeEvent event) {
-        if (event.type == CollisionShapeEvent.CollisionType.FLUID) {
+        if (!event.state.getFluidState().isEmpty() && event.state.getMaterial().isLiquid() && event.state.getMaterial().isSolid()) {
             event.shape = VoxelShapes.empty();
         }
     }

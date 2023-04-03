@@ -14,6 +14,7 @@ import net.minecraft.network.packet.c2s.play.ClientCommandC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.network.packet.c2s.play.TeleportConfirmC2SPacket;
 import net.minecraft.network.packet.s2c.play.PlayerPositionLookS2CPacket;
+import net.minecraft.network.packet.s2c.play.PositionFlag;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.ChunkSectionPos;
 import net.minecraft.util.math.MathHelper;
@@ -689,8 +690,8 @@ public class PacketFly extends Module {
 
             ((PlayerPositionLookS2CPacketAccessor) event.packet).setYaw(mc.player.getYaw());
             ((PlayerPositionLookS2CPacketAccessor) event.packet).setPitch(mc.player.getPitch());
-            packet.getFlags().remove(PlayerPositionLookS2CPacket.Flag.X_ROT);
-            packet.getFlags().remove(PlayerPositionLookS2CPacket.Flag.Y_ROT);
+            packet.getFlags().remove(PositionFlag.X_ROT);
+            packet.getFlags().remove(PositionFlag.Y_ROT);
             teleportID = packet.getTeleportId();
         }
     }

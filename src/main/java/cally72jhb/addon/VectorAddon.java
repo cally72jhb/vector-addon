@@ -1,14 +1,11 @@
 package cally72jhb.addon;
 
 import cally72jhb.addon.commands.commands.*;
-import cally72jhb.addon.modules.combat.PacketHoleFill;
-import cally72jhb.addon.modules.combat.SurroundPlus;
+import cally72jhb.addon.modules.combat.*;
 import cally72jhb.addon.modules.misc.*;
 import cally72jhb.addon.modules.movement.*;
-import cally72jhb.addon.modules.player.NoSwing;
-import cally72jhb.addon.modules.player.PortalGodMode;
-import cally72jhb.addon.modules.render.HoleRenderer;
-import cally72jhb.addon.modules.render.SkeletonESP;
+import cally72jhb.addon.modules.player.*;
+import cally72jhb.addon.modules.render.*;
 import cally72jhb.addon.utils.ExecutorTask;
 import meteordevelopment.meteorclient.addons.MeteorAddon;
 import meteordevelopment.meteorclient.systems.commands.Commands;
@@ -38,7 +35,6 @@ public class VectorAddon extends MeteorAddon {
         Modules.get().add(new NoCollision());
         Modules.get().add(new NoWorldBorder());
         Modules.get().add(new PacketPlace());
-        Modules.get().add(new Paragraph());
         Modules.get().add(new PingSpoof());
         Modules.get().add(new Placeholders());
 
@@ -69,7 +65,6 @@ public class VectorAddon extends MeteorAddon {
         Commands.get().add(new DesyncCommand());
         Commands.get().add(new ItemCommand());
         Commands.get().add(new PlayerHeadCommand());
-        Commands.get().add(new ShaderCommand());
         Commands.get().add(new TeleportCommand());
         Commands.get().add(new TrashCommand());
         Commands.get().add(new UUIDCommand());

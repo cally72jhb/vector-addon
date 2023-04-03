@@ -14,6 +14,7 @@ import net.minecraft.network.packet.c2s.play.ClientCommandC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.network.packet.c2s.play.TeleportConfirmC2SPacket;
 import net.minecraft.network.packet.s2c.play.PlayerPositionLookS2CPacket;
+import net.minecraft.network.packet.s2c.play.PositionFlag;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
@@ -190,7 +191,7 @@ public class RubberbandFly extends Module {
     private final Setting<HorizontalMode> horizontalMode = sgHorizontal.add(new EnumSetting.Builder<HorizontalMode>()
             .name("horizontal-mode")
             .description("How to fly horizontally on servers.")
-            .defaultValue(HorizontalMode.Precise)
+            .defaultValue(HorizontalMode.Normal)
             .build()
     );
 
@@ -201,7 +202,7 @@ public class RubberbandFly extends Module {
             .sliderMin(5)
             .sliderMax(9)
             .noSlider()
-            .visible(() -> horizontalMode.get() == HorizontalMode.Small)
+            .visible(() -> horizontalMode.get() == HorizontalMode.Precise)
             .build()
     );
 
@@ -212,7 +213,7 @@ public class RubberbandFly extends Module {
             .min(0.001)
             .sliderMin(0.001)
             .sliderMax(2)
-            .visible(() -> horizontalMode.get() != HorizontalMode.Small)
+            .visible(() -> horizontalMode.get() != HorizontalMode.Precise)
             .build()
     );
 
@@ -224,7 +225,7 @@ public class RubberbandFly extends Module {
             .sliderMin(1)
             .sliderMax(5)
             .noSlider()
-            .visible(() -> horizontalMode.get() == HorizontalMode.Small)
+            .visible(() -> horizontalMode.get() == HorizontalMode.Precise)
             .build()
     );
 
@@ -235,7 +236,7 @@ public class RubberbandFly extends Module {
             .min(0)
             .sliderMin(0)
             .sliderMax(1)
-            .visible(() -> horizontalMode.get() != HorizontalMode.Clip && horizontalMode.get() != HorizontalMode.Small)
+            .visible(() -> horizontalMode.get() != HorizontalMode.Clip && horizontalMode.get() != HorizontalMode.Precise)
             .build()
     );
 
@@ -247,7 +248,7 @@ public class RubberbandFly extends Module {
             .sliderMin(0)
             .sliderMax(3)
             .noSlider()
-            .visible(() -> horizontalMode.get() == HorizontalMode.Small)
+            .visible(() -> horizontalMode.get() == HorizontalMode.Precise)
             .build()
     );
 
@@ -356,13 +357,6 @@ public class RubberbandFly extends Module {
             .build()
     );
 
-    private final Setting<Boolean> bigPackets = sgOther.add(new BoolSetting.Builder()
-            .name("big-packets")
-            .description("Uses packets bigger in size.")
-            .defaultValue(false)
-            .build()
-    );
-
     private final Setting<Boolean> updateRotation = sgOther.add(new BoolSetting.Builder()
             .name("update-rotation")
             .description("Updates your rotation while flying.")
@@ -468,6 +462,9 @@ public class RubberbandFly extends Module {
     private boolean up;
     private boolean updated;
 
+    private float prevYaw;
+    private float prevPitch;
+
     private final Random random = new Random();
 
     private List<PlayerMoveC2SPacket> packets;
@@ -493,6 +490,9 @@ public class RubberbandFly extends Module {
         up = false;
         updated = true;
 
+        prevYaw = 0;
+        prevPitch = 0;
+
         packets = new ArrayList<>();
         tpPackets = new ArrayList<>();
 
@@ -501,7 +501,7 @@ public class RubberbandFly extends Module {
 
             if (!doesCollide(mc.player.getBoundingBox().offset(0, -factor + (antiFallMode.get() == AntiFallMode.Down ? 0.001 : -0.001), 0))) {
                 sendPacket(mc.player.getX(), mc.player.getY() - factor, mc.player.getZ(), mc.player.isOnGround());
-                sendPacket(mc.player.getX(), 0, mc.player.getZ());
+                sendBoundsPacket(getBounds(mc.player.getX(), mc.player.getY(), mc.player.getZ()));
             }
         }
     }
@@ -555,7 +555,7 @@ public class RubberbandFly extends Module {
 
         mc.player.setVelocity(0, 0, 0);
 
-        Vec3d bounds = getBounds();
+        Vec3d bounds = getBounds(mc.player.getX(), mc.player.getY(), mc.player.getZ());
         Vec3d position = mc.player.getPos();
 
         boolean move = true;
@@ -592,7 +592,7 @@ public class RubberbandFly extends Module {
                     if (mc.options.jumpKey.isPressed() && !shouldGoDown || up && idleMode.get() == IdleMode.UpDown && !mc.options.jumpKey.isPressed() && !mc.options.sneakKey.isPressed()) {
                         if (!doesCollide(mc.player.getBoundingBox().offset(0, factor - 0.001, 0))) {
                             sendPacket(mc.player.getX(), mc.player.getY() + factor, mc.player.getZ(), mc.player.isOnGround());
-                            sendPacket(mc.player.getX(), 0, mc.player.getZ());
+                            sendBoundsPacket(bounds);
 
                             position = new Vec3d(mc.player.getX(), mc.player.getY() + factor, mc.player.getZ());
                         }
@@ -602,7 +602,7 @@ public class RubberbandFly extends Module {
                     } else if (mc.options.sneakKey.isPressed() || shouldGoDown) {
                         if (!doesCollide(mc.player.getBoundingBox().offset(0, -factor + 0.001, 0))) {
                             sendPacket(mc.player.getX(), mc.player.getY() - factor, mc.player.getZ(), mc.player.isOnGround());
-                            sendPacket(mc.player.getX(), 0, mc.player.getZ());
+                            sendBoundsPacket(bounds);
 
                             position = new Vec3d(mc.player.getX(), mc.player.getY() - factor, mc.player.getZ());
                         }
@@ -725,13 +725,13 @@ public class RubberbandFly extends Module {
                     position = new Vec3d(mc.player.getX() + distance[0], mc.player.getY(), mc.player.getZ() + distance[1]);
                 }
 
-                case Small -> {
+                case Precise -> {
                     double small = factor * Math.pow(10, -packetDigits.get());
 
                     for (int clip = horizontalStartClip.get(); clip < horizontalClips.get(); clip++) {
                         double[] speed = directionSpeed(clip * small);
 
-                        sendPacket(mc.player.getX() + speed[0], mc.player.getY(), mc.player.getZ() + speed[1]);
+                        sendPacket(mc.player.getX() + speed[0], mc.player.getY(), mc.player.getZ() + speed[1], false);
                     }
 
                     sendBoundsPacket(bounds);
@@ -741,11 +741,11 @@ public class RubberbandFly extends Module {
                     position = new Vec3d(mc.player.getX() + speed[0], mc.player.getY(), mc.player.getZ() + speed[1]);
                 }
 
-                case Precise -> {
+                case Normal -> {
                     for (double i = (horizontalStartDistance.get() / 10); i < speed.get(); i += factor) {
                         double[] speed = directionSpeed(i);
 
-                        sendPacket(mc.player.getX() + speed[0], mc.player.getY(), mc.player.getZ() + speed[1]);
+                        sendPacket(mc.player.getX() + speed[0], mc.player.getY(), mc.player.getZ() + speed[1], false);
                     }
 
                     sendBoundsPacket(bounds);
@@ -758,7 +758,7 @@ public class RubberbandFly extends Module {
                     for (double i = (horizontalStartDistance.get() / 10); i < speed.get(); i += factor) {
                         double[] speed = directionSpeed(factor);
 
-                        sendPacket(mc.player.getX() + speed[0], mc.player.getY(), mc.player.getZ() + speed[1]);
+                        sendPacket(mc.player.getX() + speed[0], mc.player.getY(), mc.player.getZ() + speed[1], false);
                     }
 
                     sendBoundsPacket(bounds);
@@ -773,6 +773,9 @@ public class RubberbandFly extends Module {
 
         antiKickTicks++;
         idleTicks++;
+
+        prevYaw = mc.player.getYaw();
+        prevPitch = mc.player.getPitch();
     }
 
     // Updating Velocity
@@ -810,8 +813,8 @@ public class RubberbandFly extends Module {
                 ((PlayerPositionLookS2CPacketAccessor) event.packet).setYaw(mc.player.getYaw());
                 ((PlayerPositionLookS2CPacketAccessor) event.packet).setPitch(mc.player.getPitch());
 
-                packet.getFlags().remove(PlayerPositionLookS2CPacket.Flag.X_ROT);
-                packet.getFlags().remove(PlayerPositionLookS2CPacket.Flag.Y_ROT);
+                packet.getFlags().remove(PositionFlag.X_ROT);
+                packet.getFlags().remove(PositionFlag.Y_ROT);
             } else if (posUpdateAction.get() != PosUpdateAction.Ignore) {
                 switch (posUpdateAction.get()) {
                     case AcceptAll -> {
@@ -846,17 +849,17 @@ public class RubberbandFly extends Module {
     private void sendBoundsPacket(Vec3d bounds) {
         Vec3d tempBounds = smallBounds.get() ? new Vec3d(mc.player.getX(), bounds.getY(), mc.player.getZ()) : bounds;
 
-        sendPacket(tempBounds.getX(), tempBounds.getY(), tempBounds.getZ());
+        sendPacket(tempBounds.getX(), tempBounds.getY(), tempBounds.getZ(), true);
     }
 
-    private void sendPacket(double x, double y, double z) {
-        sendPacket(x, y, z, spoofOnGround.get() || mc.player.isOnGround());
+    private void sendPacket(double x, double y, double z, boolean bounds) {
+        sendPacket(x, y, z, spoofOnGround.get() || mc.player.isOnGround(), bounds);
     }
 
-    private void sendPacket(double x, double y, double z, boolean onGround) {
+    private void sendPacket(double x, double y, double z, boolean onGround, boolean bounds) {
         PlayerMoveC2SPacket packet = new PlayerMoveC2SPacket.PositionAndOnGround(x, y, z, onGround);
 
-        if (updateRotation.get() && !updated || bigPackets.get()) {
+        if (updateRotation.get() && !updated && !bounds && (prevYaw != mc.player.getYaw() || prevPitch != mc.player.getPitch())) {
             packet = new PlayerMoveC2SPacket.Full(x, y, z, mc.player.getYaw(), mc.player.getPitch(), onGround);
             updated = true;
         }
@@ -865,11 +868,7 @@ public class RubberbandFly extends Module {
         mc.getNetworkHandler().sendPacket(packet);
     }
 
-    private Vec3d getBounds() {
-        double x = mc.player.getX();
-        double y = mc.player.getY();
-        double z = mc.player.getZ();
-
+    private Vec3d getBounds(double x, double y, double z) {
         double infinity = 7.2E+4;
         double small = 0.95 * Math.pow(10, -digits.get());
 
@@ -1051,7 +1050,7 @@ public class RubberbandFly extends Module {
 
     public enum HorizontalMode {
         Clip,
-        Small,
+        Normal,
         Precise,
         Fast
     }

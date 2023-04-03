@@ -15,7 +15,7 @@ public class PortalGodMode extends Module {
     // Constructor
 
     public PortalGodMode() {
-        super(Categories.Misc, "portal-god-mode", "Exploits some bugs to make you invincible after you left a portal.");
+        super(Categories.Misc, "portal-god-mode", "Makes you invincible after leaving a nether portal.");
     }
 
     // Overrides

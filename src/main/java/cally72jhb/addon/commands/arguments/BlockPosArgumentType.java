@@ -68,9 +68,9 @@ public class BlockPosArgumentType implements ArgumentType<BlockPos> {
                 Pair<Boolean, Integer> z = parseCoordinate(reader);
 
                 return new BlockPos(
-                        x.getLeft() ? x.getRight() + mc.player.getX() : x.getRight(),
-                        y.getLeft() ? y.getRight() + mc.player.getY() : y.getRight(),
-                        z.getLeft() ? z.getRight() + mc.player.getZ() : z.getRight()
+                        (int) (x.getLeft() ? x.getRight() + mc.player.getX() : x.getRight()),
+                        (int) (y.getLeft() ? y.getRight() + mc.player.getY() : y.getRight()),
+                        (int) (z.getLeft() ? z.getRight() + mc.player.getZ() : z.getRight())
                 );
             } else {
                 reader.setCursor(cursor);

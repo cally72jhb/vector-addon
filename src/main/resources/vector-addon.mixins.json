@@ -6,9 +6,7 @@
   "client": [
     "ClientConnectionMixin",
     "ClientPlayNetworkHandlerMixin",
-    "GameRendererMixin",
     "PlayerEntityMixin",
-    "SharedConstantsMixin",
     "WorldBorderMixin"
   ],
   "injectors": {

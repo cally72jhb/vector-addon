@@ -265,9 +265,9 @@ public class SurroundPlus extends Module {
                         Vec3d position = mc.player.getPos().add(0, tolerance.get(), 0);
 
                         BlockPos pos = new BlockPos(
-                                Math.floor(position.getX()),
-                                Math.floor(position.getY()),
-                                Math.floor(position.getZ())
+                                (int) Math.floor(position.getX()),
+                                (int) Math.floor(position.getY()),
+                                (int) Math.floor(position.getZ())
                         );
 
                         pos = pos.offset(direction);
@@ -379,9 +379,9 @@ public class SurroundPlus extends Module {
                         Vec3d position = mc.player.getPos().add(0, tolerance.get(), 0);
 
                         BlockPos pos = new BlockPos(
-                                Math.floor(position.getX()),
-                                Math.floor(position.getY()),
-                                Math.floor(position.getZ())
+                                (int) Math.floor(position.getX()),
+                                (int) Math.floor(position.getY()),
+                                (int) Math.floor(position.getZ())
                         );
 
                         pos = pos.offset(direction);
@@ -436,7 +436,7 @@ public class SurroundPlus extends Module {
                 if (direction != Direction.UP && direction != Direction.DOWN) {
                     BlockPos pos = new BlockPos(
                             mc.player.getBlockX(),
-                            Math.floor(mc.player.getY() + tolerance.get()),
+                            (int) Math.floor(mc.player.getY() + tolerance.get()),
                             mc.player.getBlockZ()
                     ).offset(direction);
 
@@ -573,7 +573,7 @@ public class SurroundPlus extends Module {
     }
 
     private boolean isClickable(Block block) {
-        return block instanceof CraftingTableBlock || block instanceof AnvilBlock || block instanceof AbstractButtonBlock || block instanceof AbstractPressurePlateBlock || block instanceof BlockWithEntity || block instanceof BedBlock || block instanceof FenceGateBlock || block instanceof DoorBlock || block instanceof NoteBlock || block instanceof TrapdoorBlock;
+        return block instanceof CraftingTableBlock || block instanceof AnvilBlock || block instanceof ButtonBlock || block instanceof AbstractPressurePlateBlock || block instanceof BlockWithEntity || block instanceof BedBlock || block instanceof FenceGateBlock || block instanceof DoorBlock || block instanceof NoteBlock || block instanceof TrapdoorBlock;
     }
 
     private Direction getSide(BlockPos pos) {
@@ -733,7 +733,7 @@ public class SurroundPlus extends Module {
             if (direction != Direction.UP && direction != Direction.DOWN) {
                 BlockPos position = new BlockPos(
                         mc.player.getBlockX(),
-                        Math.floor(mc.player.getY() + tolerance.get()),
+                        (int) Math.floor(mc.player.getY() + tolerance.get()),
                         mc.player.getBlockZ()
                 );
 
@@ -772,7 +772,7 @@ public class SurroundPlus extends Module {
                     if (direction != Direction.UP && direction != Direction.DOWN) {
                         BlockPos pos = new BlockPos(
                                 mc.player.getBlockX(),
-                                Math.floor(mc.player.getY() + tolerance.get()),
+                                (int) Math.floor(mc.player.getY() + tolerance.get()),
                                 mc.player.getBlockZ()
                         ).offset(direction);
 

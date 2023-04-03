@@ -481,7 +481,7 @@ public class PacketHoleFill extends Module {
                         int dY = Math.abs(y - pY);
                         int dZ = Math.abs(z - pZ);
 
-                        if (dX <= horizontalPlaceRange.get() && dY <= verticalPlaceRange.get() && dZ <= horizontalPlaceRange.get()) {
+                        if (MathHelper.sqrt((float) (dX * dX + dZ * dZ)) <= horizontalPlaceRange.get() && dY <= verticalPlaceRange.get()) {
                             BlockPos pos = new BlockPos(x, y, z);
 
                             if (isValidHole(pos, true) && isValidHole(pos.up(), false) && canPlace(pos)) {

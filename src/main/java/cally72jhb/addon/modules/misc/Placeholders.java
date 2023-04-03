@@ -16,7 +16,6 @@ import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtString;
 import net.minecraft.network.packet.c2s.play.ChatMessageC2SPacket;
-import net.minecraft.text.Text;
 import oshi.util.tuples.Pair;
 
 import java.util.ArrayList;
@@ -41,7 +40,7 @@ public class Placeholders extends Module {
             for (Pair<String, String> placeholder : placeholders) {
                 if (placeholder != null && placeholder.getA() != null && packet.chatMessage().contains(placeholder.getA())) {
                     cancel = true;
-                    mc.player.sendChatMessage(packet.chatMessage().replaceAll(placeholder.getA(), placeholder.getB()), Text.of(packet.chatMessage().replaceAll(placeholder.getA(), placeholder.getB())));
+                    mc.getNetworkHandler().sendPacket(new ChatMessageC2SPacket(packet.chatMessage().replaceAll(placeholder.getA(), placeholder.getB()), packet.timestamp(), packet.salt(), packet.signature(), packet.acknowledgment()));
                     cancel = false;
 
                     event.cancel();
@@ -62,7 +61,7 @@ public class Placeholders extends Module {
 
     private void fillTable(GuiTheme theme, WTable table) {
         if (!placeholders.isEmpty()) {
-            placeholders.removeIf(placeholder -> !isValidPlaceholder(placeholder.getA()));
+            placeholders.removeIf(placeholder -> isInvalidPlaceholder(placeholder.getA()));
 
             for (int i = 0; i < placeholders.size(); i++) {
                 int messageI = i;
@@ -139,7 +138,7 @@ public class Placeholders extends Module {
     public NbtCompound toTag() {
         NbtCompound tag = super.toTag();
 
-        placeholders.removeIf(placeholder -> !isValidPlaceholder(placeholder.getA()));
+        placeholders.removeIf(placeholder -> isInvalidPlaceholder(placeholder.getA()));
 
         NbtList leftTag = new NbtList();
         NbtList rightTag = new NbtList();
@@ -176,7 +175,7 @@ public class Placeholders extends Module {
             resetPlaceholders();
         }
 
-        placeholders.removeIf(placeholder -> !isValidPlaceholder(placeholder.getA()));
+        placeholders.removeIf(placeholder -> isInvalidPlaceholder(placeholder.getA()));
 
         return super.fromTag(tag);
     }
@@ -265,7 +264,7 @@ public class Placeholders extends Module {
         }};
     }
 
-    private boolean isValidPlaceholder(String placeholder) {
-        return placeholder != null && !placeholder.isEmpty() && !placeholder.contains("\\") && !placeholder.contains("$");
+    private boolean isInvalidPlaceholder(String placeholder) {
+        return placeholder == null || placeholder.isEmpty() || placeholder.contains("\\") || placeholder.contains("$");
     }
 }

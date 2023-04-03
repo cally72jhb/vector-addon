@@ -1,5 +1,5 @@
 plugins {
-	id 'fabric-loom' version '1.0-SNAPSHOT'
+	id 'fabric-loom' version '1.1-SNAPSHOT'
 }
 
 sourceCompatibility = targetCompatibility = JavaVersion.VERSION_17
@@ -39,7 +39,6 @@ loom {
 
 processResources {
 	inputs.property "version", project.version
-
 
 	filesMatching("fabric.mod.json") {
 		expand "version": project.version,

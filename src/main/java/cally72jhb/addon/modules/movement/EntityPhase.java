@@ -61,7 +61,7 @@ public class EntityPhase extends Module {
 
     @EventHandler
     private void onLivingEntityMove(LivingEntityMoveEvent event) {
-        if (event.entity.getPrimaryPassenger() == mc.player) {
+        if (event.entity.getControllingPassenger() == mc.player) {
             event.entity.setYaw(mc.player.getYaw());
 
             // Horizontal Movement
