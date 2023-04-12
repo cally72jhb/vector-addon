@@ -100,7 +100,7 @@ public class SkeletonESP extends Module {
             if (mc.player == entity && Rotations.rotationTimer < rotationHoldTicks) lerpBody = Rotations.serverYaw;
             if (mc.player == entity && Rotations.rotationTimer < rotationHoldTicks) lerpHead = Rotations.serverYaw;
 
-            float angel = player.limbAnimator.getPos() - player.limbAnimator.getSpeed() * (1.0F - delta);
+            float angle = player.limbAnimator.getPos() - player.limbAnimator.getSpeed() * (1.0F - delta);
             float distance = player.limbAnimator.getSpeed(delta);
             float progress = (float) player.age + delta;
             float headYaw = lerpHead - lerpBody;
@@ -108,8 +108,8 @@ public class SkeletonESP extends Module {
             
             if (mc.player == entity && Rotations.rotationTimer < rotationHoldTicks) headPitch = Rotations.serverPitch;
 
-            playerEntityModel.animateModel(player, angel, distance, delta);
-            playerEntityModel.setAngles(player, angel, distance, progress, headYaw, headPitch);
+            playerEntityModel.animateModel(player, angle, distance, delta);
+            playerEntityModel.setAngles(player, angle, distance, progress, headYaw, headPitch);
 
             // Model States
 
