@@ -27,7 +27,7 @@ Inventory Scroll    || Allows you to scroll in your hotbar while having screens 
 No Collision        || Removes selected block or world border collisions client-side
 No Fall Plus        || An improved version of the Meteor "No Fall"
 No Swing            || Removes the hand-swinging animation client- and server-side
-Packet Fly          || Fly with packets on most servers
+Packet Fly          || Fly with packets on most servers (inspired by Konas)
 Packet Place        || Place blocks with packets to bypass desyncing with the server
 Packet Hole Fill    || Fills nearby safe-holes with obsidian using packets
 Ping Spoof          || Spoofs your ping without changing any gameplay
