@@ -9,7 +9,7 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
-import meteordevelopment.meteorclient.systems.commands.Command;
+import meteordevelopment.meteorclient.commands.Command;
 import net.minecraft.command.CommandSource;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -20,6 +20,7 @@ import net.minecraft.util.math.MathHelper;
 import java.util.Random;
 
 import static com.mojang.brigadier.Command.SINGLE_SUCCESS;
+import static meteordevelopment.meteorclient.MeteorClient.mc;
 
 public class PlayerHeadCommand extends Command {
     private final static SimpleCommandExceptionType NO_CREATIVE = new SimpleCommandExceptionType(Text.literal("You must be in creative mode to use this."));
