@@ -8,7 +8,7 @@ import cally72jhb.addon.modules.player.*;
 import cally72jhb.addon.modules.render.*;
 import cally72jhb.addon.utils.ExecutorTask;
 import meteordevelopment.meteorclient.addons.MeteorAddon;
-import meteordevelopment.meteorclient.systems.commands.Commands;
+import meteordevelopment.meteorclient.commands.Commands;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,13 +61,13 @@ public class VectorAddon extends MeteorAddon {
 
         // Commands
 
-        Commands.get().add(new CenterCommand());
-        Commands.get().add(new DesyncCommand());
-        Commands.get().add(new ItemCommand());
-        Commands.get().add(new PlayerHeadCommand());
-        Commands.get().add(new TeleportCommand());
-        Commands.get().add(new TrashCommand());
-        Commands.get().add(new UUIDCommand());
+        Commands.add(new CenterCommand());
+        Commands.add(new DesyncCommand());
+        Commands.add(new ItemCommand());
+        Commands.add(new PlayerHeadCommand());
+        Commands.add(new TeleportCommand());
+        Commands.add(new TrashCommand());
+        Commands.add(new UUIDCommand());
 
         // Done Initializing
 

@@ -588,7 +588,7 @@ public class SurroundPlus extends Module {
         for (Direction side : Direction.values()) {
             BlockState state = mc.world.getBlockState(pos.offset(side));
 
-            if (!state.getMaterial().isReplaceable() && state.getFluidState().isEmpty()) {
+            if (!state.isReplaceable() && state.getFluidState().isEmpty()) {
                 sides.add(side.getOpposite());
             }
         }
@@ -671,7 +671,7 @@ public class SurroundPlus extends Module {
     }
 
     private boolean canPlace(BlockPos pos, BlockState state, BlockState original) {
-        if (pos == null || mc.world == null || !World.isValid(pos) || original != null && !original.getMaterial().isReplaceable()) return false;
+        if (pos == null || mc.world == null || !World.isValid(pos) || original != null && !original.isReplaceable()) return false;
         return mc.world.getWorldBorder().contains(pos) && canPlace(pos, state);
     }
 
