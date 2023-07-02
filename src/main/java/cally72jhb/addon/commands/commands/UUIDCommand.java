@@ -2,11 +2,12 @@ package cally72jhb.addon.commands.commands;
 
 import cally72jhb.addon.commands.arguments.PlayerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import meteordevelopment.meteorclient.systems.commands.Command;
+import meteordevelopment.meteorclient.commands.Command;
 import net.minecraft.command.CommandSource;
 import net.minecraft.entity.player.PlayerEntity;
 
 import static com.mojang.brigadier.Command.SINGLE_SUCCESS;
+import static meteordevelopment.meteorclient.MeteorClient.mc;
 
 public class UUIDCommand extends Command {
     public UUIDCommand() {

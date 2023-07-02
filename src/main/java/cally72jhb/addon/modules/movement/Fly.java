@@ -229,7 +229,7 @@ public class Fly extends Module {
 
     @EventHandler
     private void onFluidCollisionShape(CollisionShapeEvent event) {
-        if (!event.state.getFluidState().isEmpty() && event.state.getMaterial().isLiquid() && event.state.getMaterial().isSolid()) {
+        if (!event.state.getFluidState().isEmpty() && event.state.isLiquid() && event.state.isSolid()) { // isLiquid and isSolid are deprecated TODO: replace them when they get removed
             event.shape = VoxelShapes.empty();
         }
     }

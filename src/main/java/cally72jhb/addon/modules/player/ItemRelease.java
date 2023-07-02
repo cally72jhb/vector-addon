@@ -10,12 +10,14 @@ import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerInteractItemC2SPacket;
+import net.minecraft.registry.Registries;
 import net.minecraft.util.UseAction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
-import net.minecraft.util.registry.Registry;
+import net.minecraft.registry.Registry;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -77,7 +79,7 @@ public class ItemRelease extends Module {
 
     private List<Item> getDefaultItems() {
         List<Item> items = new ArrayList<>();
-        for (Item item : Registry.ITEM) if (itemFilter(item)) items.add(item);
+        for (Item item : Registries.ITEM) if (itemFilter(item)) items.add(item);
 
         return items;
     }

@@ -478,7 +478,7 @@ public class HoleRenderer extends Module {
     // Utils
 
     private boolean isValidHole(BlockPos pos, boolean checkDown) {
-        return mc.world.getBlockState(pos).getMaterial().isReplaceable()
+        return mc.world.getBlockState(pos).isReplaceable()
                 && (mc.world.getBlockState(pos).getBlock() != Blocks.COBWEB || webs.get())
                 && (!checkDown || (mc.world.getBlockState(pos.down()).getBlock().getBlastResistance() >= 600.0F
                 && mc.world.getBlockState(pos.down()).getCollisionShape(mc.world, pos.down()) != null
