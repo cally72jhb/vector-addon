@@ -23,7 +23,7 @@ public class PlayerNameArgumentType implements ArgumentType<String> {
         if (mc.world != null && mc.getNetworkHandler() != null) {
             EXAMPLES = mc.world.getPlayers()
                     .stream()
-                    .map(PlayerEntity::getEntityName)
+                    .map(PlayerEntity::getNameForScoreboard)
                     .collect(Collectors.toList()
             );
 
@@ -60,7 +60,7 @@ public class PlayerNameArgumentType implements ArgumentType<String> {
         Collection<String> suggestions = new ArrayList<>(
                 mc.world.getPlayers()
                 .stream()
-                .map(PlayerEntity::getEntityName)
+                .map(PlayerEntity::getNameForScoreboard)
                 .toList()
         );
 

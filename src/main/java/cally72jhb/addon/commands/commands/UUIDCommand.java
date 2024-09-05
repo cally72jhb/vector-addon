@@ -26,7 +26,7 @@ public class UUIDCommand extends Command {
             PlayerEntity player = PlayerArgumentType.getPlayer(context, "player");
 
             if (player != null) {
-                info(player.getEntityName() + "'s UUID is " + player.getUuid().toString());
+                info(player.getDisplayName() + "'s UUID is " + player.getUuid().toString());
             }
 
             return SINGLE_SUCCESS;

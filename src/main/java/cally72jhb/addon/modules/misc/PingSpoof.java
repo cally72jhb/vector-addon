@@ -9,7 +9,7 @@ import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.network.packet.c2s.play.KeepAliveC2SPacket;
+import net.minecraft.network.packet.c2s.common.KeepAliveC2SPacket;
 
 import java.util.HashSet;
 

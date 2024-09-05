@@ -754,25 +754,25 @@ public class PacketHoleFill extends Module {
                     Rotations.rotate(Rotations.getYaw(hitPos), Rotations.getPitch(hitPos), 0, () -> {
                         int prevSlot = mc.player.getInventory().selectedSlot;
                         mc.player.getInventory().selectedSlot = slot;
-                        ((IClientPlayerInteractionManager) mc.interactionManager).syncSelected();
+                        ((IClientPlayerInteractionManager) mc.interactionManager).meteor$syncSelected();
 
                         place(new BlockHitResult(hitPos, side, neighbour, false), hand);
 
                         if (swapBack.get()) {
                             mc.player.getInventory().selectedSlot = prevSlot;
-                            ((IClientPlayerInteractionManager) mc.interactionManager).syncSelected();
+                            ((IClientPlayerInteractionManager) mc.interactionManager).meteor$syncSelected();
                         }
                     });
                 } else {
                     int prevSlot = mc.player.getInventory().selectedSlot;
                     mc.player.getInventory().selectedSlot = slot;
-                    ((IClientPlayerInteractionManager) mc.interactionManager).syncSelected();
+                    ((IClientPlayerInteractionManager) mc.interactionManager).meteor$syncSelected();
 
                     place(new BlockHitResult(hitPos, side, neighbour, false), hand);
 
                     if (swapBack.get()) {
                         mc.player.getInventory().selectedSlot = prevSlot;
-                        ((IClientPlayerInteractionManager) mc.interactionManager).syncSelected();
+                        ((IClientPlayerInteractionManager) mc.interactionManager).meteor$syncSelected();
                     }
                 }
             }

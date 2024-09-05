@@ -32,7 +32,7 @@ public class DesyncCommand extends Command {
                 }
             } else {
                 if (!mc.player.hasVehicle()) {
-                    mc.world.addEntity(this.entity.getId(), this.entity);
+                    mc.world.addEntity(this.entity);
                     mc.player.startRiding(this.entity, true);
 
                     this.entity = null;
@@ -60,7 +60,7 @@ public class DesyncCommand extends Command {
                 }
             } else {
                 if (!mc.player.hasVehicle()) {
-                    mc.world.addEntity(this.entity.getId(), this.entity);
+                    mc.world.addEntity(this.entity);
                     mc.player.startRiding(this.entity, true);
 
                     this.entity = null;

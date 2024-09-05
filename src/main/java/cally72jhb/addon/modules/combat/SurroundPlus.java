@@ -802,7 +802,7 @@ public class SurroundPlus extends Module {
         if (slot >= 0 && slot <= 8) {
             mc.getNetworkHandler().sendPacket(new UpdateSelectedSlotC2SPacket(slot));
             mc.player.getInventory().selectedSlot = slot;
-            ((IClientPlayerInteractionManager) mc.interactionManager).syncSelected();
+            ((IClientPlayerInteractionManager) mc.interactionManager).meteor$syncSelected();
         }
     }
 

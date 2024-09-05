@@ -34,7 +34,7 @@ public class InventoryScroll extends Module {
             else slot += (int) -event.value;
 
             mc.player.getInventory().selectedSlot = slot > 8 ? 8 : Math.max(slot, 0);
-            ((IClientPlayerInteractionManager) mc.interactionManager).syncSelected();
+            ((IClientPlayerInteractionManager) mc.interactionManager).meteor$syncSelected();
         }
     }
 }
