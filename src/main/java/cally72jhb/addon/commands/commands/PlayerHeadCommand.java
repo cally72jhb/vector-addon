@@ -11,6 +11,8 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import meteordevelopment.meteorclient.commands.Command;
 import net.minecraft.command.CommandSource;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.NbtComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.StringNbtReader;
@@ -18,9 +20,6 @@ import net.minecraft.text.Text;
 import net.minecraft.util.math.MathHelper;
 
 import java.util.Random;
-
-import static com.mojang.brigadier.Command.SINGLE_SUCCESS;
-import static meteordevelopment.meteorclient.MeteorClient.mc;
 
 public class PlayerHeadCommand extends Command {
     private final static SimpleCommandExceptionType NO_CREATIVE = new SimpleCommandExceptionType(Text.literal("You must be in creative mode to use this."));
@@ -70,11 +69,11 @@ public class PlayerHeadCommand extends Command {
 
                         if (array != null) {
                             if (amount > 1) stack.setCount(MathHelper.clamp(amount, 1, 64));
-
-                            stack.setNbt(StringNbtReader.parse(
+                            //TODO: actual nbt string needs updating
+                            stack.set(DataComponentTypes.ENTITY_DATA, NbtComponent.of(StringNbtReader.parse(
                                     "{SkullOwner:{Id:" + id + ",Properties:{textures:[{Value:\""
                                             + array.get("properties").getAsJsonArray().get(0).getAsJsonObject().get("value").getAsString()
-                                            + "\"}]}}}")
+                                            + "\"}]}}}"))
                             );
                         }
                     }

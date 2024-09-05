@@ -16,9 +16,6 @@ import net.minecraft.util.collection.DefaultedList;
 
 import java.util.List;
 
-import static com.mojang.brigadier.Command.SINGLE_SUCCESS;
-import static meteordevelopment.meteorclient.MeteorClient.mc;
-
 public class ItemCommand extends Command {
     public ItemCommand() {
         super("item", "Allows you to put any item in any slot in your inventory.", "move");

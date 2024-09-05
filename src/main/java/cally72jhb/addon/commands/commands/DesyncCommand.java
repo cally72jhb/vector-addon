@@ -6,9 +6,6 @@ import net.minecraft.command.CommandSource;
 import net.minecraft.entity.Entity;
 import net.minecraft.network.packet.c2s.play.TeleportConfirmC2SPacket;
 
-import static com.mojang.brigadier.Command.SINGLE_SUCCESS;
-import static meteordevelopment.meteorclient.MeteorClient.mc;
-
 public class DesyncCommand extends Command {
     private Entity entity = null;
 

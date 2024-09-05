@@ -6,9 +6,6 @@ import meteordevelopment.meteorclient.commands.Command;
 import net.minecraft.command.CommandSource;
 import net.minecraft.entity.player.PlayerEntity;
 
-import static com.mojang.brigadier.Command.SINGLE_SUCCESS;
-import static meteordevelopment.meteorclient.MeteorClient.mc;
-
 public class UUIDCommand extends Command {
     public UUIDCommand() {
         super("uuid", "Returns a players uuid.");

@@ -102,7 +102,7 @@ public class PacketPlace extends Module {
 
             if (playSound.get() && mc.player.getStackInHand(hand).getItem() instanceof BlockItem item) {
                 Block block = item.getBlock();
-                BlockSoundGroup group = block.getSoundGroup(block.getDefaultState());
+                BlockSoundGroup group = block.getDefaultState().getSoundGroup();
 
                 mc.getSoundManager().play(new PositionedSoundInstance(group.getPlaceSound(), SoundCategory.BLOCKS, (group.getVolume() + 1.0F) / 8.0F, group.getPitch() * 0.5F, Random.create(), result.getBlockPos()));
             }
