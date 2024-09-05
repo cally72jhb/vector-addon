@@ -30,9 +30,6 @@ import net.minecraft.util.math.*;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
-
 public class SkeletonESP extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
 

@@ -645,7 +645,7 @@ public class PacketHoleFill extends Module {
     // Utils
 
     private boolean isValidHole(BlockPos pos, boolean checkDown) {
-        return mc.world.getBlockState(pos).getMaterial().isReplaceable()
+        return mc.world.getBlockState(pos).isReplaceable()
                 && (!checkDown || (mc.world.getBlockState(pos.down()).getBlock().getBlastResistance() >= 600.0F
                 && mc.world.getBlockState(pos.down()).getCollisionShape(mc.world, pos.down()) != null
                 && !mc.world.getBlockState(pos.down()).getCollisionShape(mc.world, pos.down()).isEmpty()))
@@ -846,7 +846,7 @@ public class PacketHoleFill extends Module {
 
     private boolean canPlace(BlockPos pos) {
         if (pos == null || mc.world == null || mc.world.getBottomY() > pos.getY() || mc.world.getTopY() < pos.getY()) return false;
-        return mc.world.getBlockState(pos).getMaterial().isReplaceable() && mc.world.canPlace(Blocks.OBSIDIAN.getDefaultState(), pos, ShapeContext.absent());
+        return mc.world.getBlockState(pos).isReplaceable() && mc.world.canPlace(Blocks.OBSIDIAN.getDefaultState(), pos, ShapeContext.absent());
     }
 
     private Direction getPlaceSide(BlockPos pos) {
@@ -855,7 +855,7 @@ public class PacketHoleFill extends Module {
             Direction opposite = side.getOpposite();
             BlockState state = mc.world.getBlockState(neighbor);
 
-            if (!state.getMaterial().isReplaceable() && state.getFluidState().isEmpty() && !Utils.isClickable(mc.world.getBlockState(pos.offset(side)).getBlock())) {
+            if (!state.isReplaceable() && state.getFluidState().isEmpty() && !Utils.isClickable(mc.world.getBlockState(pos.offset(side)).getBlock())) {
                 return opposite;
             }
         }
