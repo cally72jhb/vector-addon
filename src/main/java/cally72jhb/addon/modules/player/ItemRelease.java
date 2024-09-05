@@ -59,7 +59,7 @@ public class ItemRelease extends Module {
             mc.player.networkHandler.sendPacket(new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.RELEASE_USE_ITEM, BlockPos.ORIGIN, Direction.DOWN));
 
             mc.interactionManager.sendSequencedPacket(mc.world, sequence -> {
-                PlayerInteractItemC2SPacket packet = new PlayerInteractItemC2SPacket(mc.player.getActiveHand(), sequence);
+                PlayerInteractItemC2SPacket packet = new PlayerInteractItemC2SPacket(mc.player.getActiveHand(), sequence, mc.player.getYaw(), mc.player.getPitch());
                 mc.player.networkHandler.sendPacket(packet);
                 return packet;
             });

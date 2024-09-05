@@ -133,33 +133,32 @@ public class SkeletonESP extends Module {
 
             // Setting Up Buffered Builder
 
-            BufferBuilder buffer = Tessellator.getInstance().getBuffer();
-            buffer.begin(VertexFormat.DrawMode.DEBUG_LINES, VertexFormats.POSITION_COLOR);
+            BufferBuilder buffer = Tessellator.getInstance().begin(VertexFormat.DrawMode.DEBUG_LINES, VertexFormats.POSITION_COLOR);
 
             Matrix4f matrix = matrixStack.peek().getPositionMatrix();
 
             // Spine
 
-            buffer.vertex(matrix, 0, sneaking ? 0.6F : 0.7F, sneaking ? 0.23F : 0).color(color.r, color.g, color.b, color.a).next();
-            buffer.vertex(matrix, 0, sneaking ? 1.05F : 1.4F, 0).color(color.r, color.g, color.b, color.a).next();
+            buffer.vertex(matrix, 0, sneaking ? 0.6F : 0.7F, sneaking ? 0.23F : 0).color(color.r, color.g, color.b, color.a);
+            buffer.vertex(matrix, 0, sneaking ? 1.05F : 1.4F, 0).color(color.r, color.g, color.b, color.a);
 
             // Shoulders
 
-            buffer.vertex(matrix, -0.37F, sneaking ? 1.05F : 1.35F, 0).color(color.r, color.g, color.b, color.a).next();
-            buffer.vertex(matrix, 0.37F, sneaking ? 1.05F : 1.35F, 0).color(color.r, color.g, color.b, color.a).next();
+            buffer.vertex(matrix, -0.37F, sneaking ? 1.05F : 1.35F, 0).color(color.r, color.g, color.b, color.a);
+            buffer.vertex(matrix, 0.37F, sneaking ? 1.05F : 1.35F, 0).color(color.r, color.g, color.b, color.a);
 
             // Pelvis
 
-            buffer.vertex(matrix, -0.15F, sneaking ? 0.6F : 0.7F, sneaking ? 0.23F : 0).color(color.r, color.g, color.b, color.a).next();
-            buffer.vertex(matrix, 0.15F, sneaking ? 0.6F : 0.7F, sneaking ? 0.23F : 0).color(color.r, color.g, color.b, color.a).next();
+            buffer.vertex(matrix, -0.15F, sneaking ? 0.6F : 0.7F, sneaking ? 0.23F : 0).color(color.r, color.g, color.b, color.a);
+            buffer.vertex(matrix, 0.15F, sneaking ? 0.6F : 0.7F, sneaking ? 0.23F : 0).color(color.r, color.g, color.b, color.a);
 
             // Head
             matrixStack.push();
             matrixStack.translate(0, sneaking ? 1.05F : 1.4F, 0);
             rotate(matrixStack, head);
             matrix = matrixStack.peek().getPositionMatrix();
-            buffer.vertex(matrix, 0, 0, 0).color(color.r, color.g, color.b, color.a).next();
-            buffer.vertex(matrix, 0, 0.15F, 0).color(color.r, color.g, color.b, color.a).next();
+            buffer.vertex(matrix, 0, 0, 0).color(color.r, color.g, color.b, color.a);
+            buffer.vertex(matrix, 0, 0.15F, 0).color(color.r, color.g, color.b, color.a);
             matrixStack.pop();
 
             // Right Leg
@@ -168,8 +167,8 @@ public class SkeletonESP extends Module {
             matrixStack.translate(0.15F, sneaking ? 0.6F : 0.7F, sneaking ? 0.23F : 0);
             rotate(matrixStack, rightLeg);
             matrix = matrixStack.peek().getPositionMatrix();
-            buffer.vertex(matrix, 0, 0, 0).color(color.r, color.g, color.b, color.a).next();
-            buffer.vertex(matrix, 0, -0.6F, 0).color(color.r, color.g, color.b, color.a).next();
+            buffer.vertex(matrix, 0, 0, 0).color(color.r, color.g, color.b, color.a);
+            buffer.vertex(matrix, 0, -0.6F, 0).color(color.r, color.g, color.b, color.a);
             matrixStack.pop();
 
             // Left Leg
@@ -178,8 +177,8 @@ public class SkeletonESP extends Module {
             matrixStack.translate(-0.15F, sneaking ? 0.6F : 0.7F, sneaking ? 0.23F : 0);
             rotate(matrixStack, leftLeg);
             matrix = matrixStack.peek().getPositionMatrix();
-            buffer.vertex(matrix, 0, 0, 0).color(color.r, color.g, color.b, color.a).next();
-            buffer.vertex(matrix, 0, -0.6F, 0).color(color.r, color.g, color.b, color.a).next();
+            buffer.vertex(matrix, 0, 0, 0).color(color.r, color.g, color.b, color.a);
+            buffer.vertex(matrix, 0, -0.6F, 0).color(color.r, color.g, color.b, color.a);
             matrixStack.pop();
 
             // Right Arm
@@ -188,8 +187,8 @@ public class SkeletonESP extends Module {
             matrixStack.translate(0.37F, sneaking ? 1.05F : 1.35F, 0);
             rotate(matrixStack, rightArm);
             matrix = matrixStack.peek().getPositionMatrix();
-            buffer.vertex(matrix, 0, 0, 0).color(color.r, color.g, color.b, color.a).next();
-            buffer.vertex(matrix, 0, -0.55F, 0).color(color.r, color.g, color.b, color.a).next();
+            buffer.vertex(matrix, 0, 0, 0).color(color.r, color.g, color.b, color.a);
+            buffer.vertex(matrix, 0, -0.55F, 0).color(color.r, color.g, color.b, color.a);
             matrixStack.pop();
 
             // Left Arm
@@ -198,13 +197,12 @@ public class SkeletonESP extends Module {
             matrixStack.translate(-0.37F, sneaking ? 1.05F : 1.35F, 0);
             rotate(matrixStack, leftArm);
             matrix = matrixStack.peek().getPositionMatrix();
-            buffer.vertex(matrix, 0, 0, 0).color(color.r, color.g, color.b, color.a).next();
-            buffer.vertex(matrix, 0, -0.55F, 0).color(color.r, color.g, color.b, color.a).next();
+            buffer.vertex(matrix, 0, 0, 0).color(color.r, color.g, color.b, color.a);
+            buffer.vertex(matrix, 0, -0.55F, 0).color(color.r, color.g, color.b, color.a);
             matrixStack.pop();
 
             // Drawing Built Buffer
 
-            buffer.clear();
             BufferRenderer.drawWithGlobalProgram(buffer.end());
 
             // Resetting Matrix Translation
