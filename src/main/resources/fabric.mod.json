@@ -1,35 +1,37 @@
 {
-  "schemaVersion": 1,
-  "id": "vector-addon",
-  "version": "${version}",
+    "schemaVersion": 1,
+    "id": "vector-addon",
+    "version": "${version}",
 
-  "name": "Vector Addon",
-  "description": "Vector is a powerful open-source addon for Meteor Client providing some combat and many utility modules.",
-  "authors": [
-    "cally72jhb"
-  ],
-  "contact": {
+    "name": "Vector Addon",
+    "description": "Vector is a powerful open-source addon for Meteor Client providing some combat and many utility modules.",
+    "authors": [
+        "cally72jhb"
+    ],
+    "contact": {
+        "issues": "https://github.com/cally72jhb/vector-addon/issues",
+        "sources": "https://github.com/cally72jhb/vector-addon"
+    },
 
-  },
+    "license": "GPL-3.0",
 
-  "license": "GPL-3.0",
-
-  "environment": "client",
-  "entrypoints": {
-    "meteor": [
-      "cally72jhb.addon.VectorAddon"
-    ]
-  },
-  "mixins": [
-    "vector-addon.mixins.json"
-  ],
-  "accessWidener": "vector-addon.accesswidener",
-  "custom": {
-    "meteor-client:color": "140,245,165"
-  },
-  "depends": {
-    "java": ">=16",
-    "minecraft": "~${mc_version}",
-    "meteor-client": "*"
-  }
+    "environment": "client",
+    "entrypoints": {
+        "meteor": [
+            "cally72jhb.addon.VectorAddon"
+        ]
+    },
+    "mixins": [
+        "vector-addon.mixins.json"
+    ],
+    "accessWidener": "vector-addon.accesswidener",
+    "custom": {
+        "meteor-client:color": "140,245,165",
+        "github:sha": "${gh_hash}"
+    },
+    "depends": {
+        "java": ">=16",
+        "minecraft": "~${mc_version}",
+        "meteor-client": "*"
+    }
 }

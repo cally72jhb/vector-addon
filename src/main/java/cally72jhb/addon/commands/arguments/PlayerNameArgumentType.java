@@ -22,16 +22,16 @@ public class PlayerNameArgumentType implements ArgumentType<String> {
     static {
         if (mc.world != null && mc.getNetworkHandler() != null) {
             EXAMPLES = mc.world.getPlayers()
-                    .stream()
-                    .map(PlayerEntity::getEntityName)
-                    .collect(Collectors.toList()
+                .stream()
+                .map(PlayerEntity::getNameForScoreboard)
+                .collect(Collectors.toList()
             );
 
             EXAMPLES.addAll(mc.getNetworkHandler().getPlayerList()
-                    .stream()
-                    .limit(3)
-                    .map(entry -> entry.getProfile().getName())
-                    .toList()
+                .stream()
+                .limit(3)
+                .map(entry -> entry.getProfile().getName())
+                .toList()
             );
         }
     }
@@ -58,17 +58,17 @@ public class PlayerNameArgumentType implements ArgumentType<String> {
     @Override
     public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> context, SuggestionsBuilder builder) {
         Collection<String> suggestions = new ArrayList<>(
-                mc.world.getPlayers()
-                .stream()
-                .map(PlayerEntity::getEntityName)
-                .toList()
+            mc.world.getPlayers()
+            .stream()
+            .map(PlayerEntity::getNameForScoreboard)
+            .toList()
         );
 
         suggestions.addAll(mc.getNetworkHandler().getPlayerList()
-                .stream()
-                .limit(3)
-                .map(entry -> entry.getProfile().getName())
-                .toList()
+            .stream()
+            .limit(3)
+            .map(entry -> entry.getProfile().getName())
+            .toList()
         );
 
         return CommandSource.suggestMatching(suggestions, builder);
@@ -80,7 +80,6 @@ public class PlayerNameArgumentType implements ArgumentType<String> {
     }
 
     private boolean isValidChar(char character) {
-        return character != '\\' && (character >= '0' && character <= '9' || character >= 'A' && character <= 'Z' || character >= 'a' && character <= 'z'
-                || character >= '!' && character <= '/' || character >= ':' && character <= '@' || character >= '[' && character <= '`' || character >= '{' && character <= '~');
+        return character != '\\' && (character >= '0' && character <= '9' || character >= 'A' && character <= 'Z' || character >= 'a' && character <= 'z' || character >= '!' && character <= '/' || character >= ':' && character <= '@' || character >= '[' && character <= '`' || character >= '{' && character <= '~');
     }
 }

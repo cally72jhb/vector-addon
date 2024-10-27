@@ -645,7 +645,7 @@ public class PacketHoleFill extends Module {
     // Utils
 
     private boolean isValidHole(BlockPos pos, boolean checkDown) {
-        return mc.world.getBlockState(pos).getMaterial().isReplaceable()
+        return mc.world.getBlockState(pos).isReplaceable()
                 && (!checkDown || (mc.world.getBlockState(pos.down()).getBlock().getBlastResistance() >= 600.0F
                 && mc.world.getBlockState(pos.down()).getCollisionShape(mc.world, pos.down()) != null
                 && !mc.world.getBlockState(pos.down()).getCollisionShape(mc.world, pos.down()).isEmpty()))
@@ -754,25 +754,25 @@ public class PacketHoleFill extends Module {
                     Rotations.rotate(Rotations.getYaw(hitPos), Rotations.getPitch(hitPos), 0, () -> {
                         int prevSlot = mc.player.getInventory().selectedSlot;
                         mc.player.getInventory().selectedSlot = slot;
-                        ((IClientPlayerInteractionManager) mc.interactionManager).syncSelected();
+                        ((IClientPlayerInteractionManager) mc.interactionManager).meteor$syncSelected();
 
                         place(new BlockHitResult(hitPos, side, neighbour, false), hand);
 
                         if (swapBack.get()) {
                             mc.player.getInventory().selectedSlot = prevSlot;
-                            ((IClientPlayerInteractionManager) mc.interactionManager).syncSelected();
+                            ((IClientPlayerInteractionManager) mc.interactionManager).meteor$syncSelected();
                         }
                     });
                 } else {
                     int prevSlot = mc.player.getInventory().selectedSlot;
                     mc.player.getInventory().selectedSlot = slot;
-                    ((IClientPlayerInteractionManager) mc.interactionManager).syncSelected();
+                    ((IClientPlayerInteractionManager) mc.interactionManager).meteor$syncSelected();
 
                     place(new BlockHitResult(hitPos, side, neighbour, false), hand);
 
                     if (swapBack.get()) {
                         mc.player.getInventory().selectedSlot = prevSlot;
-                        ((IClientPlayerInteractionManager) mc.interactionManager).syncSelected();
+                        ((IClientPlayerInteractionManager) mc.interactionManager).meteor$syncSelected();
                     }
                 }
             }
@@ -784,7 +784,7 @@ public class PacketHoleFill extends Module {
             mc.getNetworkHandler().sendPacket(new PlayerInteractBlockC2SPacket(hand, result, 0));
 
             Block block = ((BlockItem) mc.player.getStackInHand(hand).getItem()).getBlock();
-            BlockSoundGroup group = block.getSoundGroup(block.getDefaultState());
+            BlockSoundGroup group = block.getDefaultState().getSoundGroup();
 
             mc.getSoundManager().play(new PositionedSoundInstance(group.getPlaceSound(), SoundCategory.BLOCKS, (group.getVolume() + 1.0F) / 8.0F, group.getPitch() * 0.5F, Random.create(), result.getBlockPos()));
 
@@ -846,7 +846,7 @@ public class PacketHoleFill extends Module {
 
     private boolean canPlace(BlockPos pos) {
         if (pos == null || mc.world == null || mc.world.getBottomY() > pos.getY() || mc.world.getTopY() < pos.getY()) return false;
-        return mc.world.getBlockState(pos).getMaterial().isReplaceable() && mc.world.canPlace(Blocks.OBSIDIAN.getDefaultState(), pos, ShapeContext.absent());
+        return mc.world.getBlockState(pos).isReplaceable() && mc.world.canPlace(Blocks.OBSIDIAN.getDefaultState(), pos, ShapeContext.absent());
     }
 
     private Direction getPlaceSide(BlockPos pos) {
@@ -855,7 +855,7 @@ public class PacketHoleFill extends Module {
             Direction opposite = side.getOpposite();
             BlockState state = mc.world.getBlockState(neighbor);
 
-            if (!state.getMaterial().isReplaceable() && state.getFluidState().isEmpty() && !Utils.isClickable(mc.world.getBlockState(pos.offset(side)).getBlock())) {
+            if (!state.isReplaceable() && state.getFluidState().isEmpty() && !Utils.isClickable(mc.world.getBlockState(pos.offset(side)).getBlock())) {
                 return opposite;
             }
         }

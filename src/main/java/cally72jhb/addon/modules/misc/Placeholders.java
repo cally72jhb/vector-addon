@@ -39,8 +39,8 @@ public class Placeholders extends Module {
         if (event.packet instanceof ChatMessageC2SPacket packet && !placeholders.isEmpty() && !cancel) {
             for (Pair<String, String> placeholder : placeholders) {
                 if (placeholder != null && placeholder.getA() != null && packet.chatMessage().contains(placeholder.getA())) {
-                    cancel = true;
-                    mc.getNetworkHandler().sendPacket(new ChatMessageC2SPacket(packet.chatMessage().replaceAll(placeholder.getA(), placeholder.getB()), packet.timestamp(), packet.salt(), packet.signature(), packet.acknowledgment()));
+                    cancel = true; // TODO:
+                    //mc.getNetworkHandler().sendPacket(new ChatMessageC2SPacket(packet.chatMessage().replaceAll(placeholder.getA(), placeholder.getB()), packet.timestamp(), packet.salt(), packet.signature(), packet.acknowledgment()));
                     cancel = false;
 
                     event.cancel();
@@ -243,9 +243,6 @@ public class Placeholders extends Module {
             add(new Pair<>(":peace:", "☮"));
             add(new Pair<>(":infinity:", "∞"));
             add(new Pair<>(":umbrella:", "☂"));
-            add(new Pair<>(":cock:", "╭ᑎ╮"));
-            add(new Pair<>(":dick:", "┌▎┐"));
-            add(new Pair<>(":penis:", "┌∩┐"));
             add(new Pair<>(":?:", "�"));
             add(new Pair<>(":tm:", "™"));
             add(new Pair<>(":reg:", "®"));

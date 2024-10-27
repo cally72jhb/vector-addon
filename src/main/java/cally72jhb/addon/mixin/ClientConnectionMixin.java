@@ -25,11 +25,7 @@ import java.util.Queue;
 
 @Mixin(ClientConnection.class)
 public abstract class ClientConnectionMixin {
-    @Shadow public abstract boolean isOpen();
-    @Shadow protected abstract void sendQueuedPackets();
-    @Shadow protected abstract void sendImmediately(Packet<?> packet, @Nullable PacketCallbacks callbacks);
-
-    @Shadow @Final private Queue<ClientConnection.QueuedPacket> packetQueue;
+    @Shadow public abstract void send(Packet<?> packet, @Nullable PacketCallbacks callbacks, boolean flush);
 
     @Inject(method = "send(Lnet/minecraft/network/packet/Packet;Lnet/minecraft/network/PacketCallbacks;)V", at = @At("HEAD"), cancellable = true)
     private void onSend(Packet<?> packet, PacketCallbacks callbacks, CallbackInfo info) {
@@ -47,40 +43,30 @@ public abstract class ClientConnectionMixin {
             if (digits.isActive() || digits.shouldModifyFirstPacket() && mc.player.age <= 20) {
                 if (packet instanceof PlayerMoveC2SPacket.PositionAndOnGround move) {
                     PlayerMoveC2SPacket.PositionAndOnGround modified = new PlayerMoveC2SPacket.PositionAndOnGround(
-                            digits.round(move.getX(0)),
-                            digits.shouldModifyY() ? digits.round(move.getY(0)) : move.getY(0),
-                            digits.round(move.getZ(0)),
+                        digits.round(move.getX(0)),
+                        digits.shouldModifyY() ? digits.round(move.getY(0)) : move.getY(0),
+                        digits.round(move.getZ(0)),
 
-                            move.isOnGround()
+                        move.isOnGround()
                     );
 
                     info.cancel();
 
-                    if (this.isOpen()) {
-                        this.sendQueuedPackets();
-                        this.sendImmediately(modified, callbacks);
-                    } else {
-                        this.packetQueue.add(new ClientConnection.QueuedPacket(modified, callbacks));
-                    }
+                    send(modified, callbacks, true); // TODO: check if flush should always be true?
                 } else if (packet instanceof PlayerMoveC2SPacket.Full move) {
                     PlayerMoveC2SPacket.Full modified = new PlayerMoveC2SPacket.Full(
-                            digits.round(move.getX(0)),
-                            digits.shouldModifyY() ? digits.round(move.getY(0)) : move.getY(0),
-                            digits.round(move.getZ(0)),
+                        digits.round(move.getX(0)),
+                        digits.shouldModifyY() ? digits.round(move.getY(0)) : move.getY(0),
+                        digits.round(move.getZ(0)),
 
-                            move.getYaw(mc.player.getYaw()),
-                            move.getPitch(mc.player.getPitch()),
-                            move.isOnGround()
+                        move.getYaw(mc.player.getYaw()),
+                        move.getPitch(mc.player.getPitch()),
+                        move.isOnGround()
                     );
 
                     info.cancel();
 
-                    if (this.isOpen()) {
-                        this.sendQueuedPackets();
-                        this.sendImmediately(modified, callbacks);
-                    } else {
-                        this.packetQueue.add(new ClientConnection.QueuedPacket(modified, callbacks));
-                    }
+                    send(modified, callbacks, true); // TODO: check if flush should always be true?
                 } else if (packet instanceof VehicleMoveC2SPacket move) {
                     BoatEntity entity = new BoatEntity(EntityType.BOAT, mc.world);
 
@@ -97,12 +83,7 @@ public abstract class ClientConnectionMixin {
 
                     info.cancel();
 
-                    if (this.isOpen()) {
-                        this.sendQueuedPackets();
-                        this.sendImmediately(modified, callbacks);
-                    } else {
-                        this.packetQueue.add(new ClientConnection.QueuedPacket(modified, callbacks));
-                    }
+                    send(modified, callbacks, true); // TODO: check if flush should always be true?
                 }
             }
         }

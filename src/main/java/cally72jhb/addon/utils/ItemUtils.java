@@ -62,6 +62,6 @@ public class ItemUtils {
     }
 
     public static boolean canStackAddMore(ItemStack existing, ItemStack stack) {
-        return !existing.isEmpty() && ItemStack.canCombine(existing, stack) && existing.isStackable() && existing.getCount() < existing.getMaxCount() && existing.getCount() < 64;
+        return !existing.isEmpty() && ItemStack.areEqual(existing, stack) && existing.isStackable() && existing.getCount() < existing.getMaxCount() && existing.getCount() < 64;
     }
 }
