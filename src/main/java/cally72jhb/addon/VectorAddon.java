@@ -10,7 +10,6 @@ import cally72jhb.addon.modules.player.NoSwing;
 import cally72jhb.addon.modules.player.PortalGodMode;
 import cally72jhb.addon.modules.render.HoleRenderer;
 import cally72jhb.addon.modules.render.SkeletonESP;
-import cally72jhb.addon.modules.render.StrafeDirection;
 import cally72jhb.addon.utils.ExecutorTask;
 import meteordevelopment.meteorclient.addons.GithubRepo;
 import meteordevelopment.meteorclient.addons.MeteorAddon;
@@ -37,7 +36,7 @@ public class VectorAddon extends MeteorAddon {
 
         // Misc
 
-        Modules.get().add(new AntiScreen());
+        //Modules.get().add(new AntiScreen());
         Modules.get().add(new NoCollision());
         Modules.get().add(new NoWorldBorder());
         Modules.get().add(new PacketPlace());
@@ -69,14 +68,14 @@ public class VectorAddon extends MeteorAddon {
 
         Modules.get().add(new HoleRenderer());
         Modules.get().add(new SkeletonESP());
-        Modules.get().add(new StrafeDirection());
+        //Modules.get().add(new StrafeDirection());
 
         // Commands
 
         Commands.add(new CenterCommand());
         Commands.add(new DesyncCommand());
         Commands.add(new ItemCommand());
-        //Commands.add(new PlayerHeadCommand()); // TODO: re-add
+        //Commands.add(new PlayerHeadCommand());
         Commands.add(new TeleportCommand());
         Commands.add(new TrashCommand());
         Commands.add(new UUIDCommand());

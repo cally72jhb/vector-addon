@@ -23,6 +23,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.ShapeContext;
 import net.minecraft.client.sound.PositionedSoundInstance;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
@@ -655,7 +656,7 @@ public class PacketHoleFill extends Module {
 
     private boolean shouldPause() {
         if (minePause.get() && mc.interactionManager.isBreakingBlock()) return true;
-        if (eatPause.get() && (mc.player.isUsingItem() && (mc.player.getMainHandStack().getItem().isFood() || mc.player.getOffHandStack().getItem().isFood()))) return true;
+        if (eatPause.get() && (mc.player.isUsingItem() && (mc.player.getMainHandStack().getItem().getDefaultStack().get(DataComponentTypes.FOOD) != null || mc.player.getOffHandStack().getItem().getDefaultStack().get(DataComponentTypes.FOOD) != null))) return true;
         return drinkPause.get() && (mc.player.isUsingItem() && (mc.player.getMainHandStack().getItem() instanceof PotionItem || mc.player.getOffHandStack().getItem() instanceof PotionItem));
     }
 

@@ -21,7 +21,6 @@ import net.minecraft.client.model.ModelPart;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.option.Perspective;
 import net.minecraft.client.render.*;
-import net.minecraft.client.render.entity.LivingEntityRenderer;
 import net.minecraft.client.render.entity.PlayerEntityRenderer;
 import net.minecraft.client.render.entity.model.PlayerEntityModel;
 import net.minecraft.client.util.math.MatrixStack;
@@ -72,7 +71,7 @@ public class SkeletonESP extends Module {
     @EventHandler
     private void onRender(Render3DEvent event) {
         MatrixStack matrixStack = event.matrices;
-        float g = event.tickDelta;
+        float delta = event.tickDelta;
 
         RenderSystem.setShader(GameRenderer::getPositionColorProgram);
         RenderSystem.enableBlend();
@@ -82,36 +81,40 @@ public class SkeletonESP extends Module {
         RenderSystem.enableCull();
 
         mc.world.getEntities().forEach(entity -> {
-            if (!(entity instanceof PlayerEntity playerEntity)) return;
-            if (mc.options.getPerspective() == Perspective.FIRST_PERSON && !freecam.isActive() && mc.player == entity)
-                return;
+            if (!(entity instanceof AbstractClientPlayerEntity player)) return;
+            if (mc.options.getPerspective() == Perspective.FIRST_PERSON && !freecam.isActive() && mc.player == entity) return;
             int rotationHoldTicks = Config.get().rotationHoldTicks.get();
 
-            Color skeletonColor = PlayerUtils.getPlayerColor((PlayerEntity) entity, playersColor.get());
-            if (distance.get()) skeletonColor = getColorFromDistance(entity);
+            Color color = PlayerUtils.getPlayerColor((PlayerEntity) entity, playersColor.get());
+            if (distance.get()) color = getColorFromDistance(entity);
 
-            Vec3d footPos = getEntityRenderPosition(playerEntity, g);
-            PlayerEntityRenderer livingEntityRenderer = (PlayerEntityRenderer) (LivingEntityRenderer<?, ?>) mc.getEntityRenderDispatcher().getRenderer(playerEntity);
+            Vec3d footPos = getEntityRenderPosition(player, delta);
+            PlayerEntityRenderer livingEntityRenderer = (PlayerEntityRenderer) mc.getEntityRenderDispatcher().getRenderer(player);
             PlayerEntityModel<AbstractClientPlayerEntity> playerEntityModel = livingEntityRenderer.getModel();
 
-            float h = MathHelper.lerpAngleDegrees(g, playerEntity.prevBodyYaw, playerEntity.bodyYaw);
-            if (mc.player == entity && Rotations.rotationTimer < rotationHoldTicks) h = Rotations.serverYaw;
-            float j = MathHelper.lerpAngleDegrees(g, playerEntity.prevHeadYaw, playerEntity.headYaw);
-            if (mc.player == entity && Rotations.rotationTimer < rotationHoldTicks) j = Rotations.serverYaw;
+            float lerpBody = MathHelper.lerpAngleDegrees(delta, player.prevBodyYaw, player.bodyYaw);
+            float lerpHead = MathHelper.lerpAngleDegrees(delta, player.prevHeadYaw, player.headYaw);
+            if (mc.player == entity && Rotations.rotationTimer < rotationHoldTicks) lerpBody = Rotations.serverYaw;
+            if (mc.player == entity && Rotations.rotationTimer < rotationHoldTicks) lerpHead = Rotations.serverYaw;
 
-            float q = playerEntity.limbAnimator.getPos() - playerEntity.limbAnimator.getSpeed() * (1.0F - g);
-            float p = playerEntity.limbAnimator.getSpeed(g);
-            float o = (float) playerEntity.age + g;
-            float k = j - h;
-            float m = playerEntity.getPitch(g);
-            if (mc.player == entity && Rotations.rotationTimer < rotationHoldTicks) m = Rotations.serverPitch;
+            float angle = player.limbAnimator.getPos() - player.limbAnimator.getSpeed() * (1.0F - delta);
+            float distance = player.limbAnimator.getSpeed(delta);
+            float progress = (float) player.age + delta;
+            float headYaw = lerpHead - lerpBody;
+            float headPitch = player.getPitch(delta);
 
-            playerEntityModel.animateModel((AbstractClientPlayerEntity) playerEntity, q, p, g);
-            playerEntityModel.setAngles((AbstractClientPlayerEntity) playerEntity, q, p, o, k, m);
+            if (mc.player == entity && Rotations.rotationTimer < rotationHoldTicks) headPitch = Rotations.serverPitch;
 
-            boolean swimming = playerEntity.isInSwimmingPose();
-            boolean sneaking = playerEntity.isSneaking();
-            boolean flying = playerEntity.isFallFlying();
+            playerEntityModel.animateModel(player, angle, distance, delta);
+            playerEntityModel.setAngles(player, angle, distance, progress, headYaw, headPitch);
+
+            // Model States
+
+            boolean swimming = player.isInSwimmingPose();
+            boolean sneaking = player.isSneaking();
+            boolean flying = player.isFallFlying();
+
+            // Model Parts
 
             ModelPart head = playerEntityModel.head;
             ModelPart leftArm = playerEntityModel.leftArm;
@@ -119,83 +122,100 @@ public class SkeletonESP extends Module {
             ModelPart leftLeg = playerEntityModel.leftLeg;
             ModelPart rightLeg = playerEntityModel.rightLeg;
 
+            // Translating Matrix
+
             matrixStack.translate(footPos.x, footPos.y, footPos.z);
             if (swimming) matrixStack.translate(0, 0.35F, 0);
 
-            matrixStack.multiply(new Quaternionf().setAngleAxis((h + 180) * Math.PI / 180F, 0, -1, 0));
-            if (swimming || flying)
-                matrixStack.multiply(new Quaternionf().setAngleAxis((90 + m) * Math.PI / 180F, -1, 0, 0));
+            matrixStack.multiply(new Quaternionf().setAngleAxis((lerpBody + 180) * Math.PI / 180.0F, 0, -1, 0));
+            if (swimming || flying) matrixStack.multiply(new Quaternionf().setAngleAxis((90 + headPitch) * Math.PI / 180.0F, -1, 0, 0));
             if (swimming) matrixStack.translate(0, -0.95F, 0);
 
-            BufferBuilder bufferBuilder = Tessellator.getInstance().getBuffer();
-            bufferBuilder.begin(VertexFormat.DrawMode.DEBUG_LINES, VertexFormats.POSITION_COLOR);
+            // Setting Up Buffered Builder
 
-            Matrix4f matrix4f = matrixStack.peek().getPositionMatrix();
-            bufferBuilder.vertex(matrix4f, 0, sneaking ? 0.6F : 0.7F, sneaking ? 0.23F : 0).color(skeletonColor.r, skeletonColor.g, skeletonColor.b, skeletonColor.a).next();
-            bufferBuilder.vertex(matrix4f, 0, sneaking ? 1.05F : 1.4F, 0).color(skeletonColor.r, skeletonColor.g, skeletonColor.b, skeletonColor.a).next();//spine
+            BufferBuilder buffer = Tessellator.getInstance().begin(VertexFormat.DrawMode.DEBUG_LINES, VertexFormats.POSITION_COLOR);
 
-            bufferBuilder.vertex(matrix4f, -0.37F, sneaking ? 1.05F : 1.35F, 0).color(skeletonColor.r, skeletonColor.g, skeletonColor.b, skeletonColor.a).next();//shoulders
-            bufferBuilder.vertex(matrix4f, 0.37F, sneaking ? 1.05F : 1.35F, 0).color(skeletonColor.r, skeletonColor.g, skeletonColor.b, skeletonColor.a).next();
+            Matrix4f matrix = matrixStack.peek().getPositionMatrix();
 
-            bufferBuilder.vertex(matrix4f, -0.15F, sneaking ? 0.6f : 0.7F, sneaking ? 0.23F : 0).color(skeletonColor.r, skeletonColor.g, skeletonColor.b, skeletonColor.a).next();//pelvis
-            bufferBuilder.vertex(matrix4f, 0.15F, sneaking ? 0.6f : 0.7F, sneaking ? 0.23F : 0).color(skeletonColor.r, skeletonColor.g, skeletonColor.b, skeletonColor.a).next();
+            // Spine
+
+            buffer.vertex(matrix, 0, sneaking ? 0.6F : 0.7F, sneaking ? 0.23F : 0).color(color.r, color.g, color.b, color.a);
+            buffer.vertex(matrix, 0, sneaking ? 1.05F : 1.4F, 0).color(color.r, color.g, color.b, color.a);
+
+            // Shoulders
+
+            buffer.vertex(matrix, -0.37F, sneaking ? 1.05F : 1.35F, 0).color(color.r, color.g, color.b, color.a);
+            buffer.vertex(matrix, 0.37F, sneaking ? 1.05F : 1.35F, 0).color(color.r, color.g, color.b, color.a);
+
+            // Pelvis
+
+            buffer.vertex(matrix, -0.15F, sneaking ? 0.6F : 0.7F, sneaking ? 0.23F : 0).color(color.r, color.g, color.b, color.a);
+            buffer.vertex(matrix, 0.15F, sneaking ? 0.6F : 0.7F, sneaking ? 0.23F : 0).color(color.r, color.g, color.b, color.a);
 
             // Head
             matrixStack.push();
             matrixStack.translate(0, sneaking ? 1.05F : 1.4F, 0);
             rotate(matrixStack, head);
-            matrix4f = matrixStack.peek().getPositionMatrix();
-            bufferBuilder.vertex(matrix4f, 0, 0, 0).color(skeletonColor.r, skeletonColor.g, skeletonColor.b, skeletonColor.a).next();
-            bufferBuilder.vertex(matrix4f, 0, 0.15F, 0).color(skeletonColor.r, skeletonColor.g, skeletonColor.b, skeletonColor.a).next();
+            matrix = matrixStack.peek().getPositionMatrix();
+            buffer.vertex(matrix, 0, 0, 0).color(color.r, color.g, color.b, color.a);
+            buffer.vertex(matrix, 0, 0.15F, 0).color(color.r, color.g, color.b, color.a);
             matrixStack.pop();
 
             // Right Leg
+
             matrixStack.push();
             matrixStack.translate(0.15F, sneaking ? 0.6F : 0.7F, sneaking ? 0.23F : 0);
             rotate(matrixStack, rightLeg);
-            matrix4f = matrixStack.peek().getPositionMatrix();
-            bufferBuilder.vertex(matrix4f, 0, 0, 0).color(skeletonColor.r, skeletonColor.g, skeletonColor.b, skeletonColor.a).next();
-            bufferBuilder.vertex(matrix4f, 0, -0.6F, 0).color(skeletonColor.r, skeletonColor.g, skeletonColor.b, skeletonColor.a).next();
+            matrix = matrixStack.peek().getPositionMatrix();
+            buffer.vertex(matrix, 0, 0, 0).color(color.r, color.g, color.b, color.a);
+            buffer.vertex(matrix, 0, -0.6F, 0).color(color.r, color.g, color.b, color.a);
             matrixStack.pop();
 
             // Left Leg
+
             matrixStack.push();
-            matrixStack.translate(-0.15f, sneaking ? 0.6f : 0.7f, sneaking ? 0.23f : 0);
+            matrixStack.translate(-0.15F, sneaking ? 0.6F : 0.7F, sneaking ? 0.23F : 0);
             rotate(matrixStack, leftLeg);
-            matrix4f = matrixStack.peek().getPositionMatrix();
-            bufferBuilder.vertex(matrix4f, 0, 0, 0).color(skeletonColor.r, skeletonColor.g, skeletonColor.b, skeletonColor.a).next();
-            bufferBuilder.vertex(matrix4f, 0, -0.6f, 0).color(skeletonColor.r, skeletonColor.g, skeletonColor.b, skeletonColor.a).next();
+            matrix = matrixStack.peek().getPositionMatrix();
+            buffer.vertex(matrix, 0, 0, 0).color(color.r, color.g, color.b, color.a);
+            buffer.vertex(matrix, 0, -0.6F, 0).color(color.r, color.g, color.b, color.a);
             matrixStack.pop();
 
             // Right Arm
+
             matrixStack.push();
-            matrixStack.translate(0.37f, sneaking ? 1.05f : 1.35f, 0);
+            matrixStack.translate(0.37F, sneaking ? 1.05F : 1.35F, 0);
             rotate(matrixStack, rightArm);
-            matrix4f = matrixStack.peek().getPositionMatrix();
-            bufferBuilder.vertex(matrix4f, 0, 0, 0).color(skeletonColor.r, skeletonColor.g, skeletonColor.b, skeletonColor.a).next();
-            bufferBuilder.vertex(matrix4f, 0, -0.55f, 0).color(skeletonColor.r, skeletonColor.g, skeletonColor.b, skeletonColor.a).next();
+            matrix = matrixStack.peek().getPositionMatrix();
+            buffer.vertex(matrix, 0, 0, 0).color(color.r, color.g, color.b, color.a);
+            buffer.vertex(matrix, 0, -0.55F, 0).color(color.r, color.g, color.b, color.a);
             matrixStack.pop();
 
             // Left Arm
+
             matrixStack.push();
-            matrixStack.translate(-0.37f, sneaking ? 1.05f : 1.35f, 0);
+            matrixStack.translate(-0.37F, sneaking ? 1.05F : 1.35F, 0);
             rotate(matrixStack, leftArm);
-            matrix4f = matrixStack.peek().getPositionMatrix();
-            bufferBuilder.vertex(matrix4f, 0, 0, 0).color(skeletonColor.r, skeletonColor.g, skeletonColor.b, skeletonColor.a).next();
-            bufferBuilder.vertex(matrix4f, 0, -0.55f, 0).color(skeletonColor.r, skeletonColor.g, skeletonColor.b, skeletonColor.a).next();
+            matrix = matrixStack.peek().getPositionMatrix();
+            buffer.vertex(matrix, 0, 0, 0).color(color.r, color.g, color.b, color.a);
+            buffer.vertex(matrix, 0, -0.55F, 0).color(color.r, color.g, color.b, color.a);
             matrixStack.pop();
 
-            bufferBuilder.clear();
-            BufferRenderer.drawWithGlobalProgram(bufferBuilder.end());
+            // Drawing Built Buffer
 
-            if (swimming) matrixStack.translate(0, 0.95f, 0);
-            if (swimming || flying)
-                matrixStack.multiply(new Quaternionf().setAngleAxis((90 + m) * Math.PI / 180F, 1, 0, 0));
-            if (swimming) matrixStack.translate(0, -0.35f, 0);
+            BufferRenderer.drawWithGlobalProgram(buffer.end());
 
-            matrixStack.multiply(new Quaternionf().setAngleAxis((h + 180) * Math.PI / 180F, 0, 1, 0));
+            // Resetting Matrix Translation
+
+            if (swimming) matrixStack.translate(0, 0.95F, 0);
+            if (swimming || flying) matrixStack.multiply(new Quaternionf().setAngleAxis((90 + headPitch) * Math.PI / 180.0F, 1, 0, 0));
+            if (swimming) matrixStack.translate(0, -0.35F, 0);
+
+            matrixStack.multiply(new Quaternionf().setAngleAxis((lerpBody + 180.0F) * Math.PI / 180.0F, 0, 1, 0));
             matrixStack.translate(-footPos.x, -footPos.y, -footPos.z);
         });
+
+        // Resetting Render System GL States
 
         RenderSystem.disableCull();
         RenderSystem.disableBlend();
@@ -222,6 +242,7 @@ public class SkeletonESP extends Module {
         double x = entity.prevX + ((entity.getX() - entity.prevX) * partial) - mc.getEntityRenderDispatcher().camera.getPos().x;
         double y = entity.prevY + ((entity.getY() - entity.prevY) * partial) - mc.getEntityRenderDispatcher().camera.getPos().y;
         double z = entity.prevZ + ((entity.getZ() - entity.prevZ) * partial) - mc.getEntityRenderDispatcher().camera.getPos().z;
+
         return new Vec3d(x, y, z);
     }
 
@@ -234,17 +255,19 @@ public class SkeletonESP extends Module {
             return color;
         }
 
-        int r, g;
+        int red;
+        int green;
 
         if (percent < 0.5) {
-            r = 255;
-            g = (int) (255 * percent / 0.5);
+            red = 255;
+            green = (int) (255 * percent / 0.5);
         } else {
-            g = 255;
-            r = 255 - (int) (255 * (percent - 0.5) / 0.5);
+            green = 255;
+            red = 255 - (int) (255 * (percent - 0.5) / 0.5);
         }
 
-        color.set(r, g, 0, 255);
+        color.set(red, green, 0, 255);
+
         return color;
     }
 }

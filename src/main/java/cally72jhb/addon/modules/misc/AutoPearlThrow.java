@@ -237,7 +237,7 @@ public class AutoPearlThrow extends Module {
                             if (state.getBlock() == block) {
                                 this.aimAt(pos);
                                 if (this.debug.get()) info("target: [ " + pos.getX() + " " + pos.getY() + " " + pos.getZ() + " ]");
-                                mc.interactionManager.sendSequencedPacket(mc.world, (sequence) -> new PlayerInteractItemC2SPacket(hand, sequence));
+                                mc.interactionManager.sendSequencedPacket(mc.world, (sequence) -> new PlayerInteractItemC2SPacket(hand, sequence, mc.player.getYaw(), mc.player.getPitch()));
                                 this.timer = 0;
 
                                 event.renderer.box(pos, sideColor.get(), lineColor.get(), shapeMode.get(), 0);
