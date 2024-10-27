@@ -2,6 +2,8 @@
   
 # Vector Addon
 
+<b>This project is not actively maintained.</b>
+
 Vector is a powerful open-source addon for Meteor Client      <br/>
 providing some combat and many utility modules                <br/>
 To install Vector correctly, place it in                      <br/>
@@ -25,6 +27,7 @@ Fly                 || An improved version of the Meteor "Flight"
 Hole Renderer       || Renders nearby safe-holes
 Inventory Scroll    || Allows you to scroll in your hotbar while having screens opened
 No Collision        || Removes selected block or world border collisions client-side
+No World Border     || Disables certain aspects of the world border
 No Fall Plus        || An improved version of the Meteor "No Fall"
 No Swing            || Removes the hand-swinging animation client- and server-side
 Packet Fly          || Fly with packets on most servers (inspired by Konas)
@@ -34,15 +37,16 @@ Ping Spoof          || Spoofs your ping without changing any gameplay
 Placeholders        || Set custom placeholders to replace when sending messages
 Portal God Mode     || Gives you invincibility when leaving a portal
 Rubberband Fly      || A very customizable low-packet packet fly alternative
+Smart Sprint        || Sprints when the player is able to, making the module "undetectable"
 Skeleton ESP        || Renders a players skeleton
 Surround Plus       || Surrounds you in inexplodable blocks to prevent much explosion damage
+Tick Shift          || Allows you to move fast for limited time after standing still
 </pre>
 
 <h1>Commands:</h1>
 <pre>
 .center      || Centers you on the block
 .desync      || Desyncs the entity you're currently riding from the server
-.player-head || Gives you the head of a player in creative
 .teleport    || Allows you to teleport to any location
 .trashcan    || Allows you to silently destroy any item in your hand without dropping it
 .uuid        || Tells you a players uuid
